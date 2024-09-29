@@ -15,3 +15,10 @@ app.use(errorHandler);
 
 
 app.listen(TESTER_PORT, () => console.log(`Server running on port ${TESTER_PORT}`));
+
+
+/**
+ * things to ask
+ * should i make the user as a separate table 
+ * 
+ */

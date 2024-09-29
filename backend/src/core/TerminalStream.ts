@@ -7,7 +7,7 @@ export class TerminalStream {
     private spawnInstance: ChildProcessWithoutNullStreams;
     private connections: Connection[];
     private stageNo: number;
-    // private testId: string
+    // private userId: string
     private _currentStream: string;
 
     get currentStream() {

@@ -3,7 +3,10 @@ import { Socket as Soc } from "socket.io";
 
 
 export type Request = Req & {
-    user: string
+    user: string,
+    file: {
+        path: string,
+    }
 };
 export type Response = Res;
 export type NextFunction = NextFn;
