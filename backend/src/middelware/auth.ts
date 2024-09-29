@@ -8,9 +8,9 @@ const authMiddleware = async (req: Request, _res: Response, next: NextFunction) 
     if (authHeader && authHeader.startsWith('Bearer')) {
         token = authHeader.split(' ')[1];
     }
-    else {
-        token = randomUUID();
-    }
+    // else {
+    //     token = randomUUID();
+    // }
 
     req.user = token;
 

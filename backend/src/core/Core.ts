@@ -5,7 +5,8 @@ import stageDescription from './stageDescription.json'
 export class Core {
     public runners: StageRunner[];
     public connections: Connection[];
-    public serverSocket: Socket;
+    public serverSocket: Socket; // rename to socketio
+    // http instance
 
     constructor(serverSocket: Socket) {
         this.runners = [];

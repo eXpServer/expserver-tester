@@ -8,7 +8,7 @@ export class TerminalStream {
     private connections: Connection[];
     private stageNo: number;
     // private userId: string
-    private _currentStream: string;
+    private _currentStream: string; //send only onel ine at a time or send max 10k-ish lines
 
     get currentStream() {
         return this._currentStream;

@@ -11,11 +11,11 @@ export class StageRunner {
     private spawnInstance: ChildProcessWithoutNullStreams | null;
     private terminalInstance: TerminalStream | null;
     // private userId: string;
-    private _running: boolean
+    // private _running: boolean
 
-    get running() {
-        return this._running;
-    }
+    // get running() {
+    //     return this._running;
+    // }
 
 
     private attachTerminal = (): TerminalStream | null => {
@@ -37,7 +37,7 @@ export class StageRunner {
         this.spawnInstance = null;
         this.terminalInstance = null;
 
-        this._running = false;
+        // this._running = false;
     }
 
 

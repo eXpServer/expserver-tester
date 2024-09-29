@@ -17,15 +17,19 @@ const getStageDescription = expressAsyncHandler(async (req: Request, res: Respon
     res.status(200).json(stageDescription[stageNo]);
 })
 
+
+/**
+ * 
+ */
 const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
-        res.status(404);
+        res.status(400);
         throw new Error("File not found");
     }
 
     const stageNo = req.params['num'];
     if (verifyStageNo(stageNo)) {
-        res.status(404);
+        res.status(400);
         throw new Error("Stage not found");
     }
 
@@ -43,6 +47,8 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
         })
 
         if (existingFile) {
+            await deleteFile(existingFile.filePath);
+
             await prisma.file.delete({
                 where: {
                     id: existingFile.id,
@@ -73,7 +79,7 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Response) => {
     const stageNo = req.params['num'];
     if (verifyStageNo(stageNo)) {
-        res.status(404);
+        res.status(400);
         throw new Error("Stage not found");
     }
 
