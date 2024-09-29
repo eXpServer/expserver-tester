@@ -14,24 +14,25 @@ export const reverseString = (input: string): string => {
     return input.split('').reverse().join('');
 }
 
-
 /**
  * generates a random string
- * @param length of the string
+ * @param maxLength of the string
  * @returns random string of given length
  */
-export const generateRandomString = (length: number): string => {
+export const generateRandomStrings = (maxLength: number, count: number): string[] => {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
     const charactersLength = characters.length;
 
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    let results = Array<string>(count);
+
+    for (let i = 0; i < count; i++) {
+        results[i] = '';
+        const length = Math.floor(Math.random() * maxLength);
+        for (let j = 0; j < length; j++) {
+            results[i] += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        results[i] += '\n';
     }
 
-    return result;
+    return results;
 }
-
-/**
- * generates
- */
