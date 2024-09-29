@@ -1,18 +1,20 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { getStageDescription, uploadBinaryHandler, deleteBinaryHandler, runHandler, stopHandler } from './controllers';
 
 
 const router = Router();
+const upload = multer({ dest: 'uploads' });
 
-router.get('/:number', getStageDescription);
+router.get('/:num', getStageDescription);
 
-router.route('/:number/binary')
-    .post(uploadBinaryHandler)
+router.route('/:num/binary')
+    .post(upload.single('binary'), uploadBinaryHandler)
     .delete(deleteBinaryHandler)
 
 
-router.get('/:number/run', runHandler)
+router.get('/:num/run', runHandler)
 
-router.get('/:number/stop', stopHandler)
+router.get('/:num/stop', stopHandler)
 
 export default router;

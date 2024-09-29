@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "../types";
 
-import { ErrorVals } from '../constants';
+import { ErrorTypes } from '../constants';
 
-const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
     const statusCode = res.statusCode ? res.statusCode : 500;
     switch (statusCode) {
-        case ErrorVals.VALIDATION_ERROR:
+        case ErrorTypes.VALIDATION_ERROR:
             res.json({
                 title: "Validation Error",
                 message: err.message,
@@ -13,7 +13,7 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
             })
             break;
 
-        case ErrorVals.UNAUTHORIZED:
+        case ErrorTypes.UNAUTHORIZED:
             res.json({
                 title: "Unathorized",
                 message: err.message,
@@ -21,7 +21,7 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
             })
             break;
 
-        case ErrorVals.FORBIDDEN:
+        case ErrorTypes.FORBIDDEN:
             res.json({
                 title: "Forbidden",
                 message: err.message,
@@ -29,7 +29,7 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
             })
             break;
 
-        case ErrorVals.NOT_FOUND:
+        case ErrorTypes.NOT_FOUND:
             res.json({
                 title: "Not Found",
                 message: err.message,
@@ -37,7 +37,7 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
             })
             break;
 
-        case ErrorVals.SERVER_ERROR:
+        case ErrorTypes.SERVER_ERROR:
             res.json({
                 title: "Server Error",
                 message: err.message,
@@ -49,5 +49,3 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
             break;
     }
 };
-
-export errorHandler;
