@@ -1,10 +1,11 @@
-import { NextFunction, Request, Response } from 'express';
-import { ErrorTypes } from '../constants';
+import { NextFunction, Request, Response } from "../types";
 
-const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+import { ErrorVals } from '../constants';
+
+const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
     const statusCode = res.statusCode ? res.statusCode : 500;
     switch (statusCode) {
-        case ErrorTypes.VALIDATION_ERROR:
+        case ErrorVals.VALIDATION_ERROR:
             res.json({
                 title: "Validation Error",
                 message: err.message,
@@ -12,7 +13,7 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
             })
             break;
 
-        case ErrorTypes.UNAUTHORIZED:
+        case ErrorVals.UNAUTHORIZED:
             res.json({
                 title: "Unathorized",
                 message: err.message,
@@ -20,7 +21,7 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
             })
             break;
 
-        case ErrorTypes.FORBIDDEN:
+        case ErrorVals.FORBIDDEN:
             res.json({
                 title: "Forbidden",
                 message: err.message,
@@ -28,7 +29,7 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
             })
             break;
 
-        case ErrorTypes.NOT_FOUND:
+        case ErrorVals.NOT_FOUND:
             res.json({
                 title: "Not Found",
                 message: err.message,
@@ -36,7 +37,7 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
             })
             break;
 
-        case ErrorTypes.SERVER_ERROR:
+        case ErrorVals.SERVER_ERROR:
             res.json({
                 title: "Server Error",
                 message: err.message,
@@ -49,4 +50,4 @@ const errorHandler = (err: any, req: Request, res: Response, next: NextFunction)
     }
 };
 
-export default errorHandler;
+export errorHandler;

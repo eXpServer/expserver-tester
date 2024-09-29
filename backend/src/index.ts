@@ -1,18 +1,14 @@
+import express from 'express';
 import cors from 'cors';
-import stage1Router from "./routes/stage1";
-import stage2Router from './routes/stage2';
-import { TESTER_PORT } from "./constants";
-import errorHandler from "./middleware/error";
-import express from "express";
+import apiRouter from './api/routes';
+import authMiddleware from './middelware/auth';
 
-export const app = express();
+const app = express();
 app.use(cors());
 
 
-app.use('/stage1', stage1Router);
-app.use('/stage2', stage2Router);
-app.use(errorHandler);
+app.use(authMiddleware);
+app.use(apiRouter)
 
 
-app.listen(TESTER_PORT, () => console.log(`Server running on http://localhost:${TESTER_PORT}`));
-
+app.listen(3000, () => console.log("Server running on port 3000"));
