@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getStageDescription, uploadBinaryHandler, deleteBinaryHandler, runHandler, stopHandler } from './controllers';
+import { getStageDescription, uploadBinaryHandler, deleteBinaryHandler, runHandler, stopHandler } from './stageHandler/controllers';
 
 
 const router = Router();

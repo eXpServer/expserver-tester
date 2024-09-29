@@ -6,5 +6,4 @@ const logger = (req: Request, _res: Response, next: NextFunction) => {
     next();
 };
 
-
-module.exports = logger;
+export default logger;

@@ -1,7 +1,7 @@
-import { Core } from '../core/Core';
-import { Request, Response } from '../types';
+import { Core } from '../../core/Core';
+import { Request, Response } from '../../types';
 import expressAsyncHandler from 'express-async-handler';
-import { deleteFile, getFilePath, verifyStageNo } from '../utils/file';
+import { deleteFile, getFilePath, verifyStageNo } from '../../utils/file';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -65,7 +65,7 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 
 
     res.status(200).json({
-        filePath,
+        fileName,
         stageNo,
     })
 })
