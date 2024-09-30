@@ -6,9 +6,8 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const getStageDescription = expressAsyncHandler(async (req: Request, res: Response) => {
-
     const stageNo = req.params['num'];
-    if (verifyStageNo(stageNo)) {
+    if (!verifyStageNo(stageNo)) {
         res.status(404);
         throw new Error("Stage not found");
     }
@@ -28,7 +27,7 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     }
 
     const stageNo = req.params['num'];
-    if (verifyStageNo(stageNo)) {
+    if (!verifyStageNo(stageNo)) {
         res.status(400);
         throw new Error("Stage not found");
     }
@@ -78,7 +77,7 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 
 const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Response) => {
     const stageNo = req.params['num'];
-    if (verifyStageNo(stageNo)) {
+    if (!verifyStageNo(stageNo)) {
         res.status(400);
         throw new Error("Stage not found");
     }
@@ -119,13 +118,30 @@ const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     })
 })
 
-const runHandler = async (req: Request, res: Response) => {
+const runHandler = expressAsyncHandler(async (req: Request, res: Response) => {
+    // const stageNo = req.params['num'];
+    // if (!verifyStageNo(stageNo)) {
+    //     res.status(400);
+    //     throw new Error("Stage error");
+    // }
 
-}
 
-const stopHandler = async (req: Request, res: Response) => {
+    // const file = await prisma.file.findFirst({
+    //     where: {
+    //         AND: {
+    //             userId: req.user,
+    //             stageNo: parseInt(stageNo),
+    //         }
+    //     }
+    // })
 
-}
+    // if (file) {
+    // }
+})
+
+const stopHandler = expressAsyncHandler(async (req: Request, res: Response) => {
+
+})
 
 
 export {

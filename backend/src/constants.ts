@@ -2,6 +2,8 @@ export const LOCALHOST = '127.0.0.1';
 
 export const TESTER_PORT = 6969;
 
+export const WEBSOCKET_PORT = 6970;
+
 export const SERVER_PORT_TEMP = 8080;
 
 export const SERVER_PORTS_FINAL = [8001, 8002, 8003, 8004];
