@@ -1,7 +1,7 @@
 import { Socket, StageTestsInterface, StageTestState, TestStatus } from "../types";
 import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http'
-import { Connection } from "./Connection";
+import { StageWatcher } from "./StageWatcher";
 import { StageRunner } from "./StageRunner";
 import stageDescription from './stageDescription.json'
 import stageTests from './stageTests.json';
@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
 
 export class Core {
     public static runners: StageRunner[];
-    public static connections: Connection[];
+    public static watchers: StageWatcher[];
     public static httpServer: HttpServer;
     public static socketIo: Server;
     public static expressApp: Express;
@@ -22,7 +22,7 @@ export class Core {
 
     public static iniitialize(httpServer: HttpServer, socketIo: Server, expressApp: Express) {
         Core.runners = [];
-        Core.connections = [];
+        Core.watchers = [];
         Core.httpServer = httpServer;
         Core.socketIo = socketIo;
         Core.expressApp = expressApp;
@@ -38,8 +38,8 @@ export class Core {
         Core.runners = Core.runners.filter(runner => (runner !== stageRunner));
     }
 
-    private static findStageRunner(connection: Connection): StageRunner {
-        const { stageNo, userId } = connection;
+    private static findStageRunner(watcher: StageWatcher): StageRunner {
+        const { stageNo, userId } = watcher;
         const runner = this.runners.find(runner => {
             console.log("hello1", stageNo, userId)
             console.log("hello2", runner.stageNo, runner.userId);
@@ -48,8 +48,8 @@ export class Core {
         return runner;
     }
 
-    private static async handleNoExistingRunner(connection: Connection): Promise<StageTestState> {
-        const { stageNo, userId } = connection;
+    private static async handleNoExistingRunner(watcher: StageWatcher): Promise<StageTestState> {
+        const { stageNo, userId } = watcher;
 
         const file = await prisma.file.findFirst({
             where: {
@@ -85,10 +85,10 @@ export class Core {
         }
     }
 
-    private static async handleNewSubscriber(runner: StageRunner, connection: Connection): Promise<StageTestState> {
-        runner.attachNewSubscriber(connection);
+    private static async handleNewSubscriber(runner: StageRunner, watcher: StageWatcher): Promise<StageTestState> {
+        runner.attachNewSubscriber(watcher);
         const currentState = runner.currentState;
-        connection.stageRunner = runner;
+        watcher.stageRunner = runner;
 
         return ({
             binary_uploaded: true,
@@ -97,53 +97,53 @@ export class Core {
         })
     }
 
-    private static async handleNewConnection(socket: Socket, stageNo: number, userId: string) {
-        const connection = new Connection(socket, userId);
-        socket.connection = connection;
+    private static async handleNewWatcher(socket: Socket, stageNo: number, userId: string) {
+        const watcher = new StageWatcher(socket, userId);
+        socket.watcher = watcher;
 
-        connection.changeListeningStage(stageNo);
-        this.connections.push(connection);
+        watcher.changeListeningStage(stageNo);
+        this.watchers.push(watcher);
 
-        const runner = this.findStageRunner(connection);
+        const runner = this.findStageRunner(watcher);
         if (runner) {
-            const currentState = await this.handleNewSubscriber(runner, connection);
+            const currentState = await this.handleNewSubscriber(runner, watcher);
             socket.emit('current-state', currentState);
         }
         else {
-            const currentState = await this.handleNoExistingRunner(connection);
+            const currentState = await this.handleNoExistingRunner(watcher);
             socket.emit('current-state', currentState);
         }
     }
 
-    private static async handleExistingConnection(socket: Socket, stageNo: number) {
-        const connection = socket.connection;
+    private static async handleExistingWatcher(socket: Socket, stageNo: number) {
+        const watcher = socket.watcher;
 
-        const prevRunner = connection.stageRunner;
+        const prevRunner = watcher.stageRunner;
         if (prevRunner) {
-            prevRunner.detachSubscriber(connection);
+            prevRunner.detachSubscriber(watcher);
         }
 
-        connection.changeListeningStage(stageNo);
-        const newRunner = this.findStageRunner(connection);
+        watcher.changeListeningStage(stageNo);
+        const newRunner = this.findStageRunner(watcher);
         if (newRunner) {
-            const currentState = await this.handleNewSubscriber(newRunner, connection);
+            const currentState = await this.handleNewSubscriber(newRunner, watcher);
             socket.emit('current-state', currentState);
         }
         else {
-            const currentState = await this.handleNoExistingRunner(connection);
+            const currentState = await this.handleNoExistingRunner(watcher);
             socket.emit('current-state', currentState);
         }
     }
 
-    private static async handleConnection(socket: Socket, stageNo: number, userId: string) {
-        if (!socket.connection)
-            await this.handleNewConnection(socket, stageNo, userId);
+    private static async handleNewSocketConnection(socket: Socket, stageNo: number, userId: string) {
+        if (!socket.watcher)
+            await this.handleNewWatcher(socket, stageNo, userId);
         else
-            await this.handleExistingConnection(socket, stageNo);
+            await this.handleExistingWatcher(socket, stageNo);
     }
 
-    private static async handleRun(socket: Socket) {
-        const { userId, stageNo } = socket.connection;
+    private static async handleStartRunner(socket: Socket) {
+        const { userId, stageNo } = socket.watcher;
         const file = await prisma.file.findFirst({
             where: {
                 AND: {
@@ -164,16 +164,16 @@ export class Core {
 
         this.runners.push(runner);
 
-        this.connections.forEach(connection => {
-            if (connection.userId == userId && connection.stageNo == stageNo)
-                runner.attachNewSubscriber(connection);
+        this.watchers.forEach(watcher => {
+            if (watcher.userId == userId && watcher.stageNo == stageNo)
+                runner.attachNewSubscriber(watcher);
         })
 
         await runner.run();
     }
 
-    private static handleStop(socket: Socket) {
-        const { stageRunner } = socket.connection;
+    private static handleStopRunner(socket: Socket) {
+        const { stageRunner } = socket.watcher;
         if (stageRunner && stageRunner.running) {
             stageRunner.kill();
 
@@ -182,12 +182,12 @@ export class Core {
     }
 
 
-    private static handleDisconnect(socket: Socket) {
-        const { stageRunner } = socket.connection;
-        stageRunner?.detachSubscriber(socket.connection);
+    private static handleSocketDisconnected(socket: Socket) {
+        const { stageRunner } = socket.watcher;
+        stageRunner?.detachSubscriber(socket.watcher);
 
-        Core.connections = Core.connections.filter(connection => (connection !== socket.connection));
-        socket.connection = null;
+        Core.watchers = Core.watchers.filter(watcher => (watcher !== socket.watcher));
+        socket.watcher = null;
     }
 
 
@@ -200,20 +200,20 @@ export class Core {
 
             socket.on('request-state', async (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
-                await this.handleConnection(socket, stageNo, userId);
+                await this.handleNewSocketConnection(socket, stageNo, userId);
             })
 
             socket.on('run', () => {
-                this.handleRun(socket);
+                this.handleStartRunner(socket);
             })
 
             socket.on('stop', async () => {
-                this.handleStop(socket);
+                this.handleStopRunner(socket);
             })
 
 
             socket.on('disconnect', () => {
-                this.handleDisconnect(socket);
+                this.handleSocketDisconnected(socket);
             })
         })
     }

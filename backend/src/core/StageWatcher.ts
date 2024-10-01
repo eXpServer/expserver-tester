@@ -1,7 +1,7 @@
 import { Socket } from "../types";
 import { StageRunner } from "./StageRunner";
 
-export class Connection {
+export class StageWatcher {
     private _socket: Socket;
     public stageRunner: StageRunner;
     private _stageNo: number;

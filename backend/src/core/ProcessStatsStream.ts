@@ -1,13 +1,13 @@
 import Cpu from "node-os-utils/lib/cpu";
 import { ProcessDataInterface } from "../types";
-import { Connection } from "./Connection";
+import { StageWatcher } from "./StageWatcher";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import osu from 'node-os-utils';
 import Mem from "node-os-utils/lib/mem";
 
 export class ProcessStatsStream {
     private spawnInstance: ChildProcessWithoutNullStreams;
-    private connections: Connection[];
+    private watchers: StageWatcher[];
     private cpu: Cpu;
     private mem: Mem;
     private _currentUsage: ProcessDataInterface;
@@ -18,7 +18,7 @@ export class ProcessStatsStream {
     }
 
     constructor(spawnInstance: ChildProcessWithoutNullStreams) {
-        this.connections = [];
+        this.watchers = [];
         this.spawnInstance = spawnInstance;
         this.cpu = osu.cpu;
         this.mem = osu.mem;
@@ -29,12 +29,12 @@ export class ProcessStatsStream {
         }
     }
 
-    public attachNewSubscriber(connection: Connection) {
-        this.connections.push(connection);
+    public attachNewSubscriber(watcher: StageWatcher) {
+        this.watchers.push(watcher);
     }
 
-    public detachSubscriber(connection: Connection) {
-        this.connections = this.connections.filter(value => (value !== connection));
+    public detachSubscriber(watcher: StageWatcher) {
+        this.watchers = this.watchers.filter(value => (value !== watcher));
     }
 
     private async getUsage() {
@@ -48,7 +48,7 @@ export class ProcessStatsStream {
     }
 
     private emitToAllSockets(event: string, data: any) {
-        this.connections.forEach(connection => connection.socket.emit(event, data));
+        this.watchers.forEach(watcher => watcher.socket.emit(event, data));
     }
 
     public run() {

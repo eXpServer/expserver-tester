@@ -1,6 +1,6 @@
 import { Request as Req, Response as Res, NextFunction as NextFn } from "express";
 import { Socket as Soc } from "socket.io";
-import { Connection } from "./core/Connection";
+import { StageWatcher } from "./core/StageWatcher";
 
 
 export interface ProcessDataInterface {
@@ -59,5 +59,5 @@ export type Response = Res;
 export type NextFunction = NextFn;
 
 export type Socket = Soc & {
-    connection?: Connection
+    watcher?: StageWatcher
 };

@@ -1,10 +1,10 @@
 import { ChildProcessWithoutNullStreams } from "child_process";
 import { Core } from "./Core";
-import { Connection } from "./Connection";
+import { StageWatcher } from "./StageWatcher";
 
 export class TerminalStream {
     private spawnInstance: ChildProcessWithoutNullStreams;
-    private connections: Connection[];
+    private watchers: StageWatcher[];
     private _currentStream: string[]; //send only onel ine at a time or send max 10k-ish lines
     private _streamBuffer: string;
 
@@ -13,27 +13,27 @@ export class TerminalStream {
     }
 
     constructor(spawnInstance: ChildProcessWithoutNullStreams) {
-        this.connections = [];
+        this.watchers = [];
         this.spawnInstance = spawnInstance;
 
         this._currentStream = [];
         this._streamBuffer = "";
     }
 
-    public attachNewSubscriber(connection: Connection) {
-        this.connections.push(connection);
+    public attachNewSubscriber(watcher: StageWatcher) {
+        this.watchers.push(watcher);
 
         const toSend = this._currentStream.slice(-1000).join('\n');
         this.emitToAllSockets('stage-terminal-update', toSend);
     }
 
-    public detachSubscriber(connection: Connection) {
-        this.connections = this.connections.filter(value => (value !== connection));
+    public detachSubscriber(watcher: StageWatcher) {
+        this.watchers = this.watchers.filter(value => (value !== watcher));
     }
 
     private emitToAllSockets(event: string, data: any) {
-        this.connections.forEach(connection => {
-            connection.socket.emit(event, data);
+        this.watchers.forEach(watcher => {
+            watcher.socket.emit(event, data);
         })
     }
 

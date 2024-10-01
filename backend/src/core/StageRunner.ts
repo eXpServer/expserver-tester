@@ -1,4 +1,4 @@
-import { Connection } from "./Connection";
+import { StageWatcher } from "./StageWatcher";
 import { Core } from "./Core";
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { TerminalStream } from "./TerminalStream";
@@ -8,7 +8,7 @@ import { ProcessStatsStream } from "./ProcessStatsStream";
 import testFunctions from '../tests';
 
 export class StageRunner {
-    private connections: Connection[];
+    private watchers: StageWatcher[];
     private filePath: string;
     private spawnInstance: ChildProcessWithoutNullStreams | null;
     private terminalInstance: TerminalStream | null;
@@ -40,7 +40,7 @@ export class StageRunner {
     constructor(userId: string, stageNo: number, filePath: string) {
         this._stageNo = stageNo;
         this.filePath = filePath;
-        this.connections = [];
+        this.watchers = [];
         this.spawnInstance = null;
         this.terminalInstance = null;
         this.processStatsInstance = null;
@@ -57,28 +57,28 @@ export class StageRunner {
     }
 
 
-    public attachNewSubscriber(connection: Connection): void {
-        this.connections.push(connection);
+    public attachNewSubscriber(watcher: StageWatcher): void {
+        this.watchers.push(watcher);
         if (this.terminalInstance)
-            this.terminalInstance.attachNewSubscriber(connection);
+            this.terminalInstance.attachNewSubscriber(watcher);
         if (this.processStatsInstance)
-            this.processStatsInstance.attachNewSubscriber(connection);
+            this.processStatsInstance.attachNewSubscriber(watcher);
 
     }
 
-    public detachSubscriber(connection: Connection): void {
-        this.connections = this.connections.filter(value => (value !== connection));
+    public detachSubscriber(watcher: StageWatcher): void {
+        this.watchers = this.watchers.filter(value => (value !== watcher));
         if (this.terminalInstance)
-            this.terminalInstance.detachSubscriber(connection);
+            this.terminalInstance.detachSubscriber(watcher);
         if (this.processStatsInstance)
-            this.processStatsInstance.detachSubscriber(connection);
+            this.processStatsInstance.detachSubscriber(watcher);
 
     }
 
     private emitToAllSockets(event: string, data: any) {
 
-        this.connections.forEach(connection => {
-            connection.socket.emit(event, data);
+        this.watchers.forEach(watcher => {
+            watcher.socket.emit(event, data);
         })
     }
 
@@ -105,11 +105,11 @@ export class StageRunner {
 
 
         this.terminalInstance = new TerminalStream(this.spawnInstance);
-        this.connections.forEach(connection => this.terminalInstance.attachNewSubscriber(connection))
+        this.watchers.forEach(watcher => this.terminalInstance.attachNewSubscriber(watcher))
         this.terminalInstance.run();
 
         this.processStatsInstance = new ProcessStatsStream(this.spawnInstance)
-        this.connections.forEach(connection => this.processStatsInstance.attachNewSubscriber(connection));
+        this.watchers.forEach(watcher => this.processStatsInstance.attachNewSubscriber(watcher));
         this.processStatsInstance.run();
 
         for (let i = 0; i < functions.length; i++) {
@@ -145,7 +145,7 @@ export class StageRunner {
 
         this.cleanupCallbacks.forEach(callback => callback());
 
-        this.connections.forEach(connection => connection.stageRunner = null);
+        this.watchers.forEach(watcher => watcher.stageRunner = null);
 
 
         const numTestCases = this._currentState.length;
