@@ -6,7 +6,7 @@ import { ChildProcessWithoutNullStreams } from "child_process";
 
 const stringReversal = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
     return new Promise((resolve, _) => {
-        const testStrings = generateRandomStrings(100, 10);
+        const testStrings = generateRandomStrings(100, 1000);
 
         const client = new Socket();
 
@@ -14,6 +14,8 @@ const stringReversal = (port: number, spawnInstance: ChildProcessWithoutNullStre
             const input = testStrings[index];
 
             const verifyResultCallback = (data: Buffer) => {
+
+                client.off('data', verifyResultCallback);
                 const expected = reverseString(input);
                 const output = data.toString();
 
@@ -40,11 +42,14 @@ const stringReversal = (port: number, spawnInstance: ChildProcessWithoutNullStre
                         return writeToServer(index + 1);
                     }
                 }
+
             }
 
 
-            client.once('data', verifyResultCallback);
-            client.write(input);
+            client.on('data', verifyResultCallback);
+            setTimeout(() => {
+                client.write(input);
+            }, 100);
         }
 
         client.connect(port, LOCALHOST, () => writeToServer(0));

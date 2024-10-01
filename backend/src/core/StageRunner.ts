@@ -15,7 +15,12 @@ export class StageRunner {
     private processStatsInstance: ProcessStatsStream | null;
     private _stageNo: number;
     private _userId: string;
+    private _running: boolean;
     private cleanupCallbacks: Function[];
+
+    get running() {
+        return this._running;
+    }
 
     get stageNo() {
         return this._stageNo;
@@ -49,7 +54,6 @@ export class StageRunner {
             status: TestStatus.Pending,
         }))
 
-        this.run();
     }
 
 
@@ -59,6 +63,7 @@ export class StageRunner {
             this.terminalInstance.attachNewSubscriber(connection);
         if (this.processStatsInstance)
             this.processStatsInstance.attachNewSubscriber(connection);
+
     }
 
     public detachSubscriber(connection: Connection): void {
@@ -67,16 +72,31 @@ export class StageRunner {
             this.terminalInstance.detachSubscriber(connection);
         if (this.processStatsInstance)
             this.processStatsInstance.detachSubscriber(connection);
+
     }
 
     private emitToAllSockets(event: string, data: any) {
+
         this.connections.forEach(connection => {
             connection.socket.emit(event, data);
         })
     }
 
-    private async run(): Promise<void> {
-        const spawnInstance = await createSpawn(this.filePath);
+    public async run(): Promise<void> {
+        this._running = true;
+        this._currentState = this._currentState.map(value => ({
+            ...value,
+            status: TestStatus.Running,
+        }))
+
+        this.emitToAllSockets('run-started', {
+            binary_uploaded: true,
+            running: true,
+            current_state: this.currentState
+        });
+
+
+        this.spawnInstance = await createSpawn(this.filePath);
 
         const functions = Core.stageTests[this.stageNo.toString()].details.map(test => ({
             fnName: test.fn,
@@ -84,19 +104,19 @@ export class StageRunner {
         }));
 
 
-        this.terminalInstance = new TerminalStream(
-            this.spawnInstance,
-        );
+        this.terminalInstance = new TerminalStream(this.spawnInstance);
+        this.connections.forEach(connection => this.terminalInstance.attachNewSubscriber(connection))
+        this.terminalInstance.run();
 
-        this.processStatsInstance = new ProcessStatsStream(
-            this.spawnInstance,
-        )
+        this.processStatsInstance = new ProcessStatsStream(this.spawnInstance)
+        this.connections.forEach(connection => this.processStatsInstance.attachNewSubscriber(connection));
+        this.processStatsInstance.run();
 
         for (let i = 0; i < functions.length; i++) {
             const { fnName, args } = functions[i];
 
             const fn: Function = testFunctions[fnName];
-            const { status, data, cleanup } = await fn(...args, spawnInstance);
+            const { status, data, cleanup } = await fn(...args, this.spawnInstance);
 
             if (cleanup)
                 this.cleanupCallbacks.push(cleanup);
@@ -110,13 +130,29 @@ export class StageRunner {
         this.kill();
     }
 
-    private kill = (): void => {
+    public kill() {
+        this._running = false;
+
+        this.spawnInstance.once('close', () => {
+            this.terminalInstance.kill();
+            this.terminalInstance = null;
+
+            this.processStatsInstance.kill();
+            this.processStatsInstance = null;
+        })
+
+        this.spawnInstance.kill('SIGINT');
+
         this.cleanupCallbacks.forEach(callback => callback());
+
+        this.connections.forEach(connection => connection.stageRunner = null);
+
 
         const numTestCases = this._currentState.length;
         const numPassed = this._currentState.filter(test => test.status == TestStatus.Passed).length;
-        const numFailed = numTestCases - numPassed;
+        const numFailed = this._currentState.filter(test => test.status == TestStatus.Failed).length;
 
+        Core.deleteRunner(this);
 
         this.emitToAllSockets('stage-tests-complete', {
             numTestCases,
@@ -124,5 +160,4 @@ export class StageRunner {
             numFailed,
         })
     }
-
 }

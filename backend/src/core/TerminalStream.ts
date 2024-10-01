@@ -5,7 +5,8 @@ import { Connection } from "./Connection";
 export class TerminalStream {
     private spawnInstance: ChildProcessWithoutNullStreams;
     private connections: Connection[];
-    private _currentStream: string; //send only onel ine at a time or send max 10k-ish lines
+    private _currentStream: string[]; //send only onel ine at a time or send max 10k-ish lines
+    private _streamBuffer: string;
 
     get currentStream() {
         return this._currentStream;
@@ -15,15 +16,15 @@ export class TerminalStream {
         this.connections = [];
         this.spawnInstance = spawnInstance;
 
-        this._currentStream = "";
-
-        this.run();
+        this._currentStream = [];
+        this._streamBuffer = "";
     }
 
     public attachNewSubscriber(connection: Connection) {
         this.connections.push(connection);
 
-        connection.socket.emit('stage-terminal-update', this._currentStream);
+        const toSend = this._currentStream.slice(-1000).join('\n');
+        this.emitToAllSockets('stage-terminal-update', toSend);
     }
 
     public detachSubscriber(connection: Connection) {
@@ -36,21 +37,34 @@ export class TerminalStream {
         })
     }
 
+    private terminalStreamCallback = (data: Buffer) => {
+        this._streamBuffer += data.toString();
+        const lines = this._streamBuffer.split("\n");
+        this._streamBuffer = lines.pop();
 
-    private run(): void {
+        lines.forEach(line => void this._currentStream.push(line))
+
+        const toSend = this._currentStream.slice(-1000).join('\n');
+        this.emitToAllSockets('stage-terminal-update', toSend);
+
+    }
+
+    private closeCallback = (code: number) => {
+        const line = `Process exited with code : ${code || 0}`
+        this._currentStream.push(line);
+
+    }
+
+
+    public run(): void {
         this.spawnInstance.stdout.setEncoding('ascii');
-        this.spawnInstance.stdout.on('data', (data: Buffer) => {
-            const line = data.toString();
-            this._currentStream += line;
+        this.spawnInstance.stdout.on('data', this.terminalStreamCallback);
 
-            this.emitToAllSockets('stage-terminal-update', line);
-        })
+        this.spawnInstance.on('close', this.closeCallback)
+    }
 
-        this.spawnInstance.on('close', (code) => {
-            const line = `Process exited with code : ${code || 0}`
-            this._currentStream += line;
-
-            this.emitToAllSockets('stage-terminal-update', line);
-        })
+    public kill() {
+        this.spawnInstance.off('data', this.terminalStreamCallback);
+        this.spawnInstance.off('close', this.closeCallback);
     }
 }

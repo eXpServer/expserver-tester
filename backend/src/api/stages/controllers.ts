@@ -118,36 +118,9 @@ const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     })
 })
 
-const runHandler = expressAsyncHandler(async (req: Request, res: Response) => {
-    // const stageNo = req.params['num'];
-    // if (!verifyStageNo(stageNo)) {
-    //     res.status(400);
-    //     throw new Error("Stage error");
-    // }
-
-
-    // const file = await prisma.file.findFirst({
-    //     where: {
-    //         AND: {
-    //             userId: req.user,
-    //             stageNo: parseInt(stageNo),
-    //         }
-    //     }
-    // })
-
-    // if (file) {
-    // }
-})
-
-const stopHandler = expressAsyncHandler(async (req: Request, res: Response) => {
-
-})
-
 
 export {
     getStageDescription,
     uploadBinaryHandler,
     deleteBinaryHandler,
-    runHandler,
-    stopHandler,
 }

@@ -1,10 +1,9 @@
 import { Socket } from "../types";
-import { Core } from "./Core";
 import { StageRunner } from "./StageRunner";
 
-export class Connection { // rename
+export class Connection {
     private _socket: Socket;
-    private _stageRunner: StageRunner;
+    public stageRunner: StageRunner;
     private _stageNo: number;
     private _userId: string;
 
@@ -29,14 +28,4 @@ export class Connection { // rename
         this._stageNo = stageNo;
     }
 
-    get stageRunner() {
-        return this._stageRunner;
-    }
-
-    public updateStageRunner(runner: StageRunner) {
-        if (runner.stageNo != this._stageNo)
-            throw new Error("INCORRECT stage runner mapping");
-
-        this._stageRunner = this.stageRunner;
-    }
 }

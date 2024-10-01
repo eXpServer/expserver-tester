@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { getStageDescription, uploadBinaryHandler, deleteBinaryHandler, runHandler, stopHandler } from './controllers';
+import { getStageDescription, uploadBinaryHandler, deleteBinaryHandler } from './controllers';
 
 
 const router = Router();
@@ -12,9 +12,5 @@ router.route('/:num/binary')
     .post(upload.single('binary'), uploadBinaryHandler)
     .delete(deleteBinaryHandler)
 
-
-router.get('/:num/run', runHandler)
-
-router.get('/:num/stop', stopHandler)
 
 export default router;
