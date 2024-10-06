@@ -14,6 +14,8 @@ export const BINARY_WAIT_TIME = 3000;
 
 export const NUM_STAGES = 5;
 
+export const TERMINAL_MAX_LIMIT = 10000;
+
 /**
  * error types
  */

@@ -2,14 +2,13 @@ import { StageWatcher } from "./StageWatcher";
 import { Core } from "./Core";
 import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { TerminalStream } from "./TerminalStream";
-import { ResultInterface, TestStatus } from "../types";
+import { TestDetails, TestStatus } from "../types";
 import { createSpawn } from "../utils/process";
 import { ProcessStatsStream } from "./ProcessStatsStream";
-import testFunctions from '../tests';
 
 export class StageRunner {
     private watchers: StageWatcher[];
-    private filePath: string;
+    private _filePath: string;
     private spawnInstance: ChildProcessWithoutNullStreams | null;
     private terminalInstance: TerminalStream | null;
     private processStatsInstance: ProcessStatsStream | null;
@@ -30,7 +29,11 @@ export class StageRunner {
         return this._userId;
     }
 
-    private _currentState: ResultInterface[];
+    get filePath() {
+        return this._filePath;
+    }
+
+    private _currentState: TestDetails[];
 
     get currentState() {
         return this._currentState;
@@ -39,7 +42,7 @@ export class StageRunner {
 
     constructor(userId: string, stageNo: number, filePath: string) {
         this._stageNo = stageNo;
-        this.filePath = filePath;
+        this._filePath = filePath;
         this.watchers = [];
         this.spawnInstance = null;
         this.terminalInstance = null;
@@ -47,10 +50,12 @@ export class StageRunner {
         this.cleanupCallbacks = [];
         this._userId = userId;
 
-        this._currentState = Core.stageTests[this.stageNo.toString()].details.map(test => ({
+        this._currentState = Core.stageTests[`stage${stageNo}`].tests.map(test => ({
             title: test.title,
-            desc: test.desc,
-            data: test.data,
+            description: test.description,
+            testInput: null,
+            expectedBehavior: null,
+            observedBehavior: null,
             status: TestStatus.Pending,
         }))
 
@@ -82,7 +87,43 @@ export class StageRunner {
         })
     }
 
-    public async run(): Promise<void> {
+    private async createAndLinkSpawnInstance() {
+        if (this.spawnInstance == null) {
+            this.spawnInstance = await createSpawn(this.filePath);
+
+
+            this.spawnInstance.on('close', () => {
+                this.spawnInstance = null;
+            })
+
+            if (this.terminalInstance || this.processStatsInstance) {
+                if (this.terminalInstance.running)
+                    this.terminalInstance.kill();
+
+                if (this.processStatsInstance.running)
+                    this.processStatsInstance.kill();
+
+                this.terminalInstance.reAttachSpawn(this.spawnInstance);
+                this.terminalInstance.run();
+
+                this.processStatsInstance.reAttachSpawn(this.spawnInstance);
+                this.processStatsInstance.run();
+            }
+            else {
+
+                this.terminalInstance = new TerminalStream(this.spawnInstance);
+                this.watchers.forEach(watcher => this.terminalInstance.attachNewSubscriber(watcher))
+                this.terminalInstance.run();
+
+                this.processStatsInstance = new ProcessStatsStream(this.spawnInstance)
+                this.watchers.forEach(watcher => this.processStatsInstance.attachNewSubscriber(watcher));
+                this.processStatsInstance.run();
+            }
+
+        }
+    }
+
+    public async run() {
         this._running = true;
         this._currentState = this._currentState.map(value => ({
             ...value,
@@ -95,34 +136,30 @@ export class StageRunner {
             current_state: this.currentState
         });
 
+        await this.createAndLinkSpawnInstance();
 
-        this.spawnInstance = await createSpawn(this.filePath);
-
-        const functions = Core.stageTests[this.stageNo.toString()].details.map(test => ({
-            fnName: test.fn,
-            args: test.args,
-        }));
-
-
-        this.terminalInstance = new TerminalStream(this.spawnInstance);
-        this.watchers.forEach(watcher => this.terminalInstance.attachNewSubscriber(watcher))
-        this.terminalInstance.run();
-
-        this.processStatsInstance = new ProcessStatsStream(this.spawnInstance)
-        this.watchers.forEach(watcher => this.processStatsInstance.attachNewSubscriber(watcher));
-        this.processStatsInstance.run();
-
+        const functions = Core.stageTests[`stage${this.stageNo}`].tests.map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
-            const { fnName, args } = functions[i];
+            console.log(`Running Stage: ${this.stageNo}\t\tTest ${i}`)
+            const fn = functions[i];
 
-            const fn: Function = testFunctions[fnName];
-            const { status, data, cleanup } = await fn(...args, this.spawnInstance);
+
+            if (this.spawnInstance == null)
+                await this.createAndLinkSpawnInstance();
+
+            const { passed, observedBehavior, cleanup } = await fn(this.spawnInstance);
+
+
+            console.log(`Completed Stage: ${this.stageNo}\t\tTest ${i}`)
+
+            this._currentState[i].status = (passed
+                ? TestStatus.Passed
+                : TestStatus.Failed
+            );
+            this._currentState[i].observedBehavior = observedBehavior;
 
             if (cleanup)
                 this.cleanupCallbacks.push(cleanup);
-
-            this._currentState[i].data = data;
-            this._currentState[i].status = status;
 
             this.emitToAllSockets('stage-tests-update', this._currentState);
         }

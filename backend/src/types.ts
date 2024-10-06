@@ -8,30 +8,34 @@ export interface ProcessDataInterface {
     mem: number,
 }
 
-export interface ResultInterface {
-    title: string,
-    desc: string,
-    data?: {
-        input?: string,
-        output?: string,
-        expected?: string,
-    },
-    status: TestStatus,
-
-}
-
 export interface TestDetails {
     title: string,
-    desc: string,
-    fn: string,
-    args?: any[],
-    data?: { input?: string, expected?: string, output?: string }
+    description: string,
+    testInput: string | null,
+    expectedBehavior: string | null,
+    observedBehavior: string | null,
+    status: TestStatus;
 }
 
-export interface StageTestState {
-    binary_uploaded: boolean,
+export interface Test {
+    title: string,
+    description: string,
+    testInput?: string,
+    expectedBehavior: string | null,
+    status: TestStatus;
+    testFunction: TestFunction;
+}
+
+export type TestFunction = (...args: any[]) => Promise<{
+    passed: boolean,
+    observedBehavior: string,
+    cleanup?: () => void,
+}>
+
+export interface TestState {
+    binaryId: string | null,
     running: boolean,
-    current_state: ResultInterface[]
+    testDetails: TestDetails[]
 }
 
 export enum TestStatus {
@@ -41,10 +45,11 @@ export enum TestStatus {
     Failed = "failed",
 }
 
-export interface StageTestsInterface {
+export interface StageTest {
     [stageNo: string]: {
-        numTestCases: number,
-        details: TestDetails[],
+        stageName: string,
+        descriptionFilePath: string,
+        tests: Test[];
     }
 }
 

@@ -9,7 +9,6 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { Core } from './core/Core';
 
-
 const app = express();
 const httpServer = createServer();
 const io = new Server(httpServer, {

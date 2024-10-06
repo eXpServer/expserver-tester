@@ -25,7 +25,7 @@ const Test = () => {
             }
             const id = localStorage.getItem('userId');
 
-            const stageDescRes = await axios.get('http://localhost:6969/stage/1', {
+            const stageDescRes = await axios.get('http://localhost:6969/stage/5', {
                 headers: {
                     Authorization: `Bearer ${id}`,
                 }
@@ -41,7 +41,7 @@ const Test = () => {
 
             socketIo.on('connection-ack', () => {
                 console.log('connection-ack')
-                socketIo.emit('request-state', ({ stageNo: 1, userId: id }));
+                socketIo.emit('request-state', ({ stageNo: 5, userId: id }));
             })
 
             socketIo.on("current-state", (data) => {
@@ -56,7 +56,6 @@ const Test = () => {
 
             socketIo.on('stage-tests-complete', () => {
                 console.log('stage-tests-complete')
-                // socketIo.off('stage-tests-update')
             })
 
             socketIo.on('stage-terminal-update', (data) => {
@@ -65,10 +64,11 @@ const Test = () => {
                 setTerminal(temp.split('\n'));
             })
 
-            socketIo.on('stage-terminal-complete', () => {
+            socketIo.on('stage-terminal-complete', (data) => {
+                const temp = data.toString();
+                setTerminal(temp.split('\n'));
                 console.log('stage-terminal-complete');
 
-                // socketIo.off('stage-terminal-update')
             })
 
 
@@ -93,7 +93,7 @@ const Test = () => {
         formData.append('binary', selectedFile);
 
         try {
-            const response = await axios.post('http://localhost:6969/stage/1/binary', formData, {
+            const response = await axios.post('http://localhost:6969/stage/5/binary', formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                     "Authorization": `Bearer ${userId}`
@@ -117,13 +117,18 @@ const Test = () => {
             />
             <button
                 onClick={onSubmit}
-            > Run Binary </button>
+            > Upload </button>
+
+            <div className="flex gap-2 justify-center items-center">
+                <button onClick={() => socket.emit('run')}> Run </button>
+                <button onClick={() => socket.emit('stop')}> Stop </button>
+            </div>
 
             <div className="mt-5">
                 {stageDesc}
                 <br />
                 userId: {userId}
-                stageNo: 1
+                stageNo: 5
             </div>
 
 

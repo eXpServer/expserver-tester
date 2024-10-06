@@ -5,9 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/index.ts",
-    "build": "tsc",
+    "build": "rm -rf ./dist && tsc",
     "start": "node dist/index.js",
-    "compile": "npm run build && nexe dist/index.js -o my-binary --build --target linux-x64-22.7.0 --resource './dist/**/*'"
+    "compile": "npm run build && nexe dist/index.js -o my-binary --build --target linux-x64-22.7.0 --resource './dist/**/*'",
+    "abc": "pkg dist/index.js --output my-binary --targets node18-linux-x64 --include node_modules/@prisma/engines/libquery_engine-debian-openssl-3.0.x.so.node"
   },
   "keywords": [],
   "author": "Th3BossC",
@@ -20,6 +21,7 @@
     "express": "^4.21.0",
     "nexe": "^4.0.0-rc.6",
     "nodemon": "^3.1.7",
+    "pkg": "^5.8.1",
     "prisma": "^5.20.0",
     "typescript": "^5.6.2"
   },

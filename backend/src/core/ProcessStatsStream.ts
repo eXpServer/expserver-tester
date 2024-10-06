@@ -11,7 +11,12 @@ export class ProcessStatsStream {
     private cpu: Cpu;
     private mem: Mem;
     private _currentUsage: ProcessDataInterface;
-    private timeout: NodeJS.Timeout;
+    private timeout: ReturnType<typeof setTimeout>;
+    private _running: boolean;
+
+    get running() {
+        return this._running;
+    }
 
     get currentUsage() {
         return this._currentUsage;
@@ -27,6 +32,15 @@ export class ProcessStatsStream {
             cpu: 0,
             mem: 0,
         }
+
+        this._running = false;
+    }
+
+    public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
+        if (this._running)
+            return;
+
+        this.spawnInstance = spawnInstance;
     }
 
     public attachNewSubscriber(watcher: StageWatcher) {
@@ -52,6 +66,7 @@ export class ProcessStatsStream {
     }
 
     public run() {
+        this._running = true;
         this.timeout = setTimeout(() => {
             this.getUsage();
 
@@ -59,12 +74,13 @@ export class ProcessStatsStream {
         }, 1000);
 
         this.spawnInstance.once('close', () => {
+            this.kill();
             this.emitToAllSockets('stage-stats-complete', this._currentUsage);
-            clearTimeout(this.timeout);
         })
     }
 
     public kill() {
+        this._running = false;
         clearTimeout(this.timeout);
     }
 }

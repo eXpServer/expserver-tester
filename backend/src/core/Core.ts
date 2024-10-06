@@ -1,13 +1,14 @@
-import { Socket, StageTestsInterface, StageTestState, TestStatus } from "../types";
+import { Socket, StageTest, TestDetails, TestState, TestStatus } from "../types";
 import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http'
 import { StageWatcher } from "./StageWatcher";
 import { StageRunner } from "./StageRunner";
 import stageDescription from './stageDescription.json'
-import stageTests from './stageTests.json';
 import { Express } from "express";
 import { TESTER_PORT, WEBSOCKET_PORT } from "../constants";
 import { PrismaClient } from "@prisma/client";
+import { tests } from "../tests";
+import { decodedTextSpanIntersectsWith } from "typescript";
 const prisma = new PrismaClient();
 
 
@@ -31,7 +32,7 @@ export class Core {
     }
 
     public static stageDescription: any = stageDescription;
-    public static stageTests: StageTestsInterface = stageTests;
+    public static stageTests: StageTest = tests;
 
 
     public static deleteRunner(stageRunner: StageRunner) {
@@ -48,7 +49,7 @@ export class Core {
         return runner;
     }
 
-    private static async handleNoExistingRunner(watcher: StageWatcher): Promise<StageTestState> {
+    private static async handleNoExistingRunner(watcher: StageWatcher): Promise<TestState> {
         const { stageNo, userId } = watcher;
 
         const file = await prisma.file.findFirst({
@@ -60,40 +61,31 @@ export class Core {
             }
         })
 
-        const testDetails = Core.stageTests[stageNo.toString()];
+        const testDetails = this.stageTests[`stage${stageNo}`].tests;
+        return ({
+            binaryId: file?.filePath || null,
+            running: false,
+            testDetails: testDetails.map<TestDetails>(test => ({
+                title: test.title,
+                description: test.description,
+                testInput: test.testInput,
+                expectedBehavior: test.expectedBehavior,
+                observedBehavior: null,
+                status: TestStatus.Pending,
+            }))
 
-        const initalState = testDetails.details.map((test) => ({
-            title: test.title,
-            desc: test.desc,
-            data: test.data,
-            status: TestStatus.Pending,
-        }))
-
-        if (file) {
-            return ({
-                binary_uploaded: true,
-                running: false,
-                current_state: initalState,
-            })
-        }
-        else {
-            return ({
-                binary_uploaded: false,
-                running: false,
-                current_state: initalState,
-            })
-        }
+        })
     }
 
-    private static async handleNewSubscriber(runner: StageRunner, watcher: StageWatcher): Promise<StageTestState> {
+    private static async handleNewSubscriber(runner: StageRunner, watcher: StageWatcher): Promise<TestState> {
         runner.attachNewSubscriber(watcher);
         const currentState = runner.currentState;
         watcher.stageRunner = runner;
 
         return ({
-            binary_uploaded: true,
+            binaryId: runner.filePath,
             running: true,
-            current_state: currentState,
+            testDetails: currentState,
         })
     }
 
