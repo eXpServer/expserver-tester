@@ -177,7 +177,7 @@ export const tests: StageTest = {
                 },
                 status: TestStatus.Pending,
 
-            }
+            },
         ]
     }
 }

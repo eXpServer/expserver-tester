@@ -101,9 +101,6 @@ const Test = () => {
             });
 
             console.log(response.data);
-
-            socket.emit('run');
-            console.log("emitting run");
         }
         catch (error) {
             console.log(error);

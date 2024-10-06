@@ -8,6 +8,7 @@ export const createSpawn = async (filePath: string): Promise<ChildProcessWithout
                 return reject(err);
             const child = spawn(filePath);
             child.on('spawn', () => {
+                console.log("spawn is alive");
                 return resolve(child);
             })
         })

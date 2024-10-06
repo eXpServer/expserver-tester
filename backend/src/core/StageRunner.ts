@@ -53,8 +53,8 @@ export class StageRunner {
         this._currentState = Core.stageTests[`stage${stageNo}`].tests.map(test => ({
             title: test.title,
             description: test.description,
-            testInput: null,
-            expectedBehavior: null,
+            testInput: test.testInput,
+            expectedBehavior: test.expectedBehavior,
             observedBehavior: null,
             status: TestStatus.Pending,
         }))
@@ -144,8 +144,13 @@ export class StageRunner {
             const fn = functions[i];
 
 
-            if (this.spawnInstance == null)
-                await this.createAndLinkSpawnInstance();
+            if (this.spawnInstance) {
+                this.spawnInstance.kill();
+                this.spawnInstance = null;
+            }
+            await this.createAndLinkSpawnInstance();
+
+
 
             const { passed, observedBehavior, cleanup } = await fn(this.spawnInstance);
 
