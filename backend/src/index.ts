@@ -27,15 +27,3 @@ app.use(errorHandler);
 
 
 Core.iniitialize(httpServer, io, app);
-
-
-
-
-/**
- * things to ask
- * should i make the user as a separate table 
- * 
- * 
- * 
- * create class for process usage as well
- */

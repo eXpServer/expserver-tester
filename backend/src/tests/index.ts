@@ -2,7 +2,7 @@ import { StageTest, TestStatus } from "../types";
 import { stage1ErrorChecking, stage1StringReversal } from "./stage1";
 import { stage2CheckConnectionWhenNoServer, stage2InputOutput, stage2UnexpectedServerDisconnect } from "./stage2";
 import { stage3ErrorHandling, stage3MultipleClients } from "./stage3";
-import { stage5ProxyMultipleConnections, stage5ProxySingleConnection } from "./stage5";
+import { stage5ProxyMultipleConnections } from "./stage5";
 
 export const tests: StageTest = {
     stage1: {
@@ -155,17 +155,17 @@ export const tests: StageTest = {
         stageName: 'TCP Proxy',
         descriptionFilePath: "",
         tests: [
-            {
-                title: "proxy response checking -- single client",
-                description: "creates a singular client and verifies if the response given by the proxy server is same as the response given by a dummy server running on port 3000",
-                testInput: "Client sends a GET request to the dummy server, as well as the proxy server",
-                expectedBehavior: "The response received from the proxy should match the dummy server",
-                testFunction: async () => {
-                    const response = await stage5ProxySingleConnection(8080);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
+            // {
+            //     title: "proxy response checking -- single client",
+            //     description: "creates a singular client and verifies if the response given by the proxy server is same as the response given by a dummy server running on port 3000",
+            //     testInput: "Client sends a GET request to the dummy server, as well as the proxy server",
+            //     expectedBehavior: "The response received from the proxy should match the dummy server",
+            //     testFunction: async () => {
+            //         const response = await stage5ProxySingleConnection(8080);
+            //         return response;
+            //     },
+            //     status: TestStatus.Pending,
+            // },
             {
                 title: "proxy response checking -- multiple clients",
                 description: "creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server",

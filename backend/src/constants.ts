@@ -10,14 +10,13 @@ export const SERVER_PORTS_FINAL = [8001, 8002, 8003, 8004];
 
 export const FILE_EXECUTABLE_PERMS = 0o755;
 
-export const BINARY_WAIT_TIME = 3000;
-
 export const NUM_STAGES = 5;
 
 export const TERMINAL_MAX_LIMIT = 10000;
 
 /**
  * error types
+ * prepend http_
  */
 export enum ErrorTypes {
     VALIDATION_ERROR = 400,

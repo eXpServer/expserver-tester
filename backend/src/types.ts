@@ -1,6 +1,6 @@
-import { Request as Req, Response as Res, NextFunction as NextFn } from "express";
-import { Socket as Soc } from "socket.io";
-import { StageWatcher } from "./core/StageWatcher";
+import type { Request as Req, Response as Res, NextFunction as NextFn } from "express";
+import type { Socket as Soc } from "socket.io";
+import type { StageWatcher } from "./core/StageWatcher";
 
 
 export interface ProcessDataInterface {

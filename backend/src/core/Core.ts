@@ -8,7 +8,6 @@ import { Express } from "express";
 import { TESTER_PORT, WEBSOCKET_PORT } from "../constants";
 import { PrismaClient } from "@prisma/client";
 import { tests } from "../tests";
-import { decodedTextSpanIntersectsWith } from "typescript";
 const prisma = new PrismaClient();
 
 

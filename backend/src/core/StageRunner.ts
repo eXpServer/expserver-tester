@@ -110,7 +110,6 @@ export class StageRunner {
                 this.processStatsInstance.run();
             }
             else {
-
                 this.terminalInstance = new TerminalStream(this.spawnInstance);
                 this.watchers.forEach(watcher => this.terminalInstance.attachNewSubscriber(watcher))
                 this.terminalInstance.run();
@@ -175,15 +174,21 @@ export class StageRunner {
     public kill() {
         this._running = false;
 
-        this.spawnInstance.once('close', () => {
-            this.terminalInstance.kill();
-            this.terminalInstance = null;
+        if (this.spawnInstance) {
+            this.spawnInstance.once('close', () => {
+                this.terminalInstance.kill();
+                this.terminalInstance = null;
 
-            this.processStatsInstance.kill();
-            this.processStatsInstance = null;
-        })
+                this.processStatsInstance.kill();
+                this.processStatsInstance = null;
+            })
 
-        this.spawnInstance.kill('SIGINT');
+            this.spawnInstance.kill('SIGINT');
+        }
+        else {
+            this.terminalInstance?.kill();
+            this.processStatsInstance?.kill();
+        }
 
         this.cleanupCallbacks.forEach(callback => callback());
 

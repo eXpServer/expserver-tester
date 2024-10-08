@@ -9,7 +9,7 @@ export const errorHandler = (err: Error, _req: Request, res: Response, _next: Ne
             res.json({
                 title: "Validation Error",
                 message: err.message,
-                stackTrace: err.stack
+                // stackTrace: err.stack
             })
             break;
 
@@ -17,7 +17,7 @@ export const errorHandler = (err: Error, _req: Request, res: Response, _next: Ne
             res.json({
                 title: "Unathorized",
                 message: err.message,
-                stackTrace: err.stack
+                // stackTrace: err.stack
             })
             break;
 
@@ -25,7 +25,7 @@ export const errorHandler = (err: Error, _req: Request, res: Response, _next: Ne
             res.json({
                 title: "Forbidden",
                 message: err.message,
-                stackTrace: err.stack
+                // stackTrace: err.stack
             })
             break;
 
@@ -33,7 +33,7 @@ export const errorHandler = (err: Error, _req: Request, res: Response, _next: Ne
             res.json({
                 title: "Not Found",
                 message: err.message,
-                stackTrace: err.stack
+                // stackTrace: err.stack
             })
             break;
 
@@ -41,7 +41,7 @@ export const errorHandler = (err: Error, _req: Request, res: Response, _next: Ne
             res.json({
                 title: "Server Error",
                 message: err.message,
-                stackTrace: err.stack
+                // stackTrace: err.stack
             })
             break;
 
