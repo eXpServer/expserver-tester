@@ -1,18 +1,22 @@
 import Cpu from "node-os-utils/lib/cpu";
 import { ProcessDataInterface } from "../types";
-import { StageWatcher } from "./StageWatcher";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import osu from 'node-os-utils';
 import Mem from "node-os-utils/lib/mem";
+import EventEmitter from "eventemitter3";
 
-export class ProcessStatsStream {
+export class ResourceMonitor {
     private spawnInstance: ChildProcessWithoutNullStreams;
-    private watchers: StageWatcher[];
     private cpu: Cpu;
     private mem: Mem;
     private _currentUsage: ProcessDataInterface;
     private timeout: ReturnType<typeof setTimeout>;
     private _running: boolean;
+    private _emitter: EventEmitter;
+
+    get emitter() {
+        return this._emitter;
+    }
 
     get running() {
         return this._running;
@@ -22,8 +26,8 @@ export class ProcessStatsStream {
         return this._currentUsage;
     }
 
-    constructor(spawnInstance: ChildProcessWithoutNullStreams) {
-        this.watchers = [];
+    constructor(spawnInstance: ChildProcessWithoutNullStreams, emitterCallback: (event: string, data: any) => void) {
+        this._emitter = new EventEmitter();
         this.spawnInstance = spawnInstance;
         this.cpu = osu.cpu;
         this.mem = osu.mem;
@@ -34,6 +38,7 @@ export class ProcessStatsStream {
         }
 
         this._running = false;
+        this._emitter.on('process-stats-event', emitterCallback);
     }
 
     public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
@@ -41,14 +46,6 @@ export class ProcessStatsStream {
             return;
 
         this.spawnInstance = spawnInstance;
-    }
-
-    public attachNewSubscriber(watcher: StageWatcher) {
-        this.watchers.push(watcher);
-    }
-
-    public detachSubscriber(watcher: StageWatcher) {
-        this.watchers = this.watchers.filter(value => (value !== watcher));
     }
 
     private async getUsage() {
@@ -62,7 +59,7 @@ export class ProcessStatsStream {
     }
 
     private emitToAllSockets(event: string, data: any) {
-        this.watchers.forEach(watcher => watcher.socket.emit(event, data));
+        this._emitter.emit('process-stats-event', event, data);
     }
 
     public run() {

@@ -3,7 +3,6 @@ import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http'
 import { StageWatcher } from "./StageWatcher";
 import { StageRunner } from "./StageRunner";
-import stageDescription from './stageDescription.json'
 import { Express } from "express";
 import { TESTER_PORT, WEBSOCKET_PORT } from "../constants";
 import { PrismaClient } from "@prisma/client";
@@ -30,7 +29,6 @@ export class Core {
         Core.initializeServer()
     }
 
-    public static stageDescription: any = stageDescription;
     public static stageTests: StageTest = tests;
 
 

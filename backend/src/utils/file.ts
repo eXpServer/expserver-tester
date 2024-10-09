@@ -3,7 +3,6 @@ import { Core } from '../core/Core';
 import fs from 'fs';
 
 export const getFilePath = (fileName: string): string => {
-    // return path.join(__dirname, '..', fileName);
     return path.join(process.cwd(), fileName);
 }
 
@@ -20,6 +19,6 @@ export const deleteFile = (filePath: string): Promise<void> => {
 
 export const verifyStageNo = (stageNo: string): boolean => {
     const stageNoAsInt = parseInt(stageNo);
-    const stageDescription = Core.stageDescription;
+    const stageDescription = Core.stageTests[`stage${stageNoAsInt}`];
     return !(isNaN(stageNoAsInt) || !stageDescription[stageNo]);
 }

@@ -4,14 +4,14 @@ import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { TerminalStream } from "./TerminalStream";
 import { TestDetails, TestStatus } from "../types";
 import { createSpawn } from "../utils/process";
-import { ProcessStatsStream } from "./ProcessStatsStream";
+import { ResourceMonitor } from "./ResrouceMonitor";
 
 export class StageRunner {
     private watchers: StageWatcher[];
     private _filePath: string;
     private spawnInstance: ChildProcessWithoutNullStreams | null;
     private terminalInstance: TerminalStream | null;
-    private processStatsInstance: ProcessStatsStream | null;
+    private processStatsInstance: ResourceMonitor | null;
     private _stageNo: number;
     private _userId: string;
     private _running: boolean;
@@ -64,20 +64,11 @@ export class StageRunner {
 
     public attachNewSubscriber(watcher: StageWatcher): void {
         this.watchers.push(watcher);
-        if (this.terminalInstance)
-            this.terminalInstance.attachNewSubscriber(watcher);
-        if (this.processStatsInstance)
-            this.processStatsInstance.attachNewSubscriber(watcher);
 
     }
 
     public detachSubscriber(watcher: StageWatcher): void {
         this.watchers = this.watchers.filter(value => (value !== watcher));
-        if (this.terminalInstance)
-            this.terminalInstance.detachSubscriber(watcher);
-        if (this.processStatsInstance)
-            this.processStatsInstance.detachSubscriber(watcher);
-
     }
 
     private emitToAllSockets(event: string, data: any) {
@@ -85,6 +76,10 @@ export class StageRunner {
         this.watchers.forEach(watcher => {
             watcher.socket.emit(event, data);
         })
+    }
+
+    private emitterCallback = (event: string, data: any) => {
+        this.emitToAllSockets(event, data);
     }
 
     private async createAndLinkSpawnInstance() {
@@ -110,12 +105,10 @@ export class StageRunner {
                 this.processStatsInstance.run();
             }
             else {
-                this.terminalInstance = new TerminalStream(this.spawnInstance);
-                this.watchers.forEach(watcher => this.terminalInstance.attachNewSubscriber(watcher))
+                this.terminalInstance = new TerminalStream(this.spawnInstance, this.emitterCallback);
                 this.terminalInstance.run();
 
-                this.processStatsInstance = new ProcessStatsStream(this.spawnInstance)
-                this.watchers.forEach(watcher => this.processStatsInstance.attachNewSubscriber(watcher));
+                this.processStatsInstance = new ResourceMonitor(this.spawnInstance, this.emitterCallback);
                 this.processStatsInstance.run();
             }
 

@@ -12,8 +12,11 @@ const getStageDescription = expressAsyncHandler(async (req: Request, res: Respon
         throw new Error("Stage not found");
     }
 
-    const stageDescription = Core.stageDescription;
-    res.status(200).json(stageDescription[stageNo]);
+    // const stageDescriptionPath = 
+    // res.status(200).json(stageDescription[stageNo]);
+
+    const stageDescPath = Core.stageTests[`stage${stageNo}`].descriptionFilePath;
+    res.sendFile(stageDescPath);
 })
 
 

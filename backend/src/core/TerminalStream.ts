@@ -1,14 +1,17 @@
 import { ChildProcessWithoutNullStreams } from "child_process";
-import { Core } from "./Core";
-import { StageWatcher } from "./StageWatcher";
 import { TERMINAL_MAX_LIMIT } from "../constants";
+import EventEmitter from "eventemitter3";
 
 export class TerminalStream {
     private spawnInstance: ChildProcessWithoutNullStreams;
-    private watchers: StageWatcher[];
     private _currentStream: string[]; //send only onel ine at a time or send max 10k-ish lines
     private _streamBuffer: string;
     private _running: boolean;
+    private _emitter: EventEmitter;
+
+    get emitter() {
+        return this._emitter;
+    }
 
     get running() {
         return this._running;
@@ -18,14 +21,15 @@ export class TerminalStream {
         return this._currentStream;
     }
 
-    constructor(spawnInstance: ChildProcessWithoutNullStreams) {
-        this.watchers = [];
+    constructor(spawnInstance: ChildProcessWithoutNullStreams, emitterCallback: (event: string, data: any) => void) {
+        this._emitter = new EventEmitter();
         this.spawnInstance = spawnInstance;
 
         this._currentStream = [];
         this._streamBuffer = "";
 
         this._running = false;
+        this._emitter.on('terminal-event', emitterCallback);
     }
 
     public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
@@ -34,21 +38,8 @@ export class TerminalStream {
         this.spawnInstance = spawnInstance;
     }
 
-    public attachNewSubscriber(watcher: StageWatcher) {
-        this.watchers.push(watcher);
-
-        const toSend = this._currentStream.slice(-TERMINAL_MAX_LIMIT).join('\n');
-        this.emitToAllSockets('stage-terminal-update', toSend);
-    }
-
-    public detachSubscriber(watcher: StageWatcher) {
-        this.watchers = this.watchers.filter(value => (value !== watcher));
-    }
-
     private emitToAllSockets(event: string, data: any) {
-        this.watchers.forEach(watcher => {
-            watcher.socket.emit(event, data);
-        })
+        this._emitter.emit('terminal-event', event, data);
     }
 
     private terminalStreamCallback = (data: Buffer) => {

@@ -8,6 +8,7 @@ import logger from './middelware/logger';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { Core } from './core/Core';
+import path from 'path';
 
 const app = express();
 const httpServer = createServer();
@@ -18,6 +19,7 @@ const io = new Server(httpServer, {
 });
 
 app.use(cors());
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 app.use(logger);
 app.use('/token', authRouter);
