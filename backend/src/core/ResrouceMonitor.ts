@@ -5,6 +5,12 @@ import osu from 'node-os-utils';
 import Mem from "node-os-utils/lib/mem";
 import EventEmitter from "eventemitter3";
 
+enum ResourceMonitorEvents {
+    TEST_UPDATE = 'stage-stats-update',
+    TEST_COMPLETE = 'stage-stats-complete',
+    EMIT_TO_STAGE_RUNNER = 'process-stats-event',
+}
+
 export class ResourceMonitor {
     private spawnInstance: ChildProcessWithoutNullStreams;
     private cpu: Cpu;
@@ -38,7 +44,7 @@ export class ResourceMonitor {
         }
 
         this._running = false;
-        this._emitter.on('process-stats-event', emitterCallback);
+        this._emitter.on(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, emitterCallback);
     }
 
     public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
@@ -59,7 +65,7 @@ export class ResourceMonitor {
     }
 
     private emitToAllSockets(event: string, data: any) {
-        this._emitter.emit('process-stats-event', event, data);
+        this._emitter.emit(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, event, data);
     }
 
     public run() {
@@ -67,12 +73,12 @@ export class ResourceMonitor {
         this.timeout = setTimeout(() => {
             this.getUsage();
 
-            this.emitToAllSockets('stage-stats-update', this._currentUsage);
+            this.emitToAllSockets(ResourceMonitorEvents.TEST_UPDATE, this._currentUsage);
         }, 1000);
 
         this.spawnInstance.once('close', () => {
             this.kill();
-            this.emitToAllSockets('stage-stats-complete', this._currentUsage);
+            this.emitToAllSockets(ResourceMonitorEvents.TEST_COMPLETE, this._currentUsage);
         })
     }
 

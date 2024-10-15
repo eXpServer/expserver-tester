@@ -5,6 +5,8 @@ import { LOCALHOST } from "../constants";
 import { ChildProcessWithoutNullStreams } from "child_process";
 
 export const stage1StringReversal: TestFunction = (port: number) => {
+    const testInput = "client sends a randomly generated string to the server";
+    const expectedBehavior = "client receives reversed version of the input"
     return new Promise((resolve, _) => {
         const testStrings = generateRandomStrings(100, 1000);
 
@@ -22,6 +24,8 @@ export const stage1StringReversal: TestFunction = (port: number) => {
                 if (output !== expected) {
                     return resolve({
                         passed: false,
+                        testInput: input,
+                        expectedBehavior: expected,
                         observedBehavior: output,
                         cleanup: () => {
                             client.end();
@@ -32,6 +36,8 @@ export const stage1StringReversal: TestFunction = (port: number) => {
                     if (index == testStrings.length - 1) {
                         return resolve({
                             passed: true,
+                            testInput: input,
+                            expectedBehavior: expected,
                             observedBehavior: output,
                             cleanup: () => {
                                 client.end();
@@ -56,6 +62,9 @@ export const stage1StringReversal: TestFunction = (port: number) => {
 }
 
 export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+
+    const testInput = "Force disconnection of the client";
+    const expectedBehavior = "Process exited with code 1";
     return new Promise((resolve, _) => {
         const client = new Socket();
 
@@ -64,6 +73,8 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
 
             resolve({
                 passed: (code == 1),
+                testInput,
+                expectedBehavior: expectedBehavior,
                 observedBehavior: `Process exited with code ${code || 0}`,
             })
         })

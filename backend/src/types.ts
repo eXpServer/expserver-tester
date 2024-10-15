@@ -28,6 +28,8 @@ export interface Test {
 
 export type TestFunction = (...args: any[]) => Promise<{
     passed: boolean,
+    testInput: string,
+    expectedBehavior: string,
     observedBehavior: string,
     cleanup?: () => void,
 }>

@@ -12,9 +12,9 @@ export const tests: StageTest = {
         tests: [
             {
                 title: "String reversal",
-                description: "generate 10 random strings and see if the eXpServer gives the response we expect",
-                testInput: "abc",
-                expectedBehavior: "cba",
+                description: "Ensures proper working of the server by verifying if the string returned by the server matches the expected output",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
                 testFunction: async (...args: any[]) => {
                     const response = await stage1StringReversal(8080, ...args)
                     return response;
@@ -23,8 +23,9 @@ export const tests: StageTest = {
             },
             {
                 title: "Checking error handling",
-                description: "Force disconnection of the client should result in the server exiting with proper error code",
-                expectedBehavior: "Process exited with code 0",
+                description: "Checks how the server behaves when the client unexpectedly disconnects. In the current version of the server, we are not implementing proper handling of such a situation and thus the server should terminate with error code 1",
+                testInput: "Force disconnection of the client",
+                expectedBehavior: "Process exited with code 1",
                 testFunction: async (...args: any[]) => {
                     const response = await stage1ErrorChecking(8080, ...args);
                     return response;
@@ -78,9 +79,9 @@ export const tests: StageTest = {
         tests: [
             {
                 title: "Single client - input output",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
+                description: "This test ensures that the server runs as expected when a singular client is connected",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
                 testFunction: async () => {
                     const response = await stage1StringReversal(8080);
                     return response;
@@ -89,9 +90,9 @@ export const tests: StageTest = {
             },
             {
                 title: "Multiple clients to same port - input output",
-                description: "Previous tests are conducted with multiple connections simultaneously to ensure proper handling of multiple connections",
+                description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
-                expectedBehavior: "Each of the clients should receive their respective input, but reversed",
+                expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
                 testFunction: async () => {
                     const response = await stage3MultipleClients(8080);
                     return response;
@@ -100,8 +101,8 @@ export const tests: StageTest = {
             },
             {
                 title: "Error handling",
-                description: "Checks how the server handles unexpected client disconnections. Multiple clients are initially connected to the server. Once a client disconnects abrupty, the server should still be able to handle existing connections and new connections without halting",
-                testInput: "client disconnects",
+                description: "In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected",
+                testInput: "client forcefully disconnects",
                 expectedBehavior: "Previous and new clients are able to send and receive output as expected",
                 testFunction: async (...args) => {
                     const response = await stage3ErrorHandling(8080, ...args);
@@ -118,9 +119,9 @@ export const tests: StageTest = {
         tests: [
             {
                 title: "Single client - input output",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
+                description: "This test ensures that the server runs as expected when a singular client is connected",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
                 testFunction: async () => {
                     const response = await stage1StringReversal(8080);
                     return response;
@@ -129,9 +130,9 @@ export const tests: StageTest = {
             },
             {
                 title: "Multiple clients to same port - input output",
-                description: "Previous tests are conducted with multiple connections simultaneously to ensure proper handling of multiple connections",
+                description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
-                expectedBehavior: "Each of the clients should receive their respective input, but reversed",
+                expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
                 testFunction: async () => {
                     const response = await stage3MultipleClients(8080);
                     return response;
@@ -140,8 +141,8 @@ export const tests: StageTest = {
             },
             {
                 title: "Error handling",
-                description: "Checks how the server handles unexpected client disconnections. Multiple clients are initially connected to the server. Once a client disconnects abrupty, the server should still be able to handle existing connections and new connections without halting",
-                testInput: "client disconnects",
+                description: "In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected",
+                testInput: "client forcefully disconnects",
                 expectedBehavior: "Previous and new clients are able to send and receive output as expected",
                 testFunction: async (...args) => {
                     const response = await stage3ErrorHandling(8080, ...args);
@@ -175,55 +176,42 @@ export const tests: StageTest = {
         descriptionFilePath: "/description/sample.md",
         tests: [
             {
-                title: "Single client - input output on port 8001",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
+                title: "Single client - input output",
+                description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
                 testFunction: async () => {
-                    const response = await stage1StringReversal(8001);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
-            {
-                title: "Single client - input output on port 8002",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8002);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
-            {
-                title: "Single client - input output on port 8003",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8003);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
+                    const responses = [
+                        await stage1StringReversal(8001),
+                        await stage1StringReversal(8002),
+                        await stage1StringReversal(8003),
+                        await stage1StringReversal(8004)
+                    ];
 
-            {
-                title: "Single client - input output on port 8004",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8004);
-                    return response;
+                    if (responses.some(response => response.passed == false)) {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: "Server didn't work as expected on all ports",
+                        })
+                    }
+                    else {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: responses[0].expectedBehavior,
+                        })
+                    }
                 },
                 status: TestStatus.Pending,
             },
             {
                 title: "Multiple clients to same port - input output",
-                description: "Previous tests are conducted with multiple connections simultaneously to ensure proper handling of multiple connections",
+                description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
-                expectedBehavior: "Each of the clients should receive their respective input, but reversed",
+                expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
                 testFunction: async () => {
                     const response = await stage3MultipleClients(8001);
                     return response;
@@ -232,8 +220,8 @@ export const tests: StageTest = {
             },
             {
                 title: "Error handling",
-                description: "Checks how the server handles unexpected client disconnections. Multiple clients are initially connected to the server. Once a client disconnects abrupty, the server should still be able to handle existing connections and new connections without halting",
-                testInput: "client disconnects",
+                description: "In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected",
+                testInput: "client forcefully disconnects",
                 expectedBehavior: "Previous and new clients are able to send and receive output as expected",
                 testFunction: async (...args) => {
                     const response = await stage3ErrorHandling(8001, ...args);
@@ -249,55 +237,42 @@ export const tests: StageTest = {
         descriptionFilePath: "/description/sample.md",
         tests: [
             {
-                title: "Single client - input output on port 8001",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
+                title: "Single client - input output",
+                description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
                 testFunction: async () => {
-                    const response = await stage1StringReversal(8001);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
-            {
-                title: "Single client - input output on port 8002",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8002);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
-            {
-                title: "Single client - input output on port 8003",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8003);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
+                    const responses = [
+                        await stage1StringReversal(8001),
+                        await stage1StringReversal(8002),
+                        await stage1StringReversal(8003),
+                        await stage1StringReversal(8004)
+                    ];
 
-            {
-                title: "Single client - input output on port 8004",
-                description: "Single client is connected to the server to ensure previous functionalities are working",
-                testInput: "abcd",
-                expectedBehavior: "dcba",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8004);
-                    return response;
+                    if (responses.some(response => response.passed == false)) {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: "Server didn't work as expected on all ports",
+                        })
+                    }
+                    else {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: responses[0].expectedBehavior,
+                        })
+                    }
                 },
                 status: TestStatus.Pending,
             },
             {
                 title: "Multiple clients to same port - input output",
-                description: "Previous tests are conducted with multiple connections simultaneously to ensure proper handling of multiple connections",
+                description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
-                expectedBehavior: "Each of the clients should receive their respective input, but reversed",
+                expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
                 testFunction: async () => {
                     const response = await stage3MultipleClients(8001);
                     return response;
@@ -306,8 +281,8 @@ export const tests: StageTest = {
             },
             {
                 title: "Error handling",
-                description: "Checks how the server handles unexpected client disconnections. Multiple clients are initially connected to the server. Once a client disconnects abrupty, the server should still be able to handle existing connections and new connections without halting",
-                testInput: "client disconnects",
+                description: "In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected",
+                testInput: "client forcefully disconnects",
                 expectedBehavior: "Previous and new clients are able to send and receive output as expected",
                 testFunction: async (...args) => {
                     const response = await stage3ErrorHandling(8001, ...args);
@@ -322,6 +297,61 @@ export const tests: StageTest = {
         stageName: "Non-blocking Sockets",
         descriptionFilePath: "/description/sample.md",
         tests: [
+            {
+                title: "Single client - input output",
+                description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
+                testFunction: async () => {
+                    const responses = [
+                        await stage1StringReversal(8001),
+                        await stage1StringReversal(8002),
+                        await stage1StringReversal(8003),
+                        await stage1StringReversal(8004)
+                    ];
+
+                    if (responses.some(response => response.passed == false)) {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: "Server didn't work as expected on all ports",
+                        })
+                    }
+                    else {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: responses[0].expectedBehavior,
+                        })
+                    }
+                },
+                status: TestStatus.Pending,
+            },
+            {
+                title: "Multiple clients to same port - input output",
+                description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
+                testInput: "Connect multiple clients to server and sent string simultaneously",
+                expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
+                testFunction: async () => {
+                    const response = await stage3MultipleClients(8001);
+                    return response;
+                },
+                status: TestStatus.Pending,
+            },
+            {
+                title: "Error handling",
+                description: "In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected",
+                testInput: "client forcefully disconnects",
+                expectedBehavior: "Previous and new clients are able to send and receive output as expected",
+                testFunction: async (...args) => {
+                    const response = await stage3ErrorHandling(8001, ...args);
+                    return response;
+
+                },
+                status: TestStatus.Pending,
+            },
             {
                 title: "Non-blocking server",
                 description: "creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection",

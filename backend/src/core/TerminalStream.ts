@@ -2,6 +2,12 @@ import { ChildProcessWithoutNullStreams } from "child_process";
 import { TERMINAL_MAX_LIMIT } from "../constants";
 import EventEmitter from "eventemitter3";
 
+enum TerminalStreamEvents {
+    TEST_UPDATE = 'stage-terminal-update',
+    TEST_COMPLETE = 'stage-terminal-complete',
+    EMIT_TO_STAGE_RUNNER = 'terminal-event',
+}
+
 export class TerminalStream {
     private spawnInstance: ChildProcessWithoutNullStreams;
     private _currentStream: string[]; //send only onel ine at a time or send max 10k-ish lines
@@ -29,7 +35,7 @@ export class TerminalStream {
         this._streamBuffer = "";
 
         this._running = false;
-        this._emitter.on('terminal-event', emitterCallback);
+        this._emitter.on(TerminalStreamEvents.EMIT_TO_STAGE_RUNNER, emitterCallback);
     }
 
     public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
@@ -39,7 +45,7 @@ export class TerminalStream {
     }
 
     private emitToAllSockets(event: string, data: any) {
-        this._emitter.emit('terminal-event', event, data);
+        this._emitter.emit(TerminalStreamEvents.EMIT_TO_STAGE_RUNNER, event, data);
     }
 
     private terminalStreamCallback = (data: Buffer) => {
@@ -50,7 +56,7 @@ export class TerminalStream {
         lines.forEach(line => this._currentStream.push(line))
 
         const toSend = this._currentStream.slice(-TERMINAL_MAX_LIMIT).join('\n');
-        this.emitToAllSockets('stage-terminal-update', toSend);
+        this.emitToAllSockets(TerminalStreamEvents.TEST_UPDATE, toSend);
 
     }
 
@@ -59,7 +65,7 @@ export class TerminalStream {
         this._currentStream.push(line);
 
         const toSend = this._currentStream.slice(-TERMINAL_MAX_LIMIT).join('\n');
-        this.emitToAllSockets('stage-terminal-complete', toSend);
+        this.emitToAllSockets(TerminalStreamEvents.TEST_COMPLETE, toSend);
         this.kill();
     }
 

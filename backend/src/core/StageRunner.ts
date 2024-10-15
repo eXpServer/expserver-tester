@@ -6,6 +6,11 @@ import { TestDetails, TestStatus } from "../types";
 import { createSpawn } from "../utils/process";
 import { ResourceMonitor } from "./ResrouceMonitor";
 
+enum StageRunnerEvents {
+    TEST_UPDATE = 'stage-tests-update',
+    TEST_COMPLETE = 'stage-tests-complete',
+}
+
 export class StageRunner {
     private watchers: StageWatcher[];
     private _filePath: string;
@@ -144,11 +149,13 @@ export class StageRunner {
 
 
 
-            const { passed, observedBehavior, cleanup } = await fn(this.spawnInstance);
+            const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.spawnInstance);
 
 
             console.log(`Completed Stage: ${this.stageNo}\t\tTest ${i}`)
 
+            this._currentState[i].testInput = testInput;
+            this._currentState[i].expectedBehavior = expectedBehavior;
             this._currentState[i].status = (passed
                 ? TestStatus.Passed
                 : TestStatus.Failed
@@ -158,7 +165,7 @@ export class StageRunner {
             if (cleanup)
                 this.cleanupCallbacks.push(cleanup);
 
-            this.emitToAllSockets('stage-tests-update', this._currentState);
+            this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this._currentState);
         }
 
         this.kill();
@@ -194,7 +201,7 @@ export class StageRunner {
 
         Core.deleteRunner(this);
 
-        this.emitToAllSockets('stage-tests-complete', {
+        this.emitToAllSockets(StageRunnerEvents.TEST_COMPLETE, {
             numTestCases,
             numPassed,
             numFailed,
