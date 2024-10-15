@@ -8,7 +8,7 @@ import { stage8NonBlockingTest } from "./stage8";
 export const tests: StageTest = {
     stage1: {
         stageName: "TCP Server",
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "String reversal",
@@ -35,7 +35,7 @@ export const tests: StageTest = {
     },
     stage2: {
         stageName: 'TCP Client',
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "404 Server Not Found?",
@@ -74,7 +74,7 @@ export const tests: StageTest = {
     },
     stage3: {
         stageName: 'UDP Multithreading',
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "Single client - input output",
@@ -114,7 +114,7 @@ export const tests: StageTest = {
     },
     stage4: {
         stageName: "Linux Epoll",
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "Single client - input output",
@@ -154,7 +154,7 @@ export const tests: StageTest = {
     },
     stage5: {
         stageName: 'TCP Proxy',
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "proxy response checking -- multiple clients",
@@ -172,7 +172,7 @@ export const tests: StageTest = {
     },
     stage6: {
         stageName: "Listener and Connection Module",
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "Single client - input output on port 8001",
@@ -246,7 +246,7 @@ export const tests: StageTest = {
     },
     stage7: {
         stageName: "Core and Loop Modules",
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "Single client - input output on port 8001",
@@ -320,7 +320,7 @@ export const tests: StageTest = {
     },
     stage8: {
         stageName: "Non-blocking Sockets",
-        descriptionFilePath: "/sample.md",
+        descriptionFilePath: "/description/sample.md",
         tests: [
             {
                 title: "Non-blocking server",

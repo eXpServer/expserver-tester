@@ -118,7 +118,7 @@ const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     }
 
     res.status(200).json({
-        message: "deleted successfully",
+        message: `Binary for Stage ${stageNo} deleted successfully.`,
     })
 })
 

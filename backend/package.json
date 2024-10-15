@@ -7,8 +7,9 @@
     "dev": "nodemon src/index.ts",
     "build": "rm -rf ./dist && tsc",
     "start": "node dist/index.js",
-    "compile": "npm run build && nexe dist/index.js -o my-binary --build --target linux-x64-22.7.0 --resource './dist/**/*'",
-    "abc": "pkg dist/index.js --output my-binary --targets node18-linux-x64 --include node_modules/@prisma/engines/libquery_engine-debian-openssl-3.0.x.so.node"
+    "precompile": "rm -rf ./compile && mkdir compile && npm run build",
+    "compile": "npm run precompile && esbuild dist/index.js  --bundle --outfile=compile/build.cjs --format=cjs --platform=node && cd compile && npx pkg build.cjs && npm run postcompile",
+    "postcompile": "cd compile && rm -rf build.cjs"
   },
   "keywords": [],
   "author": "Th3BossC",
@@ -18,6 +19,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.7.4",
     "@types/node-os-utils": "^1.3.4",
+    "esbuild": "^0.24.0",
     "express": "^4.21.0",
     "nexe": "^4.0.0-rc.6",
     "nodemon": "^3.1.7",
