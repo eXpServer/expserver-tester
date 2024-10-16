@@ -15,6 +15,7 @@ import { reverseString } from "../utils/string";
  * @returns 
  */
 export const stage8NonBlockingTest: TestFunction = async (port: number) => {
+    const testInput = "a client is connected to the server and sends a large file, but does not receive any data from the server.After 30 seconds, a second client is connected to the server, and verifies if the server responds";
     const expectedBehavior = "server should be able to handle multiple connections simultaneously, and should not block on a single connection";
     return new Promise((resolve, _) => {
         const firstClient = new Socket();
@@ -38,6 +39,8 @@ export const stage8NonBlockingTest: TestFunction = async (port: number) => {
 
                         return resolve({
                             passed: true,
+                            testInput,
+                            expectedBehavior,
                             observedBehavior: expectedBehavior
                         })
                     })
@@ -50,6 +53,8 @@ export const stage8NonBlockingTest: TestFunction = async (port: number) => {
 
                         return resolve({
                             passed: false,
+                            testInput,
+                            expectedBehavior,
                             observedBehavior: "Server did not respond to the second client within 30s"
                         });
                     }, 30000);

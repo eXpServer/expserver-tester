@@ -4,6 +4,7 @@ import { ChildProcessWithoutNullStreams } from "child_process";
 import osu from 'node-os-utils';
 import Mem from "node-os-utils/lib/mem";
 import EventEmitter from "eventemitter3";
+import { getCpuUsage, getMemUsage } from "../utils/process";
 
 enum ResourceMonitorEvents {
     TEST_UPDATE = 'stage-stats-update',
@@ -55,11 +56,10 @@ export class ResourceMonitor {
     }
 
     private async getUsage() {
-        const cpuInfo = await this.cpu.free();
-        const cpuUsage = 100 - cpuInfo;
-
-        const { totalMemMb, usedMemMb } = await this.mem.used();
-        const memUsage = (usedMemMb / totalMemMb) * 100;
+        const cpuUsage = await getCpuUsage(this.spawnInstance.pid);
+        const memUsage = await getMemUsage(this.spawnInstance.pid);
+        // const { totalMemMb, usedMemMb } = await this.mem.used();
+        // const memUsage = (usedMemMb / totalMemMb) * 100;
 
         this._currentUsage = { cpu: cpuUsage, mem: memUsage };
     }

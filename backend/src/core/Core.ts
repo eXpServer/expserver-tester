@@ -186,7 +186,6 @@ export class Core {
 
         this.socketIo.on("connection", (socket: Socket) => {
             socket.emit("connection-ack");
-
             socket.on('request-state', async (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
                 await this.handleNewSocketConnection(socket, stageNo, userId);

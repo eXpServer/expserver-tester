@@ -20,5 +20,5 @@ export const deleteFile = (filePath: string): Promise<void> => {
 export const verifyStageNo = (stageNo: string): boolean => {
     const stageNoAsInt = parseInt(stageNo);
     const stageDescription = Core.stageTests[`stage${stageNoAsInt}`];
-    return !(isNaN(stageNoAsInt) || !stageDescription[stageNo]);
+    return !(isNaN(stageNoAsInt) || !stageDescription);
 }

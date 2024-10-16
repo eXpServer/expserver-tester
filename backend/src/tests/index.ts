@@ -4,6 +4,7 @@ import { stage2CheckConnectionWhenNoServer, stage2InputOutput, stage2UnexpectedS
 import { stage3ErrorHandling, stage3MultipleClients } from "./stage3";
 import { stage5ProxyMultipleConnections } from "./stage5";
 import { stage8NonBlockingTest } from "./stage8";
+import { stage9checkCpuUsage } from "./stage9";
 
 export const tests: StageTest = {
     stage1: {
@@ -355,13 +356,31 @@ export const tests: StageTest = {
             {
                 title: "Non-blocking server",
                 description: "creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection",
+                testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds",
                 expectedBehavior: "the second connection is able to send and receive data from the server",
                 testFunction: async () => {
                     const response = await stage8NonBlockingTest(8001);
                     return response;
                 },
                 status: TestStatus.Pending,
-            }
+            },
         ],
+    },
+    stage9: {
+        stageName: "Epoll Edge Triggered",
+        descriptionFilePath: "/description/sample.md",
+        tests: [
+            {
+                title: "CPU usage",
+                description: "This test verifies that the process doesn't consume CPU time unnecessarily by creating an idle client connection and tracks CPU usage over the course of 20 seconds",
+                testInput: "Creates an idle client connection and tracks CPU usage over the course of 20 seconds",
+                expectedBehavior: "CPU usage should be less than 10%",
+                testFunction: async (...args) => {
+                    const response = await stage9checkCpuUsage(8001, ...args);
+                    return response;
+                },
+                status: TestStatus.Pending,
+            }
+        ]
     }
 }
