@@ -9,11 +9,13 @@ const Test = () => {
     const [userId, setUserId] = useState<string>("");
     const [stageDesc, setStageDesc] = useState<string>("");
     const [socket, setSocket] = useState<Socket | null>(null);
+    const [stageNo, setStageNo] = useState<number>(8);
 
     const [results, setResults] = useState<string>("");
     const [terminal, setTerminal] = useState<string[]>([]);
 
     useEffect(() => {
+        setStageNo(8);
         const preload = async () => {
             if (localStorage.getItem('userId'))
                 setUserId(localStorage.getItem('userId'));
@@ -25,23 +27,17 @@ const Test = () => {
             }
             const id = localStorage.getItem('userId');
 
-            const stageDescRes = await axios.get('http://localhost:6969/stage/5', {
-                headers: {
-                    Authorization: `Bearer ${id}`,
-                }
-            });
 
             const socketIo = io('http://localhost:6970');
             setSocket(socketIo);
 
 
-            setStageDesc(stageDescRes.data.title + ' ' + stageDescRes.data.description);
 
 
 
             socketIo.on('connection-ack', () => {
                 console.log('connection-ack')
-                socketIo.emit('request-state', ({ stageNo: 5, userId: id }));
+                socketIo.emit('request-state', ({ stageNo, userId: id }));
             })
 
             socketIo.on("current-state", (data) => {
@@ -72,6 +68,14 @@ const Test = () => {
             })
 
 
+            const stageDescRes = await axios.get(`http://localhost:6969/stage/${stageNo}`, {
+                headers: {
+                    Authorization: `Bearer ${id}`,
+                }
+            });
+
+            console.log(stageDescRes.data);
+            setStageDesc(stageDescRes.data.title + ' ' + stageDescRes.data.description);
 
         }
 
@@ -93,7 +97,7 @@ const Test = () => {
         formData.append('binary', selectedFile);
 
         try {
-            const response = await axios.post('http://localhost:6969/stage/5/binary', formData, {
+            const response = await axios.post(`http://localhost:6969/stage/${stageNo}/binary`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                     "Authorization": `Bearer ${userId}`
@@ -117,7 +121,10 @@ const Test = () => {
             > Upload </button>
 
             <div className="flex gap-2 justify-center items-center">
-                <button onClick={() => socket.emit('run')}> Run </button>
+                <button onClick={() => {
+                    console.log(socket);
+                    socket.emit('run')
+                }}> Run </button>
                 <button onClick={() => socket.emit('stop')}> Stop </button>
             </div>
 
@@ -125,7 +132,7 @@ const Test = () => {
                 {stageDesc}
                 <br />
                 userId: {userId}
-                stageNo: 5
+                stageNo: {stageNo}
             </div>
 
 
