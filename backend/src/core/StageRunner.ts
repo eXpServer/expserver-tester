@@ -7,8 +7,10 @@ import { createSpawn } from "../utils/process";
 import { ResourceMonitor } from "./ResrouceMonitor";
 
 enum StageRunnerEvents {
+    TEST_STARTED = 'stage-tests-start',
     TEST_UPDATE = 'stage-tests-update',
     TEST_COMPLETE = 'stage-tests-complete',
+    FORCE_QUIT = 'stage-tests-force-quit',
 }
 
 export class StageRunner {
@@ -127,11 +129,7 @@ export class StageRunner {
             status: TestStatus.Running,
         }))
 
-        this.emitToAllSockets('run-started', {
-            binary_uploaded: true,
-            running: true,
-            current_state: this.currentState
-        });
+        this.emitToAllSockets(StageRunnerEvents.TEST_STARTED, this.currentState);
 
         await this.createAndLinkSpawnInstance();
 
@@ -171,7 +169,7 @@ export class StageRunner {
         this.kill();
     }
 
-    public kill() {
+    public kill(forced: boolean = false) {
         this._running = false;
 
         if (this.spawnInstance) {
@@ -201,10 +199,17 @@ export class StageRunner {
 
         Core.deleteRunner(this);
 
+        this.emitToAllSockets(StageRunnerEvents.FORCE_QUIT, {
+            numTestCases,
+            numPassed,
+            numFailed,
+        });
         this.emitToAllSockets(StageRunnerEvents.TEST_COMPLETE, {
             numTestCases,
             numPassed,
             numFailed,
         })
+
+
     }
 }

@@ -124,7 +124,7 @@ export class Core {
         }
     }
 
-    private static async handleNewSocketConnection(socket: Socket, stageNo: number, userId: string) {
+    private static async handleRequestState(socket: Socket, stageNo: number, userId: string) {
         if (!socket.watcher)
             await this.handleNewWatcher(socket, stageNo, userId);
         else
@@ -186,17 +186,17 @@ export class Core {
 
         this.socketIo.on("connection", (socket: Socket) => {
             socket.emit("connection-ack");
-            socket.on('request-state', async (data: { stageNo: number, userId: string }) => {
+            socket.on('request-state', (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
-                await this.handleNewSocketConnection(socket, stageNo, userId);
+                void this.handleRequestState(socket, stageNo, userId);
             })
 
             socket.on('run', () => {
-                this.handleStartRunner(socket);
+                void this.handleStartRunner(socket);
             })
 
-            socket.on('stop', async () => {
-                this.handleStopRunner(socket);
+            socket.on('stop', () => {
+                void this.handleStopRunner(socket);
             })
 
 
