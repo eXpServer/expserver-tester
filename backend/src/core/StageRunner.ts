@@ -199,17 +199,19 @@ export class StageRunner {
 
         Core.deleteRunner(this);
 
-        this.emitToAllSockets(StageRunnerEvents.FORCE_QUIT, {
-            numTestCases,
-            numPassed,
-            numFailed,
-        });
-        this.emitToAllSockets(StageRunnerEvents.TEST_COMPLETE, {
-            numTestCases,
-            numPassed,
-            numFailed,
-        })
-
-
+        if (forced) {
+            this.emitToAllSockets(StageRunnerEvents.FORCE_QUIT, {
+                numTestCases,
+                numPassed,
+                numFailed,
+            });
+        }
+        else {
+            this.emitToAllSockets(StageRunnerEvents.TEST_COMPLETE, {
+                numTestCases,
+                numPassed,
+                numFailed,
+            })
+        }
     }
 }

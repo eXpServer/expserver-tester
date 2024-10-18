@@ -164,7 +164,7 @@ export class Core {
     private static handleStopRunner(socket: Socket) {
         const { stageRunner } = socket.watcher;
         if (stageRunner && stageRunner.running) {
-            stageRunner.kill();
+            stageRunner.kill(true);
 
             Core.runners = Core.runners.filter(runner => (runner !== stageRunner));
         }
