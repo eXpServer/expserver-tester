@@ -62,7 +62,6 @@ export const stage1StringReversal: TestFunction = (port: number) => {
 }
 
 export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
-
     const testInput = "Force disconnection of the client";
     const expectedBehavior = "Process exited with code 1";
     return new Promise((resolve, _) => {

@@ -335,8 +335,8 @@ export const tests: StageTest = {
                 description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
                 expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
-                testFunction: async () => {
-                    const response = await stage3MultipleClients(8001);
+                testFunction: async (...args) => {
+                    const response = await stage3MultipleClients(8001, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,

@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { io, Socket } from 'socket.io-client';
 
 const Test = () => {
@@ -14,7 +14,10 @@ const Test = () => {
     const [results, setResults] = useState<string>("");
     const [terminal, setTerminal] = useState<string[]>([]);
 
+
     useEffect(() => {
+
+
         setStageNo(8);
         const preload = async () => {
             if (localStorage.getItem('userId'))
@@ -46,7 +49,7 @@ const Test = () => {
             })
 
             socketIo.on('stage-tests-update', (data) => {
-                console.log('stage-tests-update')
+                console.log('stage-tests-update', data);
                 setResults(data);
             })
 
@@ -58,6 +61,7 @@ const Test = () => {
                 console.log('stage-terminal-update', data.toString());
                 const temp = data.toString();
                 setTerminal(temp.split('\n'));
+
             })
 
             socketIo.on('stage-terminal-complete', (data) => {
@@ -80,6 +84,10 @@ const Test = () => {
         }
 
         void preload();
+
+        // return () => {
+        //     terminal.dispose();
+        // }
     }, []);
 
     const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -140,14 +148,7 @@ const Test = () => {
                 {JSON.stringify(results)}
             </div>
 
-            <div className="mt-5 h-full w-full p-4 bg-white text-black">
-                {
-                    terminal.map((line, index) => (
-                        <div key={index}>
-                            {line}
-                        </div>
-                    ))
-                }
+            <div id='terminal'>
             </div>
         </div>
     )

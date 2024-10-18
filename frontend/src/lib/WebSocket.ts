@@ -32,7 +32,7 @@ export class WebSocket {
     private _socket: Socket;
     private _stageNo: number;
     private _userId: string;
-    private callbacks: Map<SocketIncomingEvents, (() => void)[]> = new Map();
+    private callbacks: Map<SocketIncomingEvents, ((...args: unknown[]) => void)[]> = new Map();
 
     get socket() {
         return this._socket;
@@ -81,7 +81,7 @@ export class WebSocket {
     }
 
 
-    private setCallback(event: SocketIncomingEvents, callback: () => void) {
+    private setCallback(event: SocketIncomingEvents, callback: (...args: unknown[]) => void) {
         const prevCallbacks = this.callbacks.get(event);
         if (prevCallbacks)
             prevCallbacks.push(callback);
@@ -89,7 +89,7 @@ export class WebSocket {
             this.callbacks.set(event, [callback]);
     }
 
-    public setTestCallbacks(updateCallback: () => void, completeCallback: () => void) {
+    public setTestCallbacks(updateCallback: (...args: unknown[]) => void, completeCallback: (...args: unknown[]) => void) {
         this._socket.on(SocketIncomingEvents.TestsUpdate, updateCallback);
         this._socket.on(SocketIncomingEvents.TestsComplete, completeCallback);
 
@@ -97,7 +97,7 @@ export class WebSocket {
         this.setCallback(SocketIncomingEvents.TestsComplete, completeCallback);
     }
 
-    public setTerminalCallbacks(updateCallback: () => void, completeCallback: () => void) {
+    public setTerminalCallbacks(updateCallback: (...args: unknown[]) => void, completeCallback: (...args: unknown[]) => void) {
         this._socket.on(SocketIncomingEvents.TerminalUpdate, updateCallback);
         this._socket.on(SocketIncomingEvents.TerminalComplete, completeCallback);
 
@@ -105,7 +105,7 @@ export class WebSocket {
         this.setCallback(SocketIncomingEvents.TerminalComplete, completeCallback);
     }
 
-    public setResourceMonitorCallbacks(updateCallback: () => void, completeCallback: () => void) {
+    public setResourceMonitorCallbacks(updateCallback: (...args: unknown[]) => void, completeCallback: (...args: unknown[]) => void) {
         this._socket.on(SocketIncomingEvents.ResourceStatsUpdate, updateCallback);
         this._socket.on(SocketIncomingEvents.ResourceStatsComplete, completeCallback);
 

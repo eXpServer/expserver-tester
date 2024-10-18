@@ -4,7 +4,7 @@ import { TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
 import { ChildProcessWithoutNullStreams } from "child_process";
 
-export const stage3MultipleClients: TestFunction = (port: number) => {
+export const stage3MultipleClients: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams = null) => {
     const testInput = "Connect multiple clients to server and sent string simultaneously";
     const expectedBehavior = "Each of the clients should receive their reversed versions of the string that they sent";
     const numClients = 100;
@@ -19,14 +19,16 @@ export const stage3MultipleClients: TestFunction = (port: number) => {
 
 
         const clientRecvChecker = (client: Socket, index: number) => {
-            const input = `string-${index}`;
+            const input = `string-${index}\n`;
 
             const receivedCallback = (data: Buffer) => {
+                console.log("hello ", index);
                 const output = data.toString();
                 const expected = reverseString(input);
                 responsesReceived++;
 
                 if (output !== expected) {
+                    spawnInstance?.kill();
                     return resolve({
                         passed: false,
                         testInput,
@@ -41,6 +43,7 @@ export const stage3MultipleClients: TestFunction = (port: number) => {
 
 
                 if (responsesReceived == numClients) {
+                    spawnInstance?.kill();
                     return resolve({
                         passed: true,
                         testInput,
@@ -54,11 +57,13 @@ export const stage3MultipleClients: TestFunction = (port: number) => {
             }
 
             client.on('data', receivedCallback);
+            client.write(input);
         }
 
         clients.forEach((client, index) => {
 
             client.once('connectionAttemptFailed', () => {
+                spawnInstance?.kill();
                 return resolve({
                     passed: false,
                     testInput,
@@ -71,6 +76,7 @@ export const stage3MultipleClients: TestFunction = (port: number) => {
             })
 
             client.once('connectionAttemptTimeout', () => {
+                spawnInstance?.kill();
                 return resolve({
                     passed: false,
                     testInput,
