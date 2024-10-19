@@ -97,20 +97,20 @@ export class WebSocket {
         this.setCallback(SocketIncomingEvents.TestsComplete, completeCallback);
     }
 
-    public setTerminalCallbacks(updateCallback: (...args: unknown[]) => void, completeCallback: (...args: unknown[]) => void) {
-        this._socket.on(SocketIncomingEvents.TerminalUpdate, updateCallback);
-        this._socket.on(SocketIncomingEvents.TerminalComplete, completeCallback);
+    public setTerminalCallbacks(callback: (...args: unknown[]) => void) {
+        this._socket.on(SocketIncomingEvents.TerminalUpdate, callback);
+        this._socket.on(SocketIncomingEvents.TerminalComplete, callback);
 
-        this.setCallback(SocketIncomingEvents.TerminalUpdate, updateCallback);
-        this.setCallback(SocketIncomingEvents.TerminalComplete, completeCallback);
+        this.setCallback(SocketIncomingEvents.TerminalUpdate, callback);
+        this.setCallback(SocketIncomingEvents.TerminalComplete, callback);
     }
 
-    public setResourceMonitorCallbacks(updateCallback: (...args: unknown[]) => void, completeCallback: (...args: unknown[]) => void) {
-        this._socket.on(SocketIncomingEvents.ResourceStatsUpdate, updateCallback);
-        this._socket.on(SocketIncomingEvents.ResourceStatsComplete, completeCallback);
+    public setResourceMonitorCallbacks(callback: (...args: unknown[]) => void) {
+        this._socket.on(SocketIncomingEvents.ResourceStatsUpdate, callback);
+        this._socket.on(SocketIncomingEvents.ResourceStatsComplete, callback);
 
-        this.setCallback(SocketIncomingEvents.ResourceStatsUpdate, updateCallback);
-        this.setCallback(SocketIncomingEvents.ResourceStatsComplete, completeCallback);
+        this.setCallback(SocketIncomingEvents.ResourceStatsUpdate, callback);
+        this.setCallback(SocketIncomingEvents.ResourceStatsComplete, callback);
     }
 
     public run(): Promise<TestDetails[]> {
@@ -123,21 +123,9 @@ export class WebSocket {
     }
 
     public stop(): Promise<FinalSummary> {
-        const events: SocketIncomingEvents[] = [
-            SocketIncomingEvents.TestsUpdate,
-            SocketIncomingEvents.TestsComplete,
-            SocketIncomingEvents.TerminalUpdate,
-            SocketIncomingEvents.TerminalComplete,
-            SocketIncomingEvents.ResourceStatsUpdate,
-            SocketIncomingEvents.ResourceStatsComplete,
-        ];
 
         return new Promise((resolve) => {
-            this._socket.emit(SocketOutgoingEvents.Stop, () => {
-                events.forEach(event => this.removeCallbacks(event));
-
-                this._socket.once(SocketIncomingEvents.TestsForceQuit, (data: FinalSummary) => resolve(data))
-            });
+            this._socket.once(SocketIncomingEvents.TestsForceQuit, (data: FinalSummary) => resolve(data))
         });
     }
 
@@ -146,5 +134,28 @@ export class WebSocket {
         eventCallbacks?.forEach(callback => {
             this._socket.off(event, callback);
         });
+    }
+
+    public kill() {
+        return new Promise((resolve) => {
+            this.stop();
+
+
+            const events: SocketIncomingEvents[] = [
+                SocketIncomingEvents.TestsUpdate,
+                SocketIncomingEvents.TestsComplete,
+                SocketIncomingEvents.TerminalUpdate,
+                SocketIncomingEvents.TerminalComplete,
+                SocketIncomingEvents.ResourceStatsUpdate,
+                SocketIncomingEvents.ResourceStatsComplete,
+            ];
+
+            events.forEach(event => {
+                this.removeCallbacks(event);
+            });
+
+            this._socket.disconnect();
+            this._socket.once('disconnect', () => resolve(true));
+        })
     }
 }
