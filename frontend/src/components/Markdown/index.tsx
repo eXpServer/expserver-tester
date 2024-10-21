@@ -3,6 +3,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { okaidia } from 'react-syntax-highlighter/dist/esm/styles/prism'; // Choose your favorite theme
 import styles from './styles.module.css';
 import 'github-markdown-css/github-markdown.css';
+import remarkGfm from 'remark-gfm';
 const Markdown = ({
     text
 }: {
@@ -30,6 +31,7 @@ const Markdown = ({
                         );
                     }
                 }}
+                remarkPlugins={[remarkGfm]}
             >
                 {text}
             </ReactMarkdown>
