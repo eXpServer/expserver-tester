@@ -31,11 +31,10 @@ export const stage8NonBlockingTest: TestFunction = async (port: number) => {
                     const input = "hello world";
                     secondClient.write(input);
 
-                    secondClient.on('data', (data) => {
-                        console.log("second client got data", data)
+                    secondClient.on('data', () => {
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.end();
-                        secondClient.end();
+                        firstClient.destroy();
+                        secondClient.destroy();
                         clearTimeout(firstClientWaitTimeout)
 
                         return resolve({
@@ -48,8 +47,8 @@ export const stage8NonBlockingTest: TestFunction = async (port: number) => {
 
                     const secondClientWaitTimeout = setTimeout(() => {
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.end();
-                        secondClient.end();
+                        firstClient.destroy();
+                        secondClient.destroy();
                         clearTimeout(firstClientWaitTimeout)
 
                         return resolve({

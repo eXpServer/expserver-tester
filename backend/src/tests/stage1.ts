@@ -28,7 +28,7 @@ export const stage1StringReversal: TestFunction = (port: number) => {
                         expectedBehavior: expected,
                         observedBehavior: output,
                         cleanup: () => {
-                            client.end();
+                            client.destroy();
                         },
                     })
                 }
@@ -40,7 +40,7 @@ export const stage1StringReversal: TestFunction = (port: number) => {
                             expectedBehavior: expected,
                             observedBehavior: output,
                             cleanup: () => {
-                                client.end();
+                                client.destroy();
                             },
                         })
                     }
@@ -68,7 +68,6 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
         const client = new Socket();
 
         const closeCallback = (code: number | null) => {
-            console.log('exited with code ' + code);
 
             resolve({
                 passed: (code == 1),
@@ -90,21 +89,23 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
             })
         });
 
-        client.connect(port, LOCALHOST, () => {
-            console.log("hello, hello");
-            client.end()
 
-            const timeout = setTimeout(() => {
-                console.log("hello, hello");
-                spawnInstance.off('close', closeCallback);
-                resolve({
-                    passed: false,
-                    testInput,
-                    expectedBehavior: expectedBehavior,
-                    observedBehavior: "Process did not exit within 3s",
-                    cleanup: () => clearTimeout(timeout),
-                })
-            }, 3000);
+        client.connect(port, LOCALHOST, () => {
+            client.destroy();
+
+            client.on('close', () => {
+                console.log('clietn closed lol');
+                const timeout = setTimeout(() => {
+                    spawnInstance.off('close', closeCallback);
+                    resolve({
+                        passed: false,
+                        testInput,
+                        expectedBehavior: expectedBehavior,
+                        observedBehavior: "Process did not exit within 3s",
+                        cleanup: () => clearTimeout(timeout),
+                    })
+                }, 3000);
+            })
         });
     })
 }

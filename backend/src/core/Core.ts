@@ -39,8 +39,6 @@ export class Core {
     private static findStageRunner(watcher: StageWatcher): StageRunner {
         const { stageNo, userId } = watcher;
         const runner = this.runners.find(runner => {
-            console.log("hello1", stageNo, userId)
-            console.log("hello2", runner.stageNo, runner.userId);
             return ((runner.userId == userId) && (runner.stageNo == stageNo))
         });
         return runner;
@@ -166,9 +164,7 @@ export class Core {
         if (!socket.watcher)
             return;
         const { stageRunner } = socket.watcher;
-        console.log("hello hello", stageRunner);
         if (stageRunner && stageRunner.running) {
-            console.log("forced killling");
             stageRunner.kill(true);
 
             Core.runners = Core.runners.filter(runner => (runner !== stageRunner));
@@ -195,7 +191,6 @@ export class Core {
             socket.emit("connection-ack");
             socket.on('request-state', (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
-                console.log('requesting state', stageNo, userId);
                 void this.handleRequestState(socket, stageNo, userId);
             })
 
