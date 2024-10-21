@@ -154,6 +154,7 @@ export class Core {
         this.runners.push(runner);
 
         this.watchers.forEach(watcher => {
+            watcher.stageRunner = runner;
             if (watcher.userId == userId && watcher.stageNo == stageNo)
                 runner.attachNewSubscriber(watcher);
         })
@@ -165,7 +166,9 @@ export class Core {
         if (!socket.watcher)
             return;
         const { stageRunner } = socket.watcher;
+        console.log("hello hello", stageRunner);
         if (stageRunner && stageRunner.running) {
+            console.log("forced killling");
             stageRunner.kill(true);
 
             Core.runners = Core.runners.filter(runner => (runner !== stageRunner));
@@ -192,6 +195,7 @@ export class Core {
             socket.emit("connection-ack");
             socket.on('request-state', (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
+                console.log('requesting state', stageNo, userId);
                 void this.handleRequestState(socket, stageNo, userId);
             })
 

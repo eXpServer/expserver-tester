@@ -56,12 +56,12 @@ export class ResourceMonitor {
     }
 
     private async getUsage() {
-        const cpuUsage = await getCpuUsage(this.spawnInstance.pid);
-        const memUsage = await getMemUsage(this.spawnInstance.pid);
+        // const cpuUsage = await getCpuUsage(this.spawnInstance.pid);
+        // const memUsage = await getMemUsage(this.spawnInstance.pid);
         // const { totalMemMb, usedMemMb } = await this.mem.used();
         // const memUsage = (usedMemMb / totalMemMb) * 100;
 
-        this._currentUsage = { cpu: cpuUsage, mem: memUsage };
+        this._currentUsage = { cpu: 0, mem: 0 };
     }
 
     private emitToAllSockets(event: string, data: any) {

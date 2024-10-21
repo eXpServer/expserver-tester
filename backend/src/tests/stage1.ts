@@ -67,7 +67,7 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
     return new Promise((resolve, _) => {
         const client = new Socket();
 
-        spawnInstance.once('close', (code) => {
+        const closeCallback = (code: number | null) => {
             console.log('exited with code ' + code);
 
             resolve({
@@ -76,9 +76,35 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
                 expectedBehavior: expectedBehavior,
                 observedBehavior: `Process exited with code ${code || 0}`,
             })
-        })
+        }
 
+        spawnInstance.on('close', closeCallback);
 
-        client.connect(port, LOCALHOST, () => client.end());
+        client.on('error', () => {
+            resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: "Client disconnected with an error",
+                cleanup: () => spawnInstance.off('close', closeCallback),
+            })
+        });
+
+        client.connect(port, LOCALHOST, () => {
+            console.log("hello, hello");
+            client.end()
+
+            const timeout = setTimeout(() => {
+                console.log("hello, hello");
+                spawnInstance.off('close', closeCallback);
+                resolve({
+                    passed: false,
+                    testInput,
+                    expectedBehavior: expectedBehavior,
+                    observedBehavior: "Process did not exit within 3s",
+                    cleanup: () => clearTimeout(timeout),
+                })
+            }, 3000);
+        });
     })
 }

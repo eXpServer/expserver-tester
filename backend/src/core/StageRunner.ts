@@ -165,11 +165,13 @@ export class StageRunner {
 
             this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this._currentState);
         }
-
-        this.kill();
+        if (this.running)
+            this.kill();
     }
 
-    public kill(forced: boolean = false) {
+    public async kill(forced?: boolean) {
+        if (forced)
+            console.log("killed forcefully");
         this._running = false;
 
         if (this.spawnInstance) {

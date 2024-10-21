@@ -51,16 +51,15 @@ export class WebSocket {
         return new Promise((resolve, reject) => {
             const socket = io(SOCKET_URL);
             this._userId = userId;
-    
+
             socket.once(SocketIncomingEvents.ConnectionAcknowledged, () => {
                 this._socket = socket;
                 resolve(true);
             })
-    
+
             socket.once(SocketIncomingEvents.Error, () => {
                 this._socket = null;
-                throw new Error("socket connection not esablished");
-                reject()
+                reject("socket connection not esablished");
             })
         })
     }
@@ -72,6 +71,7 @@ export class WebSocket {
                 return resolve(null);
             this._socket.emit(SocketOutgoingEvents.RequestState, ({ stageNo, userId: this._userId }));
             this._socket.once(SocketIncomingEvents.CurrentState, (data: TestState) => {
+                console.log('current-stage', data);
                 return resolve(data);
             })
         })
@@ -126,9 +126,12 @@ export class WebSocket {
     }
 
     public stop(): Promise<FinalSummary> {
-
         return new Promise((resolve) => {
-            this._socket.once(SocketIncomingEvents.TestsForceQuit, (data: FinalSummary) => resolve(data))
+            this._socket.emit(SocketOutgoingEvents.Stop);
+            this._socket.once(SocketIncomingEvents.TestsForceQuit, (data: FinalSummary) => {
+                console.log("force-quit", data);
+                resolve(data)
+            })
         });
     }
 
@@ -140,6 +143,8 @@ export class WebSocket {
     }
 
     public kill() {
+        if (!this._socket)
+            return;
         return new Promise((resolve) => {
             this.stop();
 
