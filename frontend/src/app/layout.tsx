@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import ContextWrapper from "@/components/ContextWrapper";
+import Navbar from "@/components/navbar";
+import Sidebar from "@/components/sidebar";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -24,15 +26,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ContextWrapper>
-          {children}
-        </ContextWrapper>
-      </body>
-    </html>
-  );
+    return (
+      <html>
+        <body>
+          <ContextWrapper>
+            <Navbar/>
+            <div className="h-[calc(100vh-50px)] w-[100vw] flex z-2 absolute top-[50px]">
+              <Sidebar/>
+              {children}
+            </div>
+          </ContextWrapper>
+        </body>
+      </html>
+    )
 }

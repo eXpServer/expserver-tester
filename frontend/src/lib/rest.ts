@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const getToken = async () => {
     try {
-        const response = await axios.get<{ token: string }>(`${BACKEND_URL}/token`);
+        const response = await axios.get<{ token: string }>(`${process.env.NEXT_PUBLIC_SERVER_URL}}/token`);
         return response.data.token;
     }
     catch {
@@ -14,7 +14,7 @@ export const getToken = async () => {
 
 export const getStageDescription = async (stageNo: number, token: string) => {
     try {
-        const response = await axios.get(`${BACKEND_URL}/stage/${stageNo}`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URL}/stage/${stageNo}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             }
