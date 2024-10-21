@@ -162,6 +162,8 @@ export class Core {
     }
 
     private static handleStopRunner(socket: Socket) {
+        if (!socket.watcher)
+            return;
         const { stageRunner } = socket.watcher;
         if (stageRunner && stageRunner.running) {
             stageRunner.kill(true);
@@ -172,6 +174,8 @@ export class Core {
 
 
     private static handleSocketDisconnected(socket: Socket) {
+        if (!socket.watcher)
+            return;
         const { stageRunner } = socket.watcher;
         stageRunner?.detachSubscriber(socket.watcher);
 
