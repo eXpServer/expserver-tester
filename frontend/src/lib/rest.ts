@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const getToken = async () => {
     try {
-        const response = await axios.get<{ token: string }>(`${process.env.NEXT_PUBLIC_SERVER_URL}}/token`);
+        const response = await axios.get<{ token: string }>(`${BACKEND_URL}/token`);
         return response.data.token;
     }
     catch {
@@ -13,20 +13,26 @@ export const getToken = async () => {
 }
 
 export const getStageDescription = async (stageNo: number, token: string) => {
+    if (stageNo < 1 || !token)
+        return;
     try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_SERVER_URL}/stage/${stageNo}`, {
+        const response = await axios.get(`${BACKEND_URL}/stage/${stageNo}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             }
         });
+        console.log('response', response.data, stageNo);
         return response.data;
     }
-    catch {
+    catch (error) {
+        console.log('error', error, stageNo);
         return null;
     }
 }
 
 export const uploadBinary = async (stageNo: number, token: string, file: File) => {
+    if (stageNo < 1 || !token)
+        return;
     const formData = new FormData();
     formData.append('binary', file);
 
@@ -36,7 +42,7 @@ export const uploadBinary = async (stageNo: number, token: string, file: File) =
             formData,
             {
                 headers: {
-                    "Content-Type": 'multipart/f',
+                    "Content-Type": 'multipart/form-data',
                     Authorization: `Bearer ${token}`,
                 }
             }
@@ -49,6 +55,8 @@ export const uploadBinary = async (stageNo: number, token: string, file: File) =
 }
 
 export const deleteBinary = async (stageNo: number, token: string) => {
+    if (!token)
+        return;
     try {
         await axios.delete(
             `${BACKEND_URL}/stage/${stageNo}/binary`,

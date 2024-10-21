@@ -52,26 +52,40 @@ export class WebSocket {
             const socket = io(SOCKET_URL);
             this._userId = userId;
 
+            const errorCallback = () => {
+                this._socket = null;
+                reject("socket connection not established");
+            }
+
+
+            socket.once(SocketIncomingEvents.Error, errorCallback);
+
             socket.once(SocketIncomingEvents.ConnectionAcknowledged, () => {
+                socket.off(SocketIncomingEvents.Error, errorCallback);
                 this._socket = socket;
                 resolve(true);
             })
 
-            socket.once(SocketIncomingEvents.Error, () => {
-                this._socket = null;
-                reject("socket connection not esablished");
-            })
         })
     }
 
 
     private requestState(stageNo: number): Promise<TestState> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             if (this._socket == null)
-                return resolve(null);
+                return reject('socket is null');
             this._socket.emit(SocketOutgoingEvents.RequestState, ({ stageNo, userId: this._userId }));
+
+
+            const errorCallback = () => {
+                this._socket = null;
+                reject("socket connection not failed");
+            }
+
+            this._socket.once(SocketIncomingEvents.Error, errorCallback);
+
             this._socket.once(SocketIncomingEvents.CurrentState, (data: TestState) => {
-                console.log('current-stage', data);
+                this._socket.off(SocketIncomingEvents.Error, errorCallback);
                 return resolve(data);
             })
         })
@@ -92,7 +106,7 @@ export class WebSocket {
             this.callbacks.set(event, [callback]);
     }
 
-    public setTestCallbacks(updateCallback: (...args: unknown[]) => void, completeCallback: (...args: unknown[]) => void) {
+    public setTestCallbacks(updateCallback: (data: TestDetails[]) => void, completeCallback: (data: FinalSummary) => void) {
         this._socket.on(SocketIncomingEvents.TestsUpdate, updateCallback);
         this._socket.on(SocketIncomingEvents.TestsComplete, completeCallback);
 
@@ -100,7 +114,7 @@ export class WebSocket {
         this.setCallback(SocketIncomingEvents.TestsComplete, completeCallback);
     }
 
-    public setTerminalCallbacks(callback: (...args: unknown[]) => void) {
+    public setTerminalCallbacks(callback: (data: string) => void) {
         this._socket.on(SocketIncomingEvents.TerminalUpdate, callback);
         this._socket.on(SocketIncomingEvents.TerminalComplete, callback);
 
@@ -108,7 +122,7 @@ export class WebSocket {
         this.setCallback(SocketIncomingEvents.TerminalComplete, callback);
     }
 
-    public setResourceMonitorCallbacks(callback: (...args: unknown[]) => void) {
+    public setResourceMonitorCallbacks(callback: (data: { cpu: number, mem: number }) => void) {
         this._socket.on(SocketIncomingEvents.ResourceStatsUpdate, callback);
         this._socket.on(SocketIncomingEvents.ResourceStatsComplete, callback);
 
@@ -117,19 +131,34 @@ export class WebSocket {
     }
 
     public run(): Promise<TestDetails[]> {
-        return new Promise((resolve, _) => {
+        return new Promise((resolve, reject) => {
+
+            const errorCallback = () => {
+                this._socket = null;
+                reject('something went wrong');
+            }
+
             this._socket.emit(SocketOutgoingEvents.Run);
+            this._socket.once(SocketIncomingEvents.Error, errorCallback);
             this._socket.once(SocketIncomingEvents.TestsStart, (data: TestDetails[]) => {
+                this._socket.off(SocketIncomingEvents.Error, errorCallback);
                 resolve(data);
             })
         })
     }
 
     public stop(): Promise<FinalSummary> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
+
+            const errorCallback = () => {
+                this._socket = null;
+                reject('something went wrong');
+            }
+
             this._socket.emit(SocketOutgoingEvents.Stop);
+            this._socket.on(SocketIncomingEvents.Error, errorCallback);
             this._socket.once(SocketIncomingEvents.TestsForceQuit, (data: FinalSummary) => {
-                console.log("force-quit", data);
+                this._socket.off(SocketIncomingEvents.Error, errorCallback);
                 resolve(data)
             })
         });

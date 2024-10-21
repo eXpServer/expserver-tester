@@ -1,7 +1,7 @@
 import { getToken } from "@/lib/rest";
 import { WebSocket } from "@/lib/WebSocket";
 import { FinalSummary, TestDetails } from "@/types";
-import { createContext, Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from "react";
+import { createContext, ReactNode, useEffect, useRef, useState } from "react";
 
 interface SocketContextInterface {
     stageNo: number,
@@ -14,6 +14,7 @@ interface SocketContextInterface {
     status: "pending" | "running" | "finished" | "force-stopped",
     loading: boolean,
 
+    initializeSocket: () => Promise<boolean>,
     updateStage: (stageNo: number) => void,
     runTests: () => void,
     stopTests: () => void,
@@ -27,67 +28,50 @@ export const SocketContextProvider = ({
 }: {
     children: ReactNode
 }) => {
-    const [stageNo, setStageNo] = useState<number>(1);
+    const [stageNo, setStageNo] = useState<number>(-1);
     const [userId, setUserId] = useState<string>("");
     const [binaryId, setBinaryId] = useState<string>("");
     const socket = useRef<WebSocket>(new WebSocket());
     const [status, setStatus] = useState<"pending" | "running" | "finished" | "force-stopped">("pending");
     const [loading, setLoading] = useState<boolean>(false);
-
+    const [socketInitialized, setSocketInitialized] = useState<boolean>(false);
     const [results, setResults] = useState<TestDetails[]>([]);
     const [summary, setSummary] = useState<FinalSummary>();
     const [resourceMetrics, setResourceMetrics] = useState<{ cpu: number, mem: number }>();
     const [terminalData, setTerminalData] = useState<string[]>([]);
 
-    useEffect(() => {
+    const initializeSocket = async (): Promise<boolean> => {
         const ws = socket.current;
-        const preload = async () => {
-            setLoading(true);
-            const savedUserId = localStorage.getItem('userId');
-            if (savedUserId) {
-                setUserId(savedUserId);
 
-                await ws.initialize(savedUserId);
-                await setCallbacks(ws);
-            }
-            else {
-                const token = await getToken();
-                localStorage.setItem('userId', token);
-                setUserId(token);
+        if (socketInitialized) return true;
 
-                await ws.initialize(token);
-                await setCallbacks(ws);
-            }
+        setLoading(true);
+
+        let savedUserId = localStorage.getItem('userId');
+        if (!savedUserId) {
+            const token = await getToken();
+            localStorage.setItem('userId', token);
+            savedUserId = token;
         }
 
-        preload().then(() => {
-            setLoading(false);
-            updateStage(1);
-        })
+        setUserId(savedUserId);
+        await ws.initialize(savedUserId);
 
-        return () => {
-            void ws?.kill();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        await setCallbacks(ws);
 
-    const testUpdateCallback = (data: TestDetails[]) => {
-        console.log("test-update", data);
-        setResults(data)
+        setLoading(false);
+        setSocketInitialized(true);
+
+        return true;
     }
+
+    const testUpdateCallback = (data: TestDetails[]) => setResults(data);
     const testCompleteCallback = (data: FinalSummary) => {
-        console.log("test-complete", data);
         setSummary(data);
         setStatus('finished');
-    }
-    const resourceMonitorCallback = (data: { cpu: number, mem: number }) => {
-        console.log("resource-monitor", data);
-        setResourceMetrics(data)
-    }
-    const terminalCallback = (data: string) => {
-        console.log("terminal-update", data);
-        setTerminalData([...terminalData, data])
-    }
+    };
+    const resourceMonitorCallback = (data: { cpu: number, mem: number }) => setResourceMetrics(data);
+    const terminalCallback = (data: string) => setTerminalData([...terminalData, data]);
 
     const setCallbacks = async (socket: WebSocket) => {
         socket.setTestCallbacks(testUpdateCallback, testCompleteCallback);
@@ -145,6 +129,7 @@ export const SocketContextProvider = ({
 
 
                 //functions
+                initializeSocket,
                 updateStage,
                 runTests,
                 stopTests,
