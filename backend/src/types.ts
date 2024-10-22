@@ -3,7 +3,7 @@ import type { Socket as Soc } from "socket.io";
 import type { StageWatcher } from "./core/StageWatcher";
 
 
-export interface ProcessDataInterface {
+export interface ResourceStats {
     cpu: number,
     mem: number,
 }

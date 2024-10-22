@@ -9,7 +9,6 @@ export const createSpawn = async (filePath: string): Promise<ChildProcessWithout
                 return reject(err);
             const child = spawn(filePath);
             child.on('spawn', () => {
-                console.log("spawn is alive");
                 return resolve(child);
             })
         })
@@ -25,7 +24,6 @@ export const deleteSpawn = (spawnInstance: ChildProcessWithoutNullStreams): void
 }
 
 export const getCpuUsage = async (pid: number): Promise<number> => {
-    console.log(pid);
     const statFile = `/proc/${pid}/stat`;
     const cpuStatFile = '/proc/stat';
 
@@ -45,7 +43,6 @@ export const getCpuUsage = async (pid: number): Promise<number> => {
         const cpuUsage = ((processCpuTime / startTime) * 100).toFixed(2);
 
 
-        console.log(processCpuTime, totalCpuTime, cpuUsage);
         return parseFloat(cpuUsage);
     }
     catch (error) {

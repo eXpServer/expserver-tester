@@ -13,7 +13,8 @@ const getStageDescription = expressAsyncHandler(async (req: Request, res: Respon
     }
 
     const stageDescPath = Core.stageTests[`stage${stageNo}`].descriptionFilePath;
-    res.sendFile(stageDescPath);
+    console.log(getFilePath(stageDescPath));
+    res.sendFile(getFilePath(`public/${stageDescPath}`));
 })
 
 
@@ -27,7 +28,6 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     }
 
     const stageNo = req.params['num'];
-    console.log("test", req.user);
     if (!verifyStageNo(stageNo)) {
         res.status(400);
         throw new Error("Stage not found");

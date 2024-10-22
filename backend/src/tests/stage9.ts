@@ -29,7 +29,7 @@ export const stage9checkCpuUsage: TestFunction = (port: number, spawnInstance: C
                 if (index < 0) {
                     const average = calcAvergeUsage(results);
                     const observedBehavior = `CPU usage was ${average}%`;
-                    client.end();
+                    client.destroy();
                     clearInterval(interval);
                     return resolve({
                         testInput,

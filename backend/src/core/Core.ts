@@ -39,8 +39,6 @@ export class Core {
     private static findStageRunner(watcher: StageWatcher): StageRunner {
         const { stageNo, userId } = watcher;
         const runner = this.runners.find(runner => {
-            console.log("hello1", stageNo, userId)
-            console.log("hello2", runner.stageNo, runner.userId);
             return ((runner.userId == userId) && (runner.stageNo == stageNo))
         });
         return runner;
@@ -154,6 +152,7 @@ export class Core {
         this.runners.push(runner);
 
         this.watchers.forEach(watcher => {
+            watcher.stageRunner = runner;
             if (watcher.userId == userId && watcher.stageNo == stageNo)
                 runner.attachNewSubscriber(watcher);
         })
@@ -162,6 +161,8 @@ export class Core {
     }
 
     private static handleStopRunner(socket: Socket) {
+        if (!socket.watcher)
+            return;
         const { stageRunner } = socket.watcher;
         if (stageRunner && stageRunner.running) {
             stageRunner.kill(true);
@@ -172,6 +173,8 @@ export class Core {
 
 
     private static handleSocketDisconnected(socket: Socket) {
+        if (!socket.watcher)
+            return;
         const { stageRunner } = socket.watcher;
         stageRunner?.detachSubscriber(socket.watcher);
 

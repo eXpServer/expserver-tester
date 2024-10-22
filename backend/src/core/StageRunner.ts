@@ -81,7 +81,7 @@ export class StageRunner {
     private emitToAllSockets(event: string, data: any) {
 
         this.watchers.forEach(watcher => {
-            watcher.socket.emit(event, data);
+            watcher.socket.emit(event, data); // do watcher.emit()
         })
     }
 
@@ -92,9 +92,10 @@ export class StageRunner {
     private async createAndLinkSpawnInstance() {
         if (this.spawnInstance == null) {
             this.spawnInstance = await createSpawn(this.filePath);
-
+            console.log('spawn undied');
 
             this.spawnInstance.on('close', () => {
+                console.log('spanw died');
                 this.spawnInstance = null;
             })
 
@@ -135,7 +136,6 @@ export class StageRunner {
 
         const functions = Core.stageTests[`stage${this.stageNo}`].tests.map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
-            console.log(`Running Stage: ${this.stageNo}\t\tTest ${i}`)
             const fn = functions[i];
 
 
@@ -145,12 +145,7 @@ export class StageRunner {
             }
             await this.createAndLinkSpawnInstance();
 
-
-
             const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.spawnInstance);
-
-
-            console.log(`Completed Stage: ${this.stageNo}\t\tTest ${i}`)
 
             this._currentState[i].testInput = testInput;
             this._currentState[i].expectedBehavior = expectedBehavior;
@@ -165,11 +160,11 @@ export class StageRunner {
 
             this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this._currentState);
         }
-
-        this.kill();
+        if (this.running)
+            this.kill();
     }
 
-    public kill(forced: boolean = false) {
+    public async kill(forced?: boolean) { // add flag to indicate if forced quit
         this._running = false;
 
         if (this.spawnInstance) {
