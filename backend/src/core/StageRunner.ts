@@ -81,7 +81,7 @@ export class StageRunner {
     private emitToAllSockets(event: string, data: any) {
 
         this.watchers.forEach(watcher => {
-            watcher.socket.emit(event, data);
+            watcher.socket.emit(event, data); // do watcher.emit()
         })
     }
 
@@ -164,7 +164,7 @@ export class StageRunner {
             this.kill();
     }
 
-    public async kill(forced?: boolean) {
+    public async kill(forced?: boolean) { // add flag to indicate if forced quit
         this._running = false;
 
         if (this.spawnInstance) {
