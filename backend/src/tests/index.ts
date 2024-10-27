@@ -8,7 +8,7 @@ import { stage9checkCpuUsage } from "./stage9";
 export const tests: StageTest = {
     stage1: {
         stageName: "TCP Server",
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage1.md",
         tests: [
             {
                 title: "Checking error handling",
@@ -36,7 +36,7 @@ export const tests: StageTest = {
     },
     stage3: {
         stageName: 'UDP Multithreading',
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage3.md",
         tests: [
             {
                 title: "Single client - input output",
@@ -52,8 +52,8 @@ export const tests: StageTest = {
             {
                 title: "Multiple clients to same port - input output",
                 description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
-                testInput: "Connect multiple clients to server and sent string simultaneously",
-                expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
+                testInput: "Connect multiple clients to server and sends unique string simultaneously",
+                expectedBehavior: "Each of the clients should receive reversed versions of their input",
                 testFunction: async () => {
                     const response = await stage3MultipleClients(8080);
                     return response;
@@ -76,7 +76,7 @@ export const tests: StageTest = {
     },
     stage4: {
         stageName: "Linux Epoll",
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage4.md",
         tests: [
             {
                 title: "Single client - input output",
@@ -116,7 +116,7 @@ export const tests: StageTest = {
     },
     stage5: {
         stageName: 'TCP Proxy',
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage5.md",
         tests: [
             {
                 title: "proxy response checking -- multiple clients",
