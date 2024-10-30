@@ -6,7 +6,7 @@ import Image from 'next/image';
 const Navbar = () => {
     return (
         <div className={styles.navbar}>
-            <Image src={logo} alt='logo' className={styles['navbar-logo']}/>
+            <Image src={logo} alt='logo' className={styles['navbar-logo']} draggable={false} />
         </div>
     )
 }
