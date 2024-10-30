@@ -7,93 +7,72 @@ import { deleteBinary, getToken, uploadBinary } from '@/lib/rest'
 // import { WebSocket } from '@/lib/WebSocket'
 import { io, Socket } from 'socket.io-client'
 import { useSocketContext } from '@/hooks/useSocketContext'
+import Image from 'next/image'
+import add from '/public/add.svg'
+import play from '/public/play.svg'
+import info from '/public/info.svg'
+import TestContainer from '../testContainer'
+import ResourceMonitor from '../resourceMonitor'
+
 const Execute = () => {
 
-    const {
-        stageNo,
-        userId,
-        status,
-        binaryId,
-        updateBinaryId,
-        runTests,
-        stopTests,
-        results,
-        summary,
-    } = useSocketContext();
+    const { stageNo, userId, status, binaryId, updateBinaryId, runTests } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
+    const [myFile, setMyFile] = useState<string>("Choose a file");
+    const [isFileUploaded, setIsFileUploaded] = useState<boolean>(false);
 
-    const disableButton = useMemo(() => {
-        return (binaryId == null);
-    }, [binaryId]);
+    const disableRunButton = useMemo(() => {
+        return (status == 'running' || file == null);
+    }, [status, file]);
 
-    const handleUploadDelete = async () => {
-        if (binaryId) {
-            await deleteBinary(stageNo, userId);
-            updateBinaryId(null);
-            console.log('filel deleted successfully');
-        }
-        else {
-            const response = await uploadBinary(stageNo, userId, file);
-            updateBinaryId(response);
-            console.log("file uploaded successfully");
-        }
+
+    const handleUploadFile = async () => {
+        const response = await uploadBinary(stageNo, userId, file);
+        updateBinaryId(response);
+        console.log(response);
+
+        // set isFileUpload to true only for postive response. with alert[file uploaded successfully]
+        setIsFileUploaded(true);
+        // updateBinaryId("1234567");
+
+        // else alert[file upload failed]
+
     }
 
-    const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (event) => {
         console.log(event.target.files);
         if (event.target.files && event.target.files[0]) {
             setFile(event.target.files[0]);
+            setMyFile(event.target.files[0].name);
         }
     }
 
-    const handleRunStop = async () => {
-        if (status == 'running')
-            stopTests();
-        else
-            runTests();
+    const handleRunFile = async () => {
+        runTests();
+    }
+
+    const handleInfoClick = () => {
+        alert('Information about binary file here');
     }
 
     return (
         <div className={styles.execute}>
-            <div>Execute {stageNo}</div>
-            <div className='flex items-center justify-center gap-2'>
-                <input type="file" placeholder="select a file" className='border-[1px] w-[200px]' onChange={handleFileChange} />
-                <button className='border-[1px] p-2 bg-blue-500 text-white' onClick={handleUploadDelete}>
-                    {
-                        binaryId ? 'Delete' : 'Upload'
-                    }
-                </button>
-                <button disabled={disableButton} className={styles['execute-run']} onClick={handleRunStop}>
-                    {
-                        status == 'running' ? 'Stop' : 'Run'
-                    }
-                </button>
-            </div>
-
-
-            <div className='outline outline-black h-full mt-2'>
-                {
-                    results.map((result, index) => (
-                        <div key={index} className='border-[1px] p-2'>
-                            <div>input: {result.testInput}</div>
-                            <div>expected: {result.expectedBehavior}</div>
-                            <div>observed: {result.observedBehavior}</div>
-                            <div>status: {result.status}</div>
-                        </div>
-                    ))
-                }
-                <div className='outline outline-red-200 h-full mt-2' >
-                    <span> Test Status: {status}</span>
-                    {
-                        summary && (
-                            <div>
-                                <div>Passed: {summary.numPassed}</div>
-                                <div>Failed: {summary.numFailed}</div>
-                            </div>
-                        )
-                    }
+            <div className={styles['execute-heading']}>Execute</div>
+            <div className={styles['upload-container']}>
+                <div className={styles['upload-heading']}>Binary File <Image src={info} alt='info' height={16} width={16} onClick={handleInfoClick} className={styles['info']} /></div>
+                <div className={styles['upload-inner-container']}>
+                    <div className={styles['upload-file-container']}>
+                        <input type="file" placeholder="select a file" className={styles['file-input']} id="file-input" onChange={handleFileChange} />
+                        <label htmlFor={isFileUploaded ? 'none' : 'file-input'} className={styles['custom-file-input']}> <Image src={add} alt='add-img' height={20} width={20} draggable={false} /> Add </label>
+                        <input className={styles['add-file-input']} type='text' disabled value={myFile} />
+                    </div>
+                    <button disabled={disableRunButton} className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`} onClick={isFileUploaded ? handleRunFile : handleUploadFile}>
+                        {isFileUploaded ? <div className={styles['execute-active-run']}><Image src={play} alt='run' height={20} width={20} draggable={false} />Run</div> : <div>Upload</div>}
+                    </button>
                 </div>
             </div>
+            {isFileUploaded && <ResourceMonitor />}
+            <TestContainer />
         </div>
     )
 }
