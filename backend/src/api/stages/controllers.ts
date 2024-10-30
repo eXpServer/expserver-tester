@@ -13,7 +13,6 @@ const getStageDescription = expressAsyncHandler(async (req: Request, res: Respon
     }
 
     const stageDescPath = Core.stageTests[`stage${stageNo}`].descriptionFilePath;
-    console.log(getFilePath(stageDescPath));
     res.sendFile(getFilePath(`public/${stageDescPath}`));
 })
 

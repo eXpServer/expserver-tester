@@ -65,8 +65,12 @@ export const SocketContextProvider = ({
         return true;
     }
 
-    const testUpdateCallback = (data: TestDetails[]) => setResults(data);
+    const testUpdateCallback = (data: TestDetails[]) => {
+        console.log(data);
+        setResults(data);
+    }
     const testCompleteCallback = (data: FinalSummary) => {
+        console.log(data);
         setSummary(data);
         setStatus('finished');
     };

@@ -11,7 +11,6 @@ const Description = () => {
     useEffect(() => {
         console.log(stageNo, userId);
         getStageDescription(stageNo, userId).then(data => {
-            console.log(data);
             setDescription(data);
         })
     }, [stageNo, userId]);

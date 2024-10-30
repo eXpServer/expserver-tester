@@ -94,7 +94,6 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
             client.destroy();
 
             client.on('close', () => {
-                console.log('clietn closed lol');
                 const timeout = setTimeout(() => {
                     spawnInstance.off('close', closeCallback);
                     resolve({

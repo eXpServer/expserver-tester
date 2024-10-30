@@ -21,7 +21,6 @@ export const getStageDescription = async (stageNo: number, token: string) => {
                 Authorization: `Bearer ${token}`,
             }
         });
-        console.log('response', response.data, stageNo);
         return response.data;
     }
     catch (error) {

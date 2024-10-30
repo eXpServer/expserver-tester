@@ -19,7 +19,7 @@ const Execute = () => {
     const { stageNo, userId, status, binaryId, updateBinaryId, runTests } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
     const [myFile, setMyFile] = useState<string>("Choose a file");
-    const [isFileUploaded, setIsFileUploaded] = useState<boolean>(false);
+    const [isFileUploaded, setIsFileUploaded] = useState<boolean>(true);
 
     const disableRunButton = useMemo(() => {
         return (status == 'running' || file == null);
@@ -66,7 +66,7 @@ const Execute = () => {
                         <label htmlFor={isFileUploaded ? 'none' : 'file-input'} className={styles['custom-file-input']}> <Image src={add} alt='add-img' height={20} width={20} draggable={false} /> Add </label>
                         <input className={styles['add-file-input']} type='text' disabled value={myFile} />
                     </div>
-                    <button disabled={disableRunButton} className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`} onClick={isFileUploaded ? handleRunFile : handleUploadFile}>
+                    <button className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`} onClick={handleRunFile}>
                         {isFileUploaded ? <div className={styles['execute-active-run']}><Image src={play} alt='run' height={20} width={20} draggable={false} />Run</div> : <div>Upload</div>}
                     </button>
                 </div>
