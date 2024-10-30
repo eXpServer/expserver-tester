@@ -1,3 +1,59 @@
 .sidebar{
-    width: 300px;
+    width: 350px;
+    border: 1px solid black;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: scroll;
 }
+
+.option-container{
+    display: flex;
+    /* border: 1px solid black; */
+    height: 48px;
+    /* border-radius: 8px; */
+    background-color: var(--white);
+    position: relative;
+}
+
+.active-option-container{
+    color: var(--white);
+    background-color: var(--dark-blue);
+    border-radius: 8px 8px 0 0;
+}
+
+.inactive-option-container{
+    background-color: var(--white);
+    border-radius: 8px 8px 8px 8px;
+    color: var(--black)
+}
+
+.option-container:hover{
+    cursor: pointer;
+}
+
+.stage-container{
+    /* position: absolute; */
+
+    /* border: 1px solid black; */
+    /* height: 42px; */
+    /* bottom: 0; */
+}
+
+.stage{
+    height: 42px;
+    background-color: var(--white);
+    /* border: 1px solid black; */
+}
+.active-stage{
+    background-color: var(--blue);
+}
+
+.inactive-stage{
+    background-color: var(--white);
+}
+.stage:hover {
+    cursor:pointer;
+    background-color: var(--light-blue);
+}   

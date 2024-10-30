@@ -1,19 +1,16 @@
 import { useSocketContext } from '@/hooks/useSocketContext';
 import styles from './testContainer.module.css'
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const TestContainer = () => {
     const {binaryId} = useSocketContext();
-    const [fileUploaded, setFileUploaded] = useState<boolean>(false)
 
-    useEffect(()=>{
-        if(binaryId == ""){
-            setFileUploaded(false);
-        }
-        else{
-            setFileUploaded(true);
-        }
-    }, [binaryId]);
+    const fileUploaded = useMemo(() => {
+        if (binaryId)
+            return true;
+        else
+            return false;
+    }, [binaryId])
 
     return (
         <div className={styles['test-container']}>

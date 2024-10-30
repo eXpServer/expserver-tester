@@ -1,4 +1,4 @@
-import { getToken } from "@/lib/rest";
+import { getStageDescription, getToken } from "@/lib/rest";
 import { WebSocket } from "@/lib/WebSocket";
 import { FinalSummary, TestDetails } from "@/types";
 import { createContext, ReactNode, useEffect, useRef, useState } from "react";
@@ -6,6 +6,7 @@ import { createContext, ReactNode, useEffect, useRef, useState } from "react";
 interface SocketContextInterface {
     stageNo: number,
     userId: string,
+    description: string,
     results: TestDetails[],
     summary: FinalSummary,
     resourceMetrics: { cpu: number, mem: number },
@@ -39,6 +40,15 @@ export const SocketContextProvider = ({
     const [summary, setSummary] = useState<FinalSummary>();
     const [resourceMetrics, setResourceMetrics] = useState<{ cpu: number, mem: number }>();
     const [terminalData, setTerminalData] = useState<string[]>([]);
+    const [description, setDescription] = useState<string>("");
+
+    useEffect(() => {
+        console.log('stuff')
+        console.log(stageNo, userId);
+        getStageDescription(stageNo, userId).then(data => {
+            setDescription(data);
+        })
+    }, [stageNo, userId]);
 
     const initializeSocket = async (): Promise<boolean> => {
         const ws = socket.current;
@@ -83,11 +93,13 @@ export const SocketContextProvider = ({
         socket.setTerminalCallbacks(terminalCallback);
     }
 
-    const updateStage = async (stageNo: number) => {
+    const updateStage = async (newStageNo: number) => {
+        if (newStageNo == stageNo)
+            return;
         setLoading(true);
 
-        setStageNo(stageNo);
-        const { binaryId, running, testDetails } = await socket.current.changeStage(stageNo);
+        setStageNo(newStageNo);
+        const { binaryId, running, testDetails } = await socket.current.changeStage(newStageNo);
         setBinaryId(binaryId);
         setStatus(running ? "running" : "pending");
         setResults(testDetails);
@@ -122,6 +134,7 @@ export const SocketContextProvider = ({
                 // states
                 stageNo,
                 userId,
+                description,
                 results,
                 summary,
                 resourceMetrics,

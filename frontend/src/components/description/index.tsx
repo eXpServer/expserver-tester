@@ -5,15 +5,10 @@ import { getStageDescription } from '@/lib/rest';
 import Markdown from '../Markdown';
 
 const Description = () => {
-    const { stageNo, userId } = useSocketContext();
-    const [description, setDescription] = useState<string>("");
+    const { stageNo, userId, description } = useSocketContext();
 
-    useEffect(() => {
-        console.log(stageNo, userId);
-        getStageDescription(stageNo, userId).then(data => {
-            setDescription(data);
-        })
-    }, [stageNo, userId]);
+
+
     return (
         <div className={styles.description}>
             <Markdown text={description} />
