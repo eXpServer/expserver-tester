@@ -51,6 +51,13 @@
     cursor: pointer;
 }
 
+.dropdown-img{
+    position: absolute;
+    right: 8px;
+    transform: translateY(-50%);
+    top: 50%;
+}
+
 .stage{
     height: 42px;
     display: flex;
