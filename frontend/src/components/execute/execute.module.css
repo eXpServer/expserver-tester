@@ -44,8 +44,19 @@
 }
 
 .upload-file-container {
+    position: relative;
     display: flex;
     gap: 4px;
+}
+.bin{
+    position: absolute;
+    right: 4px;
+    transform:translateY(-50%);
+    top: 50%;
+}
+
+.bin:hover{
+    cursor: pointer;
 }
 
 .file-input {

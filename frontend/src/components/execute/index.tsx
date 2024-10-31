@@ -12,8 +12,10 @@ import add from '/public/add.svg'
 import play from '/public/play.svg'
 import info from '/public/info.svg'
 import stop from '/public/stop.svg'
+import bin from '/public/delete.svg'
 import TestContainer from '../testContainer'
 import ResourceMonitor from '../resourceMonitor'
+import { error } from 'console'
 
 const Execute = () => {
 
@@ -34,14 +36,33 @@ const Execute = () => {
 
 
     const handleUploadFile = async () => {
-        const response = await uploadBinary(stageNo, userId, file);
-        updateBinaryId(response);
-        console.log("file uploaded successfully");
+        if(file == null){
+            console.log('file not selected');
+        }
+        else{
+            const response = await uploadBinary(stageNo, userId, file);
+            updateBinaryId(response);
+            console.log("file uploaded successfully");
+        }
 
         // set isFileUpload to true only for postive response. with alert[file uploaded successfully]
         // updateBinaryId("1234567");
 
         // else alert[file upload failed]
+
+    }
+
+    const handleDeleteFile = async () => {
+        const response = await deleteBinary(stageNo,userId);
+        if(response == true){
+            updateBinaryId(null);
+            setFile(null);
+            setMyFile('Choose a file')
+            console.log("File deleted successfully")
+        }
+        else{
+            console.log(Error,"failed to delete the binary")
+        }
 
     }
 
@@ -71,8 +92,13 @@ const Execute = () => {
                         <input type="file" placeholder="select a file" className={styles['file-input']} id="file-input" onChange={handleFileChange} />
                         <label htmlFor={isFileUploaded ? 'none' : 'file-input'} className={styles['custom-file-input']}> <Image src={add} alt='add-img' height={20} width={20} draggable={false} /> Add </label>
                         <input className={styles['add-file-input']} type='text' disabled value={myFile} />
+                        {binaryId && 
+                            <div className={styles.bin}>
+                                <Image  src = {bin} alt = 'bin' height = {25} width = {25} onClick={handleDeleteFile}></Image>
+                            </div>
+                        }
                     </div>
-                    <button className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`} onClick={isFileUploaded ? handleRunFile : handleUploadFile}>
+                    <button disabled = {disableRunButton} className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`} onClick={isFileUploaded ? handleRunFile : handleUploadFile}>
                         {isFileUploaded ? status == 'running' ? <div className={styles['execute-active-run']}><Image src={stop} alt='stop' height={20} width={20} draggable={false} />Stop</div> : <div className={styles['execute-active-run']}><Image src={play} alt='run' height={20} width={20} draggable={false} />Run</div> : <div>Upload</div>}
                     </button>
                 </div>
