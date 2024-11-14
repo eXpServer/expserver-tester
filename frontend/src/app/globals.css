@@ -2,22 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+
 :root {
-  --background: #ffffff;
+  --background: #EAF3FF;
   --foreground: #171717;
+
+  --border: rgba(0,0,0,0.25);
+  --black: #000000;
+  --pink: #E12495;
+  --green: #4E9E6F;
+  --white: #FFFFFF;
+  --dark-blue: #2B4ED5;
+  --blue: #5D98FF;
+  --light-blue: #82B7FF;
+  --lighter-blue: #b5d4ff;
+  --text-color: #4C4C4C;
+  --input-field-background: #E3E3E3;
+  --input-field-text: rgba(0,0,0,0.47);
+  --test-container-background: #F0F0F0;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+} */
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  /* background: var(--background); */
+  background-color: var(--lighter-blue);
+  font-family: 'Inter', sans-serif;
 }
 
 @layer utilities {

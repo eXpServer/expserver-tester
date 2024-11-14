@@ -1,21 +1,6 @@
 import { TestFunction } from "../types";
 import Express from "express";
-
-
-const setupServer = (serverPort: number, listenerCallback: () => Promise<void> | void, errorCallback: (err: Error) => Promise<void> | void) => {
-    const httpServer = Express();
-
-    httpServer.get('/:num', (req, res) => {
-        const num = req.params.num;
-        res.setHeader('Date', 'doesnt-matter');
-        res.json({ message: "Hello, World!", num });
-    })
-
-    const serverInstance = httpServer.listen(serverPort, listenerCallback);
-    serverInstance.on('error', errorCallback);
-
-    return serverInstance;
-}
+import { setupHttpServer } from "../utils/dummyServer";
 
 export const stage5ProxyMultipleConnections: TestFunction = (port: number) => {
     const testInput = "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2";
@@ -27,7 +12,6 @@ export const stage5ProxyMultipleConnections: TestFunction = (port: number) => {
 
         let numPassed = 0;
         const verifyResponse = async (proxyServerResponse: string, route: number) => {
-            console.log("hello", route);
             const uri = `http://localhost:${serverPort}/${route}`;
 
             const serverResponse = await fetch(uri);
@@ -91,6 +75,6 @@ export const stage5ProxyMultipleConnections: TestFunction = (port: number) => {
         }
 
 
-        const serverInstance = setupServer(serverPort, listenerCallback, errorCallback);
+        const serverInstance = setupHttpServer(serverPort, listenerCallback, errorCallback);
     })
 }

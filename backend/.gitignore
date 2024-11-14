@@ -4,3 +4,4 @@ node_modules
 uploads/
 test.js
 public/*.txt
+compile/

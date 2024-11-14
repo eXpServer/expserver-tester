@@ -22,7 +22,6 @@ export const stage3MultipleClients: TestFunction = (port: number, spawnInstance:
             const input = `string-${index}\n`;
 
             const receivedCallback = (data: Buffer) => {
-                console.log("hello ", index);
                 const output = data.toString();
                 const expected = reverseString(input);
                 responsesReceived++;
@@ -35,7 +34,7 @@ export const stage3MultipleClients: TestFunction = (port: number, spawnInstance:
                         expectedBehavior: `client ${index} receives ${expected}`,
                         observedBehavior: `client ${index} received ${output}`,
                         cleanup: () => {
-                            clients.forEach((client) => client.end());
+                            clients.forEach((client) => client.destroy());
                         }
                     })
                 }
@@ -50,7 +49,7 @@ export const stage3MultipleClients: TestFunction = (port: number, spawnInstance:
                         expectedBehavior,
                         observedBehavior: expectedBehavior,
                         cleanup: () => {
-                            clients.forEach(client => client.end());
+                            clients.forEach(client => client.destroy());
                         }
                     })
                 }
@@ -70,7 +69,7 @@ export const stage3MultipleClients: TestFunction = (port: number, spawnInstance:
                     expectedBehavior,
                     observedBehavior: "Server refused connection",
                     cleanup: () => {
-                        clients.forEach(client => client.end());
+                        clients.forEach(client => client.destroy());
                     }
                 })
             })
@@ -83,7 +82,7 @@ export const stage3MultipleClients: TestFunction = (port: number, spawnInstance:
                     expectedBehavior,
                     observedBehavior: "Server connection timed out",
                     cleanup: () => {
-                        clients.forEach(client => client.end());
+                        clients.forEach(client => client.destroy());
                     }
                 })
             })
@@ -113,9 +112,9 @@ export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: C
                 expectedBehavior,
                 observedBehavior: "server refused connection",
                 cleanup: () => {
-                    existingClient.end();
-                    clientToBeDisconnected.end();
-                    newClient.end();
+                    existingClient.destroy();
+                    clientToBeDisconnected.destroy();
+                    newClient.destroy();
                 }
             })
         }
@@ -127,9 +126,9 @@ export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: C
                 expectedBehavior,
                 observedBehavior: "server connection timed out",
                 cleanup: () => {
-                    existingClient.end();
-                    clientToBeDisconnected.end();
-                    newClient.end();
+                    existingClient.destroy();
+                    clientToBeDisconnected.destroy();
+                    newClient.destroy();
                 }
             })
         }
@@ -149,9 +148,9 @@ export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: C
                 expectedBehavior,
                 observedBehavior: `Server terminated with Error code ${code || 0}`,
                 cleanup: () => {
-                    existingClient.end();
-                    clientToBeDisconnected.end();
-                    newClient.end();
+                    existingClient.destroy();
+                    clientToBeDisconnected.destroy();
+                    newClient.destroy();
                 }
             })
 
@@ -171,9 +170,9 @@ export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: C
                             expectedBehavior,
                             observedBehavior: "new client didn't receive string it expected",
                             cleanup: () => {
-                                existingClient.end();
-                                clientToBeDisconnected.end();
-                                newClient.end();
+                                existingClient.destroy();
+                                clientToBeDisconnected.destroy();
+                                newClient.destroy();
                             }
                         })
                     }
@@ -184,9 +183,9 @@ export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: C
                             expectedBehavior,
                             observedBehavior: expectedBehavior,
                             cleanup: () => {
-                                existingClient.end();
-                                clientToBeDisconnected.end();
-                                newClient.end();
+                                existingClient.destroy();
+                                clientToBeDisconnected.destroy();
+                                newClient.destroy();
                             }
                         })
                     }
@@ -209,9 +208,9 @@ export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: C
                         expectedBehavior,
                         observedBehavior: "existing client didn't receive string it expected",
                         cleanup: () => {
-                            existingClient.end();
-                            clientToBeDisconnected.end();
-                            newClient.end();
+                            existingClient.destroy();
+                            clientToBeDisconnected.destroy();
+                            newClient.destroy();
                         }
                     })
                 }
@@ -224,7 +223,7 @@ export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: C
 
         clientToBeDisconnected.connect(port, LOCALHOST, () => {
             existingClient.connect(port, LOCALHOST, () => {
-                clientToBeDisconnected.end();
+                clientToBeDisconnected.destroy();
             })
         })
 

@@ -1,11 +1,12 @@
-import { getToken } from "@/lib/rest";
+import { getStageDescription, getToken } from "@/lib/rest";
 import { WebSocket } from "@/lib/WebSocket";
 import { FinalSummary, TestDetails } from "@/types";
-import { createContext, Dispatch, ReactNode, SetStateAction, useEffect, useState } from "react";
+import { createContext, ReactNode, useEffect, useRef, useState } from "react";
 
 interface SocketContextInterface {
     stageNo: number,
     userId: string,
+    description: string,
     results: TestDetails[],
     summary: FinalSummary,
     resourceMetrics: { cpu: number, mem: number },
@@ -14,9 +15,11 @@ interface SocketContextInterface {
     status: "pending" | "running" | "finished" | "force-stopped",
     loading: boolean,
 
+    initializeSocket: () => Promise<boolean>,
     updateStage: (stageNo: number) => void,
     runTests: () => void,
     stopTests: () => void,
+    updateBinaryId: (binaryId: string | null) => void;
 }
 
 export const SocketContext = createContext<SocketContextInterface>(null);
@@ -29,65 +32,74 @@ export const SocketContextProvider = ({
     const [stageNo, setStageNo] = useState<number>(-1);
     const [userId, setUserId] = useState<string>("");
     const [binaryId, setBinaryId] = useState<string>("");
-    const [socket, setSocket] = useState<WebSocket>(null);
+    const socket = useRef<WebSocket>(new WebSocket());
     const [status, setStatus] = useState<"pending" | "running" | "finished" | "force-stopped">("pending");
     const [loading, setLoading] = useState<boolean>(false);
-
-    const [results, setResults] = useState<TestDetails[]>();
+    const [socketInitialized, setSocketInitialized] = useState<boolean>(false);
+    const [results, setResults] = useState<TestDetails[]>([]);
     const [summary, setSummary] = useState<FinalSummary>();
     const [resourceMetrics, setResourceMetrics] = useState<{ cpu: number, mem: number }>();
     const [terminalData, setTerminalData] = useState<string[]>([]);
+    const [description, setDescription] = useState<string>("");
 
     useEffect(() => {
-        const preload = async () => {
-            setLoading(true);
+        console.log('stuff')
+        console.log(stageNo, userId);
+        getStageDescription(stageNo, userId).then(data => {
+            setDescription(data);
+        })
+    }, [stageNo, userId]);
 
-            const savedUserId = localStorage.getItem('userId');
-            if (savedUserId) {
-                setUserId(savedUserId);
+    const initializeSocket = async (): Promise<boolean> => {
+        const ws = socket.current;
 
-                const newSocket = new WebSocket(savedUserId);
-                setSocket(newSocket);
-                await setCallbacks();
-            }
-            else {
-                const token = await getToken();
-                localStorage.setItem('userId', token);
-                setUserId(token);
+        if (socketInitialized) return true;
 
-                const newSocket = new WebSocket(token);
-                setSocket(newSocket);
-                await setCallbacks();
-            }
+        setLoading(true);
 
-            setLoading(false);
+        let savedUserId = localStorage.getItem('userId');
+        if (!savedUserId) {
+            const token = await getToken();
+            localStorage.setItem('userId', token);
+            savedUserId = token;
         }
 
-        void preload();
+        setUserId(savedUserId);
+        await ws.initialize(savedUserId);
 
-        return () => {
-            void socket?.kill();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        await setCallbacks(ws);
 
-    const testUpdateCallback = (data: TestDetails[]) => setResults(data)
-    const testCompleteCallback = (data: FinalSummary) => setSummary(data)
-    const resourceMonitorCallback = (data: { cpu: number, mem: number }) => setResourceMetrics(data)
-    const terminalCallback = (data: string) => setTerminalData([...terminalData, data])
+        setLoading(false);
+        setSocketInitialized(true);
 
-    const setCallbacks = async () => {
+        return true;
+    }
+
+    const testUpdateCallback = (data: TestDetails[]) => {
+        console.log(data);
+        setResults(data);
+    }
+    const testCompleteCallback = (data: FinalSummary) => {
+        console.log(data);
+        setSummary(data);
+        setStatus('finished');
+    };
+    const resourceMonitorCallback = (data: { cpu: number, mem: number }) => setResourceMetrics(data);
+    const terminalCallback = (data: string) => setTerminalData([...terminalData, data]);
+
+    const setCallbacks = async (socket: WebSocket) => {
         socket.setTestCallbacks(testUpdateCallback, testCompleteCallback);
         socket.setResourceMonitorCallbacks(resourceMonitorCallback);
         socket.setTerminalCallbacks(terminalCallback);
     }
 
-
-    const updateStage = async (stageNo: number) => {
+    const updateStage = async (newStageNo: number) => {
+        if (newStageNo == stageNo)
+            return;
         setLoading(true);
 
-        setStageNo(stageNo);
-        const { binaryId, running, testDetails } = await socket.changeStage(stageNo);
+        setStageNo(newStageNo);
+        const { binaryId, running, testDetails } = await socket.current.changeStage(newStageNo);
         setBinaryId(binaryId);
         setStatus(running ? "running" : "pending");
         setResults(testDetails);
@@ -98,7 +110,8 @@ export const SocketContextProvider = ({
     const runTests = async () => {
         setLoading(true);
 
-        await socket.run();
+        const data = await socket.current.run();
+        setResults(data);
         setStatus("running");
 
         setLoading(false);
@@ -106,14 +119,14 @@ export const SocketContextProvider = ({
 
     const stopTests = async () => {
         setLoading(true);
-
-        const summary = await socket.stop();
+        const summary = await socket.current.stop();
         setSummary(summary);
         setStatus("force-stopped");
 
         setLoading(false);
     }
 
+    const updateBinaryId = (binaryId: string | null) => setBinaryId(binaryId);
 
     return (
         <SocketContext.Provider
@@ -121,6 +134,7 @@ export const SocketContextProvider = ({
                 // states
                 stageNo,
                 userId,
+                description,
                 results,
                 summary,
                 resourceMetrics,
@@ -131,9 +145,11 @@ export const SocketContextProvider = ({
 
 
                 //functions
+                initializeSocket,
                 updateStage,
                 runTests,
                 stopTests,
+                updateBinaryId,
             }}
         >
             {children}

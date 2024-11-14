@@ -1,6 +1,5 @@
 import { StageTest, TestStatus } from "../types";
 import { stage1ErrorChecking, stage1StringReversal } from "./stage1";
-import { stage2CheckConnectionWhenNoServer, stage2InputOutput, stage2UnexpectedServerDisconnect } from "./stage2";
 import { stage3ErrorHandling, stage3MultipleClients } from "./stage3";
 import { stage5ProxyMultipleConnections } from "./stage5";
 import { stage8NonBlockingTest } from "./stage8";
@@ -9,8 +8,19 @@ import { stage9checkCpuUsage } from "./stage9";
 export const tests: StageTest = {
     stage1: {
         stageName: "TCP Server",
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage1.md",
         tests: [
+            {
+                title: "Checking error handling",
+                description: "Checks how the server behaves when the client unexpectedly disconnects. In the current version of the server, we are not implementing proper handling of such a situation and thus the server should terminate with error code 1",
+                testInput: "Force disconnection of the client",
+                expectedBehavior: "Process exited with code 1",
+                testFunction: async (...args: any[]) => {
+                    const response = await stage1ErrorChecking(8080, ...args);
+                    return response;
+                },
+                status: TestStatus.Pending,
+            },
             {
                 title: "String reversal",
                 description: "Ensures proper working of the server by verifying if the string returned by the server matches the expected output",
@@ -22,61 +32,11 @@ export const tests: StageTest = {
                 },
                 status: TestStatus.Pending,
             },
-            {
-                title: "Checking error handling",
-                description: "Checks how the server behaves when the client unexpectedly disconnects. In the current version of the server, we are not implementing proper handling of such a situation and thus the server should terminate with error code 1",
-                testInput: "Force disconnection of the client",
-                expectedBehavior: "Process exited with code 1",
-                testFunction: async (...args: any[]) => {
-                    const response = await stage1ErrorChecking(8080, ...args);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            }
-        ]
-    },
-    stage2: {
-        stageName: 'TCP Client',
-        descriptionFilePath: "/description/sample.md",
-        tests: [
-            {
-                title: "404 Server Not Found?",
-                description: "When the server isn't running / refuses connection, the client should handle it and exit with proper error code",
-                testInput: "No server running on port 8080",
-                expectedBehavior: "Client exited with code 1",
-                testFunction: async (...args: any[]) => {
-                    const response = await stage2CheckConnectionWhenNoServer(...args);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
-            {
-                title: "Checking input / output",
-                description: "Sends 10 strings via terminal input manuallly and sees if the client is able to send it properly to a dummy server",
-                testInput: "abcd",
-                expectedBehavior: "Messaged received successfully by the server",
-                testFunction: async (...args: any[]) => {
-                    const response = await stage2InputOutput(...args);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
-            {
-                title: "Error Handling when server unexpectedly disconnects",
-                description: "The client is only able to connect to a single server, and when the server diconnects unexpected an appropriate error should be thrown by the client",
-                testInput: "Force disconnect the dummy server",
-                expectedBehavior: "Client exited with code 1",
-                testFunction: async (...args: any[]) => {
-                    const response = await stage2UnexpectedServerDisconnect(...args);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            }
         ]
     },
     stage3: {
         stageName: 'UDP Multithreading',
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage3.md",
         tests: [
             {
                 title: "Single client - input output",
@@ -92,8 +52,8 @@ export const tests: StageTest = {
             {
                 title: "Multiple clients to same port - input output",
                 description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
-                testInput: "Connect multiple clients to server and sent string simultaneously",
-                expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
+                testInput: "Connect multiple clients to server and sends unique string simultaneously",
+                expectedBehavior: "Each of the clients should receive reversed versions of their input",
                 testFunction: async () => {
                     const response = await stage3MultipleClients(8080);
                     return response;
@@ -116,7 +76,7 @@ export const tests: StageTest = {
     },
     stage4: {
         stageName: "Linux Epoll",
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage4.md",
         tests: [
             {
                 title: "Single client - input output",
@@ -156,7 +116,7 @@ export const tests: StageTest = {
     },
     stage5: {
         stageName: 'TCP Proxy',
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage5.md",
         tests: [
             {
                 title: "proxy response checking -- multiple clients",
