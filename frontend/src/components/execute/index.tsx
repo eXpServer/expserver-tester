@@ -1,5 +1,5 @@
 'use client'
-import { ChangeEvent, useState, useEffect, useMemo } from 'react'
+import { ChangeEvent, useState, useEffect, useMemo, use } from 'react'
 import axios from 'axios'
 import styles from './execute.module.css'
 // import local from 'next/font/local'
@@ -21,15 +21,24 @@ const Execute = () => {
 
     const { stageNo, userId, status, binaryId, updateBinaryId, runTests } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
-    const [myFile, setMyFile] = useState<string>("Choose a file");
+    const [myFile, setMyFile] = useState<string>(() => {
+        console.log(binaryId)
+        if (binaryId)
+            return binaryId;
+        else 
+            return "Choose a file"
+});
+
 
     const disableRunButton = useMemo(() => {
         return (status == 'running' || file == null);
     }, [status, file]);
 
     const isFileUploaded = useMemo(() => {
-        if (binaryId)
+        if (binaryId){
+            // setMyFile(file.name)
             return true;
+        }
         else 
             return false;
     }, [binaryId]); 
@@ -44,11 +53,6 @@ const Execute = () => {
             updateBinaryId(response);
             console.log("file uploaded successfully");
         }
-
-        // set isFileUpload to true only for postive response. with alert[file uploaded successfully]
-        // updateBinaryId("1234567");
-
-        // else alert[file upload failed]
 
     }
 

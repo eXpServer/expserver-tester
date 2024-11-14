@@ -20,7 +20,7 @@ const Page = () => {
     }
 
     void asyncFn();
-  }, [pageNum]);
+  }, [pageNum, initializeSocket, updateStage]);
 
   return (
     <div className="h-[calc(100vh-50px)] w-full">
