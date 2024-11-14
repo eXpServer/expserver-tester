@@ -1,18 +1,18 @@
 import { Core } from '../../core/Core';
 import { Request, Response } from '../../types';
 import expressAsyncHandler from 'express-async-handler';
-import { deleteFile, getFilePath, verifyStageNo } from '../../utils/file';
+import { deleteFile, getFilePath } from '../../utils/file';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const getStageDescription = expressAsyncHandler(async (req: Request, res: Response) => {
     const stageNo = req.params['num'];
-    if (!verifyStageNo(stageNo)) {
+    const stageDescPath = Core.getDescription(stageNo);
+    if (!stageDescPath) {
         res.status(404);
         throw new Error("Stage not found");
     }
 
-    const stageDescPath = Core.stageTests[`stage${stageNo}`].descriptionFilePath;
     res.sendFile(getFilePath(`public/${stageDescPath}`));
 })
 
@@ -27,8 +27,8 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     }
 
     const stageNo = req.params['num'];
-    if (!verifyStageNo(stageNo)) {
-        res.status(400);
+    if (!Core.getDescription(stageNo)) {
+        res.status(404);
         throw new Error("Stage not found");
     }
 
@@ -77,8 +77,8 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 
 const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Response) => {
     const stageNo = req.params['num'];
-    if (!verifyStageNo(stageNo)) {
-        res.status(400);
+    if (!Core.getDescription(stageNo)) {
+        res.status(404);
         throw new Error("Stage not found");
     }
 

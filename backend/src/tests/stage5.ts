@@ -1,14 +1,22 @@
+import { ChildProcessWithoutNullStreams } from "child_process";
 import { TestFunction } from "../types";
-import Express from "express";
 import { setupHttpServer } from "../utils/dummyServer";
 
-export const stage5ProxyMultipleConnections: TestFunction = (port: number) => {
+export const stage5ProxyMultipleConnections: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
     const testInput = "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2";
     const expectedBehavior = "client 1 receives response from /test/1 && client 2 gets response from /test/2";
     const serverPort = 3000;
     const numClients = 3;
 
     return new Promise((resolve, _) => {
+        spawnInstance.on('error', (error) => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: `Server crashed with error ${error}`
+            })
+        })
 
         let numPassed = 0;
         const verifyResponse = async (proxyServerResponse: string, route: number) => {
@@ -49,19 +57,28 @@ export const stage5ProxyMultipleConnections: TestFunction = (port: number) => {
 
         const listenerCallback = () => {
             for (let i = 0; i < numClients; i++) {
-                fetch(`http://localhost:${port}/${i}`).then(res => {
+                fetch(`http://localhost:${port}/${i}`)
+                    .then(res => {
 
-                    const statusLine = `HTTP/1.1 ${res.status} ${res.statusText}`;
+                        const statusLine = `HTTP/1.1 ${res.status} ${res.statusText}`;
 
-                    const headers = [...res.headers.entries()]
-                        .map(([key, value]) => `${key}: ${value}`)
-                        .join('\n')
+                        const headers = [...res.headers.entries()]
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join('\n')
 
-                    res.text().then(body => {
-                        const fullResponse = `${statusLine}\n${headers}\n\n${body}`;
-                        verifyResponse(fullResponse, i);
+                        res.text().then(body => {
+                            const fullResponse = `${statusLine}\n${headers}\n\n${body}`;
+                            verifyResponse(fullResponse, i);
+                        })
                     })
-                })
+                    .catch(error => {
+                        return resolve({
+                            passed: false,
+                            testInput,
+                            expectedBehavior,
+                            observedBehavior: `Connection failed with error ${error}`
+                        })
+                    })
             }
         }
 

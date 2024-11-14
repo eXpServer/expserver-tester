@@ -11,6 +11,15 @@ export const stage9checkCpuUsage: TestFunction = (port: number, spawnInstance: C
         const NUM_ITERATIONS = 20;
         const client = new Socket();
 
+        spawnInstance.on('error', error => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: `Server crashed with error ${error}`
+            })
+        })
+
         const calcAvergeUsage = (results: number[]) => {
             let total = 0;
             for (let i = 0; i < results.length; i++) {
@@ -19,6 +28,24 @@ export const stage9checkCpuUsage: TestFunction = (port: number, spawnInstance: C
             const average = total / results.length;
             return average;
         }
+
+        client.on('connectionAttemptFailed', () => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: "Server refused connection",
+            })
+        });
+
+        client.on('connectionAttemptTimeout', () => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: "Server connection timed out",
+            })
+        })
 
         client.connect(port, LOCALHOST, () => {
             const results = Array<number>(NUM_ITERATIONS);

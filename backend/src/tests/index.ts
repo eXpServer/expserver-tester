@@ -43,8 +43,8 @@ export const tests: StageTest = {
                 description: "This test ensures that the server runs as expected when a singular client is connected",
                 testInput: "client sends a randomly generated string to the server",
                 expectedBehavior: "client receives reversed version of the input",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8080);
+                testFunction: async (...args) => {
+                    const response = await stage1StringReversal(8080, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -54,8 +54,8 @@ export const tests: StageTest = {
                 description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sends unique string simultaneously",
                 expectedBehavior: "Each of the clients should receive reversed versions of their input",
-                testFunction: async () => {
-                    const response = await stage3MultipleClients(8080);
+                testFunction: async (...args) => {
+                    const response = await stage3MultipleClients(8080, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -83,8 +83,8 @@ export const tests: StageTest = {
                 description: "This test ensures that the server runs as expected when a singular client is connected",
                 testInput: "client sends a randomly generated string to the server",
                 expectedBehavior: "client receives reversed version of the input",
-                testFunction: async () => {
-                    const response = await stage1StringReversal(8080);
+                testFunction: async (...args) => {
+                    const response = await stage1StringReversal(8080, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -94,8 +94,8 @@ export const tests: StageTest = {
                 description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
                 expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
-                testFunction: async () => {
-                    const response = await stage3MultipleClients(8080);
+                testFunction: async (...args) => {
+                    const response = await stage3MultipleClients(8080, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -123,8 +123,8 @@ export const tests: StageTest = {
                 description: "creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server",
                 testInput: "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2",
                 expectedBehavior: "client 1 receives response from /test/1 && client 2 gets response from /test/2",
-                testFunction: async () => {
-                    const response = await stage5ProxyMultipleConnections(8080);
+                testFunction: async (...args) => {
+                    const response = await stage5ProxyMultipleConnections(8080, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -141,12 +141,12 @@ export const tests: StageTest = {
                 description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
                 testInput: "client sends a randomly generated string to the server",
                 expectedBehavior: "client receives reversed version of the input",
-                testFunction: async () => {
+                testFunction: async (...args) => {
                     const responses = [
-                        await stage1StringReversal(8001),
-                        await stage1StringReversal(8002),
-                        await stage1StringReversal(8003),
-                        await stage1StringReversal(8004)
+                        await stage1StringReversal(8001, ...args),
+                        await stage1StringReversal(8002, ...args),
+                        await stage1StringReversal(8003, ...args),
+                        await stage1StringReversal(8004, ...args)
                     ];
 
                     if (responses.some(response => response.passed == false)) {
@@ -173,8 +173,8 @@ export const tests: StageTest = {
                 description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
                 expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
-                testFunction: async () => {
-                    const response = await stage3MultipleClients(8001);
+                testFunction: async (...args) => {
+                    const response = await stage3MultipleClients(8001, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -202,13 +202,16 @@ export const tests: StageTest = {
                 description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
                 testInput: "client sends a randomly generated string to the server",
                 expectedBehavior: "client receives reversed version of the input",
-                testFunction: async () => {
+                testFunction: async (...args) => {
+                    console.log("hello start")
                     const responses = [
-                        await stage1StringReversal(8001),
-                        await stage1StringReversal(8002),
-                        await stage1StringReversal(8003),
-                        await stage1StringReversal(8004)
+                        await stage1StringReversal(8001, ...args),
+                        await stage1StringReversal(8002, ...args),
+                        await stage1StringReversal(8003, ...args),
+                        await stage1StringReversal(8004, ...args)
                     ];
+
+                    console.log("hello end");
 
                     if (responses.some(response => response.passed == false)) {
                         return ({
@@ -234,8 +237,8 @@ export const tests: StageTest = {
                 description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
                 testInput: "Connect multiple clients to server and sent string simultaneously",
                 expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
-                testFunction: async () => {
-                    const response = await stage3MultipleClients(8001);
+                testFunction: async (...args) => {
+                    const response = await stage3MultipleClients(8001, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -263,12 +266,12 @@ export const tests: StageTest = {
                 description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
                 testInput: "client sends a randomly generated string to the server",
                 expectedBehavior: "client receives reversed version of the input",
-                testFunction: async () => {
+                testFunction: async (...args) => {
                     const responses = [
-                        await stage1StringReversal(8001),
-                        await stage1StringReversal(8002),
-                        await stage1StringReversal(8003),
-                        await stage1StringReversal(8004)
+                        await stage1StringReversal(8001, ...args),
+                        await stage1StringReversal(8002, ...args),
+                        await stage1StringReversal(8003, ...args),
+                        await stage1StringReversal(8004, ...args)
                     ];
 
                     if (responses.some(response => response.passed == false)) {
@@ -318,8 +321,8 @@ export const tests: StageTest = {
                 description: "creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection",
                 testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds",
                 expectedBehavior: "the second connection is able to send and receive data from the server",
-                testFunction: async () => {
-                    const response = await stage8NonBlockingTest(8001);
+                testFunction: async (...args) => {
+                    const response = await stage8NonBlockingTest(8001, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,

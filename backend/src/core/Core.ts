@@ -17,6 +17,23 @@ export class Core {
     public static httpServer: HttpServer;
     public static socketIo: Server;
     public static expressApp: Express;
+    private static _stageTests: StageTest = tests as StageTest;
+
+    public static getTests(stageNo: string | number) {
+        const index = `stage${stageNo}`;
+        if (!this._stageTests[index])
+            return null;
+
+        return this._stageTests[index].tests;
+    }
+
+    public static getDescription(stageNo: string | number) {
+        const index = `stage${stageNo}`;
+        if (!this._stageTests[index])
+            return null;
+
+        return this._stageTests[index].descriptionFilePath;
+    }
 
 
     public static iniitialize(httpServer: HttpServer, socketIo: Server, expressApp: Express) {
@@ -29,7 +46,6 @@ export class Core {
         Core.initializeServer()
     }
 
-    public static stageTests: StageTest = tests;
 
 
     public static deleteRunner(stageRunner: StageRunner) {
@@ -56,18 +72,18 @@ export class Core {
             }
         })
 
-        const testDetails = this.stageTests[`stage${stageNo}`].tests;
+        const testDetails = this.getTests(stageNo);
         return ({
             binaryId: file?.filePath || null,
             running: false,
-            testDetails: testDetails.map<TestDetails>(test => ({
+            testDetails: testDetails?.map<TestDetails>(test => ({
                 title: test.title,
                 description: test.description,
                 testInput: test.testInput,
                 expectedBehavior: test.expectedBehavior,
                 observedBehavior: null,
                 status: TestStatus.Pending,
-            }))
+            })) || [],
 
         })
     }

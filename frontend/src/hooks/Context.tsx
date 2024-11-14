@@ -30,8 +30,8 @@ export const SocketContextProvider = ({
     children: ReactNode
 }) => {
     const [stageNo, setStageNo] = useState<number>(-1);
-    const [userId, setUserId] = useState<string>("");
-    const [binaryId, setBinaryId] = useState<string>("");
+    const [userId, setUserId] = useState<string>(null);
+    const [binaryId, setBinaryId] = useState<string>(null);
     const socket = useRef<WebSocket>(new WebSocket());
     const [status, setStatus] = useState<"pending" | "running" | "finished" | "force-stopped">("pending");
     const [loading, setLoading] = useState<boolean>(false);
@@ -44,11 +44,17 @@ export const SocketContextProvider = ({
 
     useEffect(() => {
         console.log('stuff')
-        console.log(stageNo, userId);
+        console.log({
+            stageNo,
+            userId,
+            binaryId,
+            status,
+            loading,
+        });
         getStageDescription(stageNo, userId).then(data => {
             setDescription(data);
         })
-    }, [stageNo, userId]);
+    }, [stageNo, userId, binaryId, status, loading]);
 
     const initializeSocket = async (): Promise<boolean> => {
         const ws = socket.current;
