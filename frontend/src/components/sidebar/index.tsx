@@ -159,7 +159,7 @@ const Sidebar = () => {
                             currPhase == item.phaseId &&
                             <motion.div 
                                 className={styles['stage-container']} 
-                                initial = {{height: 0, opactiy: 1}}
+                                initial = {{height: 0, opacity: 1}}
                                 animate = {{height: 'auto', opacity: 1}}
                                 exit = {{height: 0, opacity: 1}}
                                 transition = {{duration: 0.3, ease: 'easeInOut'}}

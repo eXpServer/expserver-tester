@@ -1,6 +1,7 @@
 import { useSocketContext } from '@/hooks/useSocketContext';
 import styles from './testContainer.module.css'
 import { useEffect, useMemo, useState } from 'react';
+import TestCard from '../testcard';
 
 const TestContainer = () => {
     const {binaryId} = useSocketContext();
@@ -19,10 +20,10 @@ const TestContainer = () => {
         <div className={styles['test-container']}>
             {fileUploaded ?
             <div className={styles['test-container-active']}>
-                <div className={styles['test-card']}>
-                    <div className={styles['test-name']}> Testcase 1</div>
-                    <div className={styles['test-status']}>Passed</div>
-                </div>
+                <TestCard testStatus = {'pending'} testNo = {1} />
+                <TestCard testStatus = {'running'} testNo = {2} />
+                <TestCard testStatus = {'passed'} testNo = {3} />
+                <TestCard testStatus = {'failed'} testNo = {4} />
             </div> : 
             <div className={styles['test-container-idle']}> Upload a binary file to test</div>}
         </div>

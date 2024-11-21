@@ -1,0 +1,47 @@
+
+.test-card{
+    height: 48px;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    display: flex;
+    /* flex-direction: row; */
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.test-name{
+    width: max-content;
+    color: var(--text-color);
+}
+
+.test-status{
+    width: 84px;
+    height: 32px;
+    color: var(--text-color);
+    /* border: 1px solid black; */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+
+.pending{
+    background-color: var(--light-violet);
+}
+
+.running{
+    background-color: var(--light-yellow);
+}
+
+.failed{
+    background-color: var(--light-red);
+}
+
+.passed{
+    background-color: var(--light-green);
+}
