@@ -44,11 +44,11 @@ export const SocketContextProvider = ({
 
     useEffect(() => {
         console.log('stuff')
-        console.log(stageNo, userId);
+        console.log(stageNo, userId, binaryId);
         getStageDescription(stageNo, userId).then(data => {
             setDescription(data);
         })
-    }, [stageNo, userId]);
+    }, [stageNo, userId, binaryId]);
 
     const initializeSocket = async (): Promise<boolean> => {
         const ws = socket.current;

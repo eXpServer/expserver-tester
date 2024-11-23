@@ -15,7 +15,6 @@ import stop from '/public/stop.svg'
 import bin from '/public/delete.svg'
 import TestContainer from '../testContainer'
 import ResourceMonitor from '../resourceMonitor'
-import { error } from 'console'
 
 const Execute = () => {
 
@@ -25,30 +24,30 @@ const Execute = () => {
         console.log(binaryId)
         if (binaryId)
             return binaryId;
-        else 
+        else
             return "Choose a file"
-});
+    });
 
 
     const disableRunButton = useMemo(() => {
-        return (status == 'running' || file == null);
-    }, [status, file]);
+        return (status == 'running' || binaryId == null);
+    }, [status, binaryId]);
 
     const isFileUploaded = useMemo(() => {
-        if (binaryId){
+        if (binaryId) {
             // setMyFile(file.name)
             return true;
         }
-        else 
+        else
             return false;
-    }, [binaryId]); 
+    }, [binaryId]);
 
 
     const handleUploadFile = async () => {
-        if(file == null){
+        if (file == null) {
             console.log('file not selected');
         }
-        else{
+        else {
             const response = await uploadBinary(stageNo, userId, file);
             updateBinaryId(response);
             console.log("file uploaded successfully");
@@ -57,15 +56,15 @@ const Execute = () => {
     }
 
     const handleDeleteFile = async () => {
-        const response = await deleteBinary(stageNo,userId);
-        if(response == true){
+        const response = await deleteBinary(stageNo, userId);
+        if (response == true) {
             updateBinaryId(null);
             setFile(null);
             setMyFile('Choose a file')
             console.log("File deleted successfully")
         }
-        else{
-            console.log(Error,"failed to delete the binary")
+        else {
+            console.log(Error, "failed to delete the binary")
         }
 
     }
@@ -94,17 +93,54 @@ const Execute = () => {
                 <div className={styles['upload-inner-container']}>
                     <div className={styles['upload-file-container']}>
                         <input type="file" placeholder="select a file" className={styles['file-input']} id="file-input" onChange={handleFileChange} />
-                        <label htmlFor={isFileUploaded ? 'none' : 'file-input'} className={styles['custom-file-input']}> <Image src={add} alt='add-img' height={20} width={20} draggable={false} /> Add </label>
+                        <label htmlFor={isFileUploaded ? 'none' : 'file-input'} className={styles['custom-file-input']}>
+                            <Image src={add} alt='add-img' height={20} width={20} draggable={false} />
+                            Add
+                        </label>
                         <input className={styles['add-file-input']} type='text' disabled value={myFile} />
-                        {binaryId && 
-                            <div className={styles.bin}>
-                                <Image  src = {bin} alt = 'bin' height = {25} width = {25} onClick={handleDeleteFile}></Image>
-                            </div>
+                        {
+                            binaryId && (
+                                <div className={styles.bin}>
+                                    <Image src={bin} alt='bin' height={25} width={25} onClick={handleDeleteFile} />
+                                </div>
+                            )
                         }
                     </div>
-                    <button disabled = {disableRunButton} className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`} onClick={isFileUploaded ? handleRunFile : handleUploadFile}>
-                        {isFileUploaded ? status == 'running' ? <div className={styles['execute-active-run']}><Image src={stop} alt='stop' height={20} width={20} draggable={false} />Stop</div> : <div className={styles['execute-active-run']}><Image src={play} alt='run' height={20} width={20} draggable={false} />Run</div> : <div>Upload</div>}
-                    </button>
+                    {/* <button
+                        disabled={disableRunButton}
+                        className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`}
+                        onClick={isFileUploaded ? handleRunFile : handleUploadFile}
+                    >
+                        {
+                            isFileUploaded
+                                ? status == 'running'
+                                    ? <div className={styles['execute-active-run']}><Image src={stop} alt='stop' height={20} width={20} draggable={false} />Stop</div>
+                                    : <div className={styles['execute-active-run']}><Image src={play} alt='run' height={20} width={20} draggable={false} />Run</div>
+                                : <div>Upload</div>
+                        }
+                    </button> */}
+                    {
+                        isFileUploaded ? (
+                            <button
+                                className={`${styles['execute-button']} ${styles['execute-run']}`}
+                                onClick={handleRunFile}
+                                disabled={disableRunButton}
+                            >
+                                {
+                                    status == 'running'
+                                        ? <span className={styles['execute-active-run']}><Image src={stop} alt='stop' height={20} width={20} draggable={false} />Stop</span>
+                                        : <span className={styles['execute-active-run']}><Image src={play} alt='run' height={20} width={20} draggable={false} />Run</span>
+                                }
+                            </button>
+                        ) : (
+                            <button
+                                className={`${styles['execute-button']} ${styles['execute-upload']}`}
+                                onClick={handleUploadFile}
+                            >
+                                <span>Upload</span>
+                            </button>
+                        )
+                    }
                 </div>
             </div>
             {isFileUploaded && <ResourceMonitor />}

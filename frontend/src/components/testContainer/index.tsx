@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import TestCard from '../testcard';
 
 const TestContainer = () => {
-    const {binaryId} = useSocketContext();
+    const { binaryId, results } = useSocketContext();
 
     const [numOfTests, setNumOfTest] = useState<number>(3);
 
@@ -19,13 +19,18 @@ const TestContainer = () => {
     return (
         <div className={styles['test-container']}>
             {fileUploaded ?
-            <div className={styles['test-container-active']}>
-                <TestCard testStatus = {'pending'} testNo = {1} />
-                <TestCard testStatus = {'running'} testNo = {2} />
-                <TestCard testStatus = {'passed'} testNo = {3} />
-                <TestCard testStatus = {'failed'} testNo = {4} />
-            </div> : 
-            <div className={styles['test-container-idle']}> Upload a binary file to test</div>}
+                <div className={styles['test-container-active']}>
+                    {/* <TestCard testStatus={'pending'} testNo={1} />
+                    <TestCard testStatus={'running'} testNo={2} />
+                    <TestCard testStatus={'passed'} testNo={3} />
+                    <TestCard testStatus={'failed'} testNo={4} /> */}
+                    {
+                        results.map((result, index) => {
+                            return <TestCard key={index} testStatus={result.status} testNo={index + 1} />
+                        })
+                    }
+                </div> :
+                <div className={styles['test-container-idle']}> Upload a binary file to test</div>}
         </div>
     )
 }
