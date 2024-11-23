@@ -5,3 +5,5 @@ uploads/
 test.js
 public/*.txt
 compile/
+prisma/migrations
+prisma/dev.db
