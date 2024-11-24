@@ -1,5 +1,5 @@
 .sidebar{
-    width: 350px;
+    /* width: 350px; */
     /* border: 1px solid black; */
     padding: 4px;
     display: flex;
@@ -7,6 +7,8 @@
     gap: 4px;
     overflow-y: scroll;
     font-size: 20px;
+    height: 100%;
+    width: 300px;
 }
 
 .option-main-container{

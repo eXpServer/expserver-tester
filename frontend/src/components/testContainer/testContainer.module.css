@@ -6,6 +6,7 @@
     /* border-width: 3px; */
     background-color: var(--test-container-background);
     margin-top: 6px;
+
 }
 
 .test-container-idle{
@@ -22,12 +23,25 @@
 }
 
 .test-container-active{
+    height: 100%;
     position: relative;
     padding: 8px;
+    display: flex;
+    flex-direction: column;
 
+    
+    /* align-items:center; */
+    
+    /* gap: 8px; */
+}
+
+.testcase-container{
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    /* border: 1px solid black; */
+    overflow-y: scroll;
 }
 
 

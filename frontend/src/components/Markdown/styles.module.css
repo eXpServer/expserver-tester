@@ -94,6 +94,7 @@
     border-radius: 3px;
     font-size: 85%;
     font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    text-wrap: wrap;
 }
 
 .markdownBody pre>code {
