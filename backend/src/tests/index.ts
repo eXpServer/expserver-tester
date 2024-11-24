@@ -195,7 +195,7 @@ export const tests: StageTest = {
     },
     stage7: {
         stageName: "Core and Loop Modules",
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage7.md",
         tests: [
             {
                 title: "Single client - input output",
@@ -256,7 +256,7 @@ export const tests: StageTest = {
     },
     stage8: {
         stageName: "Non-blocking Sockets",
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage8.md",
         tests: [
             {
                 title: "Non-blocking server",
@@ -328,7 +328,7 @@ export const tests: StageTest = {
     },
     stage9: {
         stageName: "Epoll Edge Triggered",
-        descriptionFilePath: "/description/sample.md",
+        descriptionFilePath: "/description/stage9.md",
         tests: [
             {
                 title: "CPU usage",
