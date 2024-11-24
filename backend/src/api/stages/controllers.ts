@@ -7,12 +7,13 @@ const prisma = new PrismaClient();
 
 const getStageDescription = expressAsyncHandler(async (req: Request, res: Response) => {
     const stageNo = req.params['num'];
-    if (!verifyStageNo(stageNo)) {
+
+    const stageDescPath = Core.getDescription(stageNo);
+    if (!stageDescPath) {
         res.status(404);
         throw new Error("Stage not found");
     }
 
-    const stageDescPath = Core.stageTests[`stage${stageNo}`].descriptionFilePath;
     res.sendFile(getFilePath(`public/${stageDescPath}`));
 })
 

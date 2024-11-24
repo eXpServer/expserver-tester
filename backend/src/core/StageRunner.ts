@@ -57,7 +57,7 @@ export class StageRunner {
         this.cleanupCallbacks = [];
         this._userId = userId;
 
-        this._currentState = Core.stageTests[`stage${stageNo}`].tests.map(test => ({
+        this._currentState = Core.getTests(stageNo).map(test => ({
             title: test.title,
             description: test.description,
             testInput: test.testInput,
@@ -134,7 +134,7 @@ export class StageRunner {
 
         await this.createAndLinkSpawnInstance();
 
-        const functions = Core.stageTests[`stage${this.stageNo}`].tests.map(test => test.testFunction);
+        const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
             const fn = functions[i];
 

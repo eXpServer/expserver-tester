@@ -1,4 +1,4 @@
-import { Socket, StageTest, TestDetails, TestState, TestStatus } from "../types";
+import { Socket, StageTest, TestDetails, Test, TestState, TestStatus } from "../types";
 import { Server } from 'socket.io';
 import { Server as HttpServer } from 'http'
 import { StageWatcher } from "./StageWatcher";
@@ -9,7 +9,19 @@ import { PrismaClient } from "@prisma/client";
 import { tests } from "../tests";
 const prisma = new PrismaClient();
 
+enum EmitEvents {
+    CurrentState = 'current-state',
+    NoBinary = 'no-binary',
+    ConnectionAck = 'connection-ack',
+}
 
+enum ReceiveEvents {
+    Connection = 'connection',
+    RequestState = 'request-state',
+    Run = 'run',
+    Stop = 'stop',
+    Disconnect = 'disconnect',
+}
 
 export class Core {
     public static runners: StageRunner[];
@@ -29,7 +41,7 @@ export class Core {
         Core.initializeServer()
     }
 
-    public static stageTests: StageTest = tests;
+    private static stageTests: StageTest = tests;
 
 
     public static deleteRunner(stageRunner: StageRunner) {
@@ -94,11 +106,11 @@ export class Core {
         const runner = this.findStageRunner(watcher);
         if (runner) {
             const currentState = await this.handleNewSubscriber(runner, watcher);
-            socket.emit('current-state', currentState);
+            socket.emit(EmitEvents.CurrentState, currentState);
         }
         else {
             const currentState = await this.handleNoExistingRunner(watcher);
-            socket.emit('current-state', currentState);
+            socket.emit(EmitEvents.CurrentState, currentState);
         }
     }
 
@@ -114,11 +126,11 @@ export class Core {
         const newRunner = this.findStageRunner(watcher);
         if (newRunner) {
             const currentState = await this.handleNewSubscriber(newRunner, watcher);
-            socket.emit('current-state', currentState);
+            socket.emit(EmitEvents.CurrentState, currentState);
         }
         else {
             const currentState = await this.handleNoExistingRunner(watcher);
-            socket.emit('current-state', currentState);
+            socket.emit(EmitEvents.CurrentState, currentState);
         }
     }
 
@@ -141,7 +153,7 @@ export class Core {
         })
 
         if (!file)
-            return socket.emit('no-binary');
+            return socket.emit(EmitEvents.NoBinary);
 
         const runner = new StageRunner(
             userId,
@@ -187,25 +199,40 @@ export class Core {
         this.expressApp.listen(TESTER_PORT, () => console.log(`Server running on port ${TESTER_PORT}`));
         this.httpServer.listen(WEBSOCKET_PORT, () => console.log(`Websocket running on port ${WEBSOCKET_PORT}`));
 
-        this.socketIo.on("connection", (socket: Socket) => {
-            socket.emit("connection-ack");
-            socket.on('request-state', (data: { stageNo: number, userId: string }) => {
+        this.socketIo.on(ReceiveEvents.Connection, (socket: Socket) => {
+            socket.emit(EmitEvents.ConnectionAck);
+            socket.on(ReceiveEvents.RequestState, (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
                 void this.handleRequestState(socket, stageNo, userId);
             })
 
-            socket.on('run', () => {
+            socket.on(ReceiveEvents.Run, () => {
                 void this.handleStartRunner(socket);
             })
 
-            socket.on('stop', () => {
+            socket.on(ReceiveEvents.Stop, () => {
                 void this.handleStopRunner(socket);
             })
 
 
-            socket.on('disconnect', () => {
+            socket.on(ReceiveEvents.Disconnect, () => {
                 this.handleSocketDisconnected(socket);
             })
         })
+    }
+
+
+    public static getDescription(stageNo: number | string): string | null {
+        if (!this.stageTests[`stage${stageNo}`])
+            return null;
+
+        return this.stageTests[`stage${stageNo}`].descriptionFilePath;
+    }
+
+    public static getTests(stageNo: number | string): Test[] | null {
+        if (!this.stageTests[`stage${stageNo}`])
+            return null;
+
+        return this.stageTests[`stage${stageNo}`].tests;
     }
 }
