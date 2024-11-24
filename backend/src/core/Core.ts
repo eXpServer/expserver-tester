@@ -68,7 +68,15 @@ export class Core {
             }
         })
 
-        const testDetails = this.stageTests[`stage${stageNo}`].tests;
+        // const testDetails = this.stageTests[`stage${stageNo}`].tests;
+        const testDetails = this.getTests(stageNo);
+        if (!testDetails) {
+            return ({
+                binaryId: null,
+                running: false,
+                testDetails: [],
+            })
+        }
         return ({
             binaryId: file?.filePath || null,
             running: false,

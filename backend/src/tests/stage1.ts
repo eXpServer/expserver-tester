@@ -97,7 +97,6 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
 
 
         const closeCallback = (code: number | null) => {
-
             resolve({
                 passed: (code == 1),
                 testInput,

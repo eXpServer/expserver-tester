@@ -8,7 +8,7 @@ export const stage9checkCpuUsage: TestFunction = (port: number, spawnInstance: C
     const testInput = "Creates an idle client connection and tracks CPU usage over the course of 20 seconds";
     const expectedBehavior = "CPU usage should be less than 10%";
     return new Promise((resolve, _) => {
-        const NUM_ITERATIONS = 20;
+        const NUM_ITERATIONS = 30;
         const client = new Socket();
 
         spawnInstance.on('error', error => {
@@ -49,7 +49,7 @@ export const stage9checkCpuUsage: TestFunction = (port: number, spawnInstance: C
 
         client.connect(port, LOCALHOST, () => {
             const results = Array<number>(NUM_ITERATIONS);
-            let index = 19;
+            let index = NUM_ITERATIONS - 1;
 
 
             const interval = setInterval(async () => {
@@ -62,7 +62,7 @@ export const stage9checkCpuUsage: TestFunction = (port: number, spawnInstance: C
                         testInput,
                         expectedBehavior,
                         observedBehavior,
-                        passed: average <= 10,
+                        passed: average <= 0.10,
                     });
                 }
 
