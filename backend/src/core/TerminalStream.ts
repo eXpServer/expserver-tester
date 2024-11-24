@@ -13,11 +13,7 @@ export class TerminalStream {
     private _currentStream: string[]; //send only onel ine at a time or send max 10k-ish lines
     private _streamBuffer: string;
     private _running: boolean;
-    private _emitter: EventEmitter;
-
-    get emitter() {
-        return this._emitter;
-    }
+    private _callback: (event: string, data: any) => void;
 
     get running() {
         return this._running;
@@ -28,14 +24,13 @@ export class TerminalStream {
     }
 
     constructor(spawnInstance: ChildProcessWithoutNullStreams, emitterCallback: (event: string, data: any) => void) {
-        this._emitter = new EventEmitter();
         this.spawnInstance = spawnInstance;
 
         this._currentStream = [];
         this._streamBuffer = "";
+        this._callback = emitterCallback;
 
         this._running = false;
-        this._emitter.on(TerminalStreamEvents.EMIT_TO_STAGE_RUNNER, emitterCallback);
     }
 
     public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
@@ -45,7 +40,7 @@ export class TerminalStream {
     }
 
     private emitToAllSockets(event: string, data: any) {
-        this._emitter.emit(TerminalStreamEvents.EMIT_TO_STAGE_RUNNER, event, data);
+        this._callback(event, data);
     }
 
     private terminalStreamCallback = (data: Buffer) => {

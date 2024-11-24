@@ -12,7 +12,7 @@ In this stage, we shall deviate a bit from our current implementation to explore
 
 ## Tests
 
-### Proxy response checking
+### Checking Proxy Response
 Creates multiple clients, each of them connects to the proxy server and _simultaneously_ sends an auto-genereated `GET` request unique to each client. Upon receiving a response from the proxy, a similar client connects to the upstream server directly and ensures both the responses are identical.
 ```js
 testInput: "Multiple clients are created and each of them sends a unique message and expects a unique response"

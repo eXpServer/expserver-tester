@@ -19,11 +19,7 @@ export class ResourceMonitor {
     private _currentUsage: ResourceStats;
     private timeout: ReturnType<typeof setTimeout>;
     private _running: boolean;
-    private _emitter: EventEmitter;
-
-    get emitter() {
-        return this._emitter;
-    }
+    private _callback: (event: string, data: any) => void;
 
     get running() {
         return this._running;
@@ -34,7 +30,6 @@ export class ResourceMonitor {
     }
 
     constructor(spawnInstance: ChildProcessWithoutNullStreams, emitterCallback: (event: string, data: any) => void) {
-        this._emitter = new EventEmitter();
         this.spawnInstance = spawnInstance;
         this.cpu = osu.cpu;
         this.mem = osu.mem;
@@ -45,7 +40,8 @@ export class ResourceMonitor {
         }
 
         this._running = false;
-        this._emitter.on(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, emitterCallback);
+        this._callback = emitterCallback;
+        // this._emitter.on(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, emitterCallback);
     }
 
     public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
@@ -65,7 +61,8 @@ export class ResourceMonitor {
     }
 
     private emitToAllSockets(event: string, data: any) {
-        this._emitter.emit(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, event, data);
+        this._callback(event, data);
+        // this._emitter.emit(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, event, data);
     }
 
     public run() {
