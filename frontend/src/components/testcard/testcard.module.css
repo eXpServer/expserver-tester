@@ -1,5 +1,4 @@
-
-.test-card{
+.test-card {
     height: 48px;
     width: 100%;
     border: 1px solid var(--border);
@@ -12,12 +11,12 @@
     padding-inline: 10px;
 }
 
-.test-name{
+.test-name {
     font-size: 16px;
     font-weight: 600;
 }
 
-.test-name{
+.test-name {
     width: max-content;
     color: var(--text-color);
     display: flex;
@@ -25,7 +24,7 @@
     align-items: center;
 }
 
-.test-status{
+.test-status {
     width: 84px;
     height: 32px;
     color: var(--text-color);
@@ -42,23 +41,23 @@
     cursor: pointer;
 }
 
-.pending{
+.pending {
     background-color: var(--light-violet);
 }
 
-.running{
+.running {
     background-color: var(--light-yellow);
 }
 
-.failed{
+.failed {
     background-color: var(--light-red);
 }
 
-.passed{
+.passed {
     background-color: var(--light-green);
 }
 
-.dialog-close-button-container{
+.dialog-close-button-container {
     position: fixed;
     top: 75px;
     right: 25px;
@@ -68,10 +67,9 @@
     color: var(--red);
     background-color: var(--white);
 }
-.dialog-close-button-container:hover{
+
+.dialog-close-button-container:hover {
     color: var(--white);
     background-color: var(--red);
     cursor: pointer;
 }
-
-
