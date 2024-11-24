@@ -10,6 +10,9 @@
     align-items: center;
     justify-content: space-between;
     padding-inline: 10px;
+}
+
+.test-name{
     font-size: 16px;
     font-weight: 600;
 }
@@ -17,6 +20,9 @@
 .test-name{
     width: max-content;
     color: var(--text-color);
+    display: flex;
+    gap: 18px;
+    align-items: center;
 }
 
 .test-status{
@@ -28,6 +34,12 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.test-info-img:hover {
+    cursor: pointer;
 }
 
 .pending{
@@ -45,3 +57,21 @@
 .passed{
     background-color: var(--light-green);
 }
+
+.dialog-close-button-container{
+    position: fixed;
+    top: 75px;
+    right: 25px;
+    /* border: 1px solid red; */
+    padding: 6px 12px;
+    border-radius: 10px;
+    color: var(--red);
+    background-color: var(--white);
+}
+.dialog-close-button-container:hover{
+    color: var(--white);
+    background-color: var(--red);
+    cursor: pointer;
+}
+
+

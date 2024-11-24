@@ -19,7 +19,7 @@ export default function RootLayout({
       <body>
         <ContextWrapper>
           <Navbar />
-          <div className="h-[calc(100vh-50px)] w-[100vw] flex z-2 absolute top-[50px]">
+          <div className="h-[calc(100vh-50px)] flex w-screen z-2 absolute top-[50px]">
             <Sidebar />
             {children}
           </div>
