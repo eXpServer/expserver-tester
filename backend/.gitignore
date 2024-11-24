@@ -6,4 +6,5 @@ test.js
 public/*.txt
 compile/
 prisma/migrations
-prisma/dev.db
+prisma/*.db
+prisma/*.db-journal
