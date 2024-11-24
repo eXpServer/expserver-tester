@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { cwd } from "process";
 import { reverseString } from "../utils/string";
+import { ChildProcessWithoutNullStreams } from "child_process";
 
 
 /**
@@ -14,12 +15,54 @@ import { reverseString } from "../utils/string";
  * @param port number
  * @returns 
  */
-export const stage8NonBlockingTest: TestFunction = async (port: number) => {
+export const stage8NonBlockingTest: TestFunction = async (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
     const testInput = "a client is connected to the server and sends a large file, but does not receive any data from the server.After 30 seconds, a second client is connected to the server, and verifies if the server responds";
     const expectedBehavior = "server should be able to handle multiple connections simultaneously, and should not block on a single connection";
     return new Promise((resolve, _) => {
         const firstClient = new Socket();
         const secondClient = new Socket();
+
+        spawnInstance.on('error', error => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: `Server crashed with error ${error}`
+            })
+        })
+
+
+        const connectionFailedHandler = () => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: "Server refused connection",
+                cleanup: () => {
+                    firstClient.destroy();
+                    secondClient.destroy();
+                }
+            })
+        };
+
+        const connectionTimeoutHandler = () => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: "Server connection timeout",
+                cleanup: () => {
+                    firstClient.destroy();
+                    secondClient.destroy();
+                }
+            })
+        }
+
+        firstClient.on('connectionAttemptFailed', connectionFailedHandler);
+        secondClient.on('connectionAttemptFailed', connectionFailedHandler);
+
+        firstClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
+        secondClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
 
         firstClient.connect(port, LOCALHOST, () => {
             const file = fs.createReadStream(path.join(cwd(), 'public', '4gb.txt'));

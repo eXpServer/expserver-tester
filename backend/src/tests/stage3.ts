@@ -4,7 +4,7 @@ import { TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
 import { ChildProcessWithoutNullStreams } from "child_process";
 
-export const stage3MultipleClients: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams = null) => {
+export const stage3MultipleClients: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
     const testInput = "Connect multiple clients to server and sent string simultaneously";
     const expectedBehavior = "Each of the clients should receive their reversed versions of the string that they sent";
     const numClients = 100;
@@ -16,6 +16,15 @@ export const stage3MultipleClients: TestFunction = (port: number, spawnInstance:
             clients.push(new Socket());
 
         let responsesReceived: number = 0;
+
+        spawnInstance.on('error', (error) => {
+            resolve({
+                passed: false,
+                testInput,
+                expectedBehavior: expectedBehavior,
+                observedBehavior: `server crashed with error ${error}`
+            })
+        });
 
 
         const clientRecvChecker = (client: Socket, index: number) => {

@@ -1,16 +1,44 @@
 import { Socket } from "net";
 import { generateRandomStrings, reverseString } from "../utils/string"
-import { TestFunction, TestStatus } from "../types";
+import { TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
 import { ChildProcessWithoutNullStreams } from "child_process";
 
-export const stage1StringReversal: TestFunction = (port: number) => {
+export const stage1StringReversal: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
     const testInput = "client sends a randomly generated string to the server";
     const expectedBehavior = "client receives reversed version of the input"
     return new Promise((resolve, _) => {
+
+        spawnInstance.on('error', (error) => {
+            resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: `server crashed with error ${error}`
+            })
+        });
+
         const testStrings = generateRandomStrings(100, 1000);
 
         const client = new Socket();
+
+        client.on('connectionAttemptFailed', () => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: "server refused connection",
+            })
+        })
+
+        client.on('connectionAttemptTimeout', () => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: "server connection timed out",
+            })
+        })
 
         const writeToServer = (index: number) => {
             const input = testStrings[index];
@@ -66,6 +94,7 @@ export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: C
     const expectedBehavior = "Process exited with code 1";
     return new Promise((resolve, _) => {
         const client = new Socket();
+
 
         const closeCallback = (code: number | null) => {
 
