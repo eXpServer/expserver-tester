@@ -23,11 +23,19 @@ const Execute = () => {
     const [myFile, setMyFile] = useState<string>(() => {
         console.log(binaryId)
         if (binaryId)
-            return binaryId;
+            return binaryId.split('/').pop();
         else
             return "Choose a file"
     });
 
+
+    useEffect(() => {
+        if (binaryId)
+            setMyFile(binaryId.split('/').pop());
+        else
+            setMyFile("Choose a file")
+    }, [binaryId])
+ 
 
     const disableRunButton = useMemo(() => {
         return (status == 'running' || binaryId == null);
