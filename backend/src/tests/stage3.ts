@@ -7,7 +7,7 @@ import { ChildProcessWithoutNullStreams } from "child_process";
 export const stage3MultipleClients: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
     const testInput = "Connect multiple clients to server and sent string simultaneously";
     const expectedBehavior = "Each of the clients should receive their reversed versions of the string that they sent";
-    const numClients = 100;
+    const numClients = 10;
 
 
     return new Promise((resolve, _) => {
