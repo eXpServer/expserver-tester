@@ -54,7 +54,10 @@ export class ContainerManager extends EventEmitter {
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            Cmd: [`./${this._binaryId}`],
+            Cmd: [
+                'sh', '-c',
+                `python3 -m http.server 3000 & ./${this._binaryId}`
+            ],
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
                 PublishAllPorts: true,
@@ -130,6 +133,7 @@ export class ContainerManager extends EventEmitter {
         }
         console.log(`Removing container: ${this._containerName}`);
         await this.container.remove({ force: true });
+        this._running = false;
 
         this.container = null;
 

@@ -55,7 +55,7 @@ export class StageRunner {
         this.watchers = [];
         // this.spawnInstance = null;
         const binaryId = filePath.split('/').pop();
-        this.containerInstance = new ContainerManager(`container-${binaryId}`, binaryId, [8080, 8001, 8002, 8003, 8004]);
+        this.containerInstance = new ContainerManager(`container-${binaryId}`, binaryId, [3000, 8080, 8001, 8002, 8003, 8004]);
         this.terminalInstance = null;
         this.processStatsInstance = null;
         this.cleanupCallbacks = [];

@@ -9,6 +9,7 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
     const testInput = "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2";
     const expectedBehavior = "client 1 receives response from /test/1 && client 2 gets response from /test/2";
     const serverPort = 3000;
+    const serverMappedPort = spawnInstance.getMapppedPort(serverPort);
     const numClients = 3;
 
     return new Promise((resolve, _) => {
@@ -23,7 +24,7 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
 
         let numPassed = 0;
         const verifyResponse = async (proxyServerResponse: string, route: number) => {
-            const uri = `http://localhost:${serverPort}/${route}`;
+            const uri = `http://localhost:${serverMappedPort}/${route}`;
 
             const serverResponse = await fetch(uri);
 
@@ -36,7 +37,6 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
             const body = await serverResponse.text();
             const fullResponse = `${statusLine}\n${headers}\n\n${body}`;
 
-            serverInstance.close();
             if (fullResponse !== proxyServerResponse) {
                 return resolve({
                     passed: false,
@@ -58,43 +58,32 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
             }
         }
 
-        const listenerCallback = () => {
-            for (let i = 0; i < numClients; i++) {
-                fetch(`http://localhost:${port}/${i}`)
-                    .then(res => {
+        for (let i = 0; i < numClients; i++) {
+            fetch(`http://localhost:${port}/${i}`)
+                .then(res => {
 
-                        const statusLine = `HTTP/1.1 ${res.status} ${res.statusText}`;
+                    const statusLine = `HTTP/1.1 ${res.status} ${res.statusText}`;
 
-                        const headers = [...res.headers.entries()]
-                            .map(([key, value]) => `${key}: ${value}`)
-                            .join('\n')
+                    const headers = [...res.headers.entries()]
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join('\n')
 
-                        res.text().then(body => {
-                            const fullResponse = `${statusLine}\n${headers}\n\n${body}`;
-                            verifyResponse(fullResponse, i);
-                        })
+                    res.text().then(body => {
+                        const fullResponse = `${statusLine}\n${headers}\n\n${body}`;
+                        verifyResponse(fullResponse, i);
                     })
-                    .catch(error => {
-                        return resolve({
-                            passed: false,
-                            testInput,
-                            expectedBehavior,
-                            observedBehavior: `Connection failed with error ${error}`
-                        })
+                })
+                .catch(error => {
+                    return resolve({
+                        passed: false,
+                        testInput,
+                        expectedBehavior,
+                        observedBehavior: `Connection failed with error ${error}`
                     })
-            }
-        }
-
-        const errorCallback = (err: Error) => {
-            return resolve({
-                passed: false,
-                testInput,
-                expectedBehavior,
-                observedBehavior: "Can't create dummy server,  check if port 3000 is busy",
-            })
+                })
         }
 
 
-        const serverInstance = setupHttpServer(serverPort, listenerCallback, errorCallback);
+        // const serverInstance = setupHttpServer(serverPort, listenerCallback, errorCallback);
     })
 }

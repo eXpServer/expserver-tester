@@ -258,7 +258,17 @@ export const tests: StageTest = {
         stageName: "Non-blocking Sockets",
         descriptionFilePath: "/description/stage8.md",
         tests: [
-
+            {
+                title: "Non-blocking server",
+                description: "creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection",
+                testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds",
+                expectedBehavior: "the second connection is able to send and receive data from the server",
+                testFunction: async (...args) => {
+                    const response = await stage8NonBlockingTest(8001, ...args);
+                    return response;
+                },
+                status: TestStatus.Pending,
+            },
             {
                 title: "Single client - input output",
                 description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
@@ -311,17 +321,6 @@ export const tests: StageTest = {
                     const response = await stage3ErrorHandling(8001, ...args);
                     return response;
 
-                },
-                status: TestStatus.Pending,
-            },
-            {
-                title: "Non-blocking server",
-                description: "creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection",
-                testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds",
-                expectedBehavior: "the second connection is able to send and receive data from the server",
-                testFunction: async (...args) => {
-                    const response = await stage8NonBlockingTest(8001, ...args);
-                    return response;
                 },
                 status: TestStatus.Pending,
             },
