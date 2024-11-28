@@ -125,8 +125,8 @@ export class StageRunner {
 
         // }
 
-        if (this.containerInstance?.running)
-            await this.containerInstance.kill();
+        // if (this.containerInstance?.running)
+        await this.containerInstance.kill();
         await this.containerInstance.start();
 
         //     if (this.terminalInstance || this.processStatsInstance) {
@@ -166,7 +166,7 @@ export class StageRunner {
         for (let i = 0; i < functions.length; i++) {
             const fn = functions[i];
 
-            if (this.containerInstance.running) {
+            if (!this.containerInstance.running) {
                 await this.createAndLinkSpawnInstance();
             }
 

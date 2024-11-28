@@ -12,6 +12,7 @@ export class ContainerManager extends EventEmitter {
     private docker: Docker;
     private _stream: NodeJS.ReadWriteStream | null;
     private _pid: number;
+    private containerConfig: Object;
 
     get containerName(): string {
         return this._containerName;
@@ -49,6 +50,20 @@ export class ContainerManager extends EventEmitter {
         this.docker = new Docker();
         this._running = false;
         this.initialized = false;
+
+        this.containerConfig = {
+            Image: IMAGE_NAME,
+            name: this._containerName,
+            Cmd: [`./${this._binaryId}`],
+            ExposedPorts: this.getExposedPortsConfig(),
+            HostConfig: {
+                PublishAllPorts: true,
+                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`],
+                PortBindings: {
+                    '3000/tcp': [{ HostPort: '3000' }]
+                },
+            }
+        }
     }
 
     public async start(): Promise<void> {
@@ -76,7 +91,9 @@ export class ContainerManager extends EventEmitter {
             if (event.Type == 'container' && event.Actor.Attributes.name == this._containerName && (event.Action == 'stop' || event.Action == 'die')) {
                 console.log(event);
                 this._running = false;
-                const inspect = this.container.inspect().then((data) => {
+                if (!this.container)
+                    return;
+                this.container.inspect().then((data) => {
                     const exitCode = data.State.ExitCode;
                     this.emit('close', exitCode);
                     console.log('close');
@@ -120,19 +137,20 @@ export class ContainerManager extends EventEmitter {
     }
 
 
-    private async startContainer(): Promise<void> {
-        this.container = await this.docker.createContainer({
-            Image: IMAGE_NAME,
-            name: this._containerName,
-            Cmd: [`./${this._binaryId}`],
-            ExposedPorts: this.getExposedPortsConfig(),
-            HostConfig: {
-                PublishAllPorts: true,
-                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`]
-            }
-        });
 
-        console.log(`Starting container: ${this._containerName}`);
+    private async startContainer(): Promise<void> {
+        try {
+            this.container = await this.docker.createContainer(this.containerConfig);
+        }
+        catch {
+            const existingContainer = this.docker.getContainer(this._containerName);
+            if (existingContainer)
+                await existingContainer.remove({ force: true });
+
+            this.container = await this.docker.createContainer(this.containerConfig);
+        }
+
+        console.log(`Starting container: ${this._containerName} `);
         await this.container.start();
 
         await this.waitForContainerToRun();
@@ -144,6 +162,8 @@ export class ContainerManager extends EventEmitter {
         for (const port of this.ports) {
             exposedPorts[`${port}/tcp`] = {};
         }
+
+        exposedPorts[`3000/tcp`] = {}
 
         return exposedPorts;
     }
