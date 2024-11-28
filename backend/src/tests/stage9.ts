@@ -3,8 +3,10 @@ import { TestFunction } from "../types";
 import { Socket } from "net";
 import { LOCALHOST } from "../constants";
 import { getCpuUsage } from "../utils/process";
+import { ContainerManager } from "../core/ContainerManager";
 
-export const stage9checkCpuUsage: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+export const stage9checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "Creates an idle client connection and tracks CPU usage over the course of 20 seconds";
     const expectedBehavior = "CPU usage should be less than 10%";
     return new Promise((resolve, _) => {

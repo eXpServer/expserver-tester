@@ -5,6 +5,7 @@ import { TerminalStream } from "./TerminalStream";
 import { TestDetails, TestStatus } from "../types";
 import { createSpawn } from "../utils/process";
 import { ResourceMonitor } from "./ResrouceMonitor";
+import { ContainerManager } from "./ContainerManager";
 
 enum StageRunnerEvents {
     TEST_STARTED = 'stage-tests-start',
@@ -16,7 +17,8 @@ enum StageRunnerEvents {
 export class StageRunner {
     private watchers: StageWatcher[];
     private _filePath: string;
-    private spawnInstance: ChildProcessWithoutNullStreams | null;
+    // private spawnInstance: ChildProcessWithoutNullStreams | null;
+    private containerInstance: ContainerManager | null;
     private terminalInstance: TerminalStream | null;
     private processStatsInstance: ResourceMonitor | null;
     private _stageNo: number;
@@ -51,7 +53,9 @@ export class StageRunner {
         this._stageNo = stageNo;
         this._filePath = filePath;
         this.watchers = [];
-        this.spawnInstance = null;
+        // this.spawnInstance = null;
+        const binaryId = filePath.split('/').pop();
+        this.containerInstance = new ContainerManager(`container-${binaryId}`, binaryId, [8080, 8001, 8002, 8003, 8004]);
         this.terminalInstance = null;
         this.processStatsInstance = null;
         this.cleanupCallbacks = [];
@@ -65,7 +69,6 @@ export class StageRunner {
             observedBehavior: null,
             status: TestStatus.Pending,
         }))
-
     }
 
 
@@ -90,37 +93,62 @@ export class StageRunner {
     }
 
     private async createAndLinkSpawnInstance() {
-        if (this.spawnInstance == null) {
-            this.spawnInstance = await createSpawn(this.filePath);
-            console.log('spawn undied');
+        // if (this.spawnInstance == null) {
+        //     this.spawnInstance = await createSpawn(this.filePath);
+        //     console.log('spawn undied');
 
-            this.spawnInstance.on('close', () => {
-                console.log('spanw died');
-                this.spawnInstance = null;
-            })
+        //     this.spawnInstance.on('close', () => {
+        //         console.log('spanw died');
+        //         this.spawnInstance = null;
+        //     })
 
-            if (this.terminalInstance || this.processStatsInstance) {
-                if (this.terminalInstance.running)
-                    this.terminalInstance.kill();
+        //     if (this.terminalInstance || this.processStatsInstance) {
+        //         if (this.terminalInstance.running)
+        //             this.terminalInstance.kill();
 
-                if (this.processStatsInstance.running)
-                    this.processStatsInstance.kill();
+        //         if (this.processStatsInstance.running)
+        //             this.processStatsInstance.kill();
 
-                this.terminalInstance.reAttachSpawn(this.spawnInstance);
-                this.terminalInstance.run();
+        //         this.terminalInstance.reAttachSpawn(this.spawnInstance);
+        //         this.terminalInstance.run();
 
-                this.processStatsInstance.reAttachSpawn(this.spawnInstance);
-                this.processStatsInstance.run();
-            }
-            else {
-                this.terminalInstance = new TerminalStream(this.spawnInstance, this.emitterCallback);
-                this.terminalInstance.run();
+        //         this.processStatsInstance.reAttachSpawn(this.spawnInstance);
+        //         this.processStatsInstance.run();
+        //     }
+        //     else {
+        //         this.terminalInstance = new TerminalStream(this.spawnInstance, this.emitterCallback);
+        //         this.terminalInstance.run();
 
-                this.processStatsInstance = new ResourceMonitor(this.spawnInstance, this.emitterCallback);
-                this.processStatsInstance.run();
-            }
+        //         this.processStatsInstance = new ResourceMonitor(this.spawnInstance, this.emitterCallback);
+        //         this.processStatsInstance.run();
+        //     }
 
-        }
+        // }
+
+        if (this.containerInstance?.running)
+            await this.containerInstance.kill();
+        await this.containerInstance.start();
+
+        //     if (this.terminalInstance || this.processStatsInstance) {
+        //         if (this.terminalInstance.running)
+        //             this.terminalInstance.kill();
+
+        //         if (this.processStatsInstance.running)
+        //             this.processStatsInstance.kill();
+
+        //         this.terminalInstance.reAttachSpawn(this.spawnInstance);
+        //         this.terminalInstance.run();
+
+        //         this.processStatsInstance.reAttachSpawn(this.spawnInstance);
+        //         this.processStatsInstance.run();
+        //     }
+        //     else {
+        //         this.terminalInstance = new TerminalStream(this.spawnInstance, this.emitterCallback);
+        //         this.terminalInstance.run();
+
+        //         this.processStatsInstance = new ResourceMonitor(this.spawnInstance, this.emitterCallback);
+        //         this.processStatsInstance.run();
+        //     }
     }
 
     public async run() {
@@ -138,14 +166,12 @@ export class StageRunner {
         for (let i = 0; i < functions.length; i++) {
             const fn = functions[i];
 
-
-            if (this.spawnInstance) {
-                this.spawnInstance.kill();
-                this.spawnInstance = null;
+            if (this.containerInstance.running) {
+                await this.createAndLinkSpawnInstance();
             }
-            await this.createAndLinkSpawnInstance();
 
-            const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.spawnInstance);
+            // const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.spawnInstance);
+            const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
 
             this._currentState[i].testInput = testInput;
             this._currentState[i].expectedBehavior = expectedBehavior;
@@ -167,21 +193,27 @@ export class StageRunner {
     public async kill(forced?: boolean) { // add flag to indicate if forced quit
         this._running = false;
 
-        if (this.spawnInstance) {
-            this.spawnInstance.once('close', () => {
-                this.terminalInstance.kill();
-                this.terminalInstance = null;
+        // if (this.spawnInstance) {
+        //     this.spawnInstance.once('close', () => {
+        //         this.terminalInstance.kill();
+        //         this.terminalInstance = null;
 
-                this.processStatsInstance.kill();
-                this.processStatsInstance = null;
-            })
+        //         this.processStatsInstance.kill();
+        //         this.processStatsInstance = null;
+        //     })
 
-            this.spawnInstance.kill('SIGINT');
-        }
-        else {
-            this.terminalInstance?.kill();
-            this.processStatsInstance?.kill();
-        }
+        //     this.spawnInstance.kill('SIGINT');
+        // }
+        // else {
+        //     this.terminalInstance?.kill();
+        //     this.processStatsInstance?.kill();
+        // }
+
+        if (this.containerInstance.running)
+            await this.containerInstance.kill();
+
+        // this.terminalInstance?.kill();
+        // this.processStatsInstance?.kill();
 
         this.cleanupCallbacks.forEach(callback => callback());
 

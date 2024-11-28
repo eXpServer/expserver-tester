@@ -1,8 +1,10 @@
 import { ChildProcessWithoutNullStreams } from "child_process";
 import { TestFunction } from "../types";
 import { setupHttpServer } from "../utils/dummyServer";
+import { ContainerManager } from "../core/ContainerManager";
 
-export const stage5ProxyMultipleConnections: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2";
     const expectedBehavior = "client 1 receives response from /test/1 && client 2 gets response from /test/2";
     const serverPort = 3000;

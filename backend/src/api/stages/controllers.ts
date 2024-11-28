@@ -3,6 +3,8 @@ import { Request, Response } from '../../types';
 import expressAsyncHandler from 'express-async-handler';
 import { deleteFile, getFilePath, verifyStageNo } from '../../utils/file';
 import { PrismaClient } from '@prisma/client';
+import { chmod } from 'fs';
+import { FILE_EXECUTABLE_PERMS } from '../../constants';
 const prisma = new PrismaClient();
 
 const getStageDescription = expressAsyncHandler(async (req: Request, res: Response) => {
@@ -68,6 +70,11 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
         res.status(500);
         throw new Error("error creating db entry");
     }
+
+    chmod(filePath, FILE_EXECUTABLE_PERMS, (err) => {
+        if (err)
+            return;
+    })
 
 
     res.status(200).json({

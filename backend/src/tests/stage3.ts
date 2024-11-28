@@ -3,8 +3,10 @@ import { generateRandomStrings, reverseString } from "../utils/string";
 import { TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
 import { ChildProcessWithoutNullStreams } from "child_process";
+import { ContainerManager } from "../core/ContainerManager";
 
-export const stage3MultipleClients: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+export const stage3MultipleClients: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "Connect multiple clients to server and sent string simultaneously";
     const expectedBehavior = "Each of the clients should receive their reversed versions of the string that they sent";
     const numClients = 10;
@@ -104,7 +106,8 @@ export const stage3MultipleClients: TestFunction = (port: number, spawnInstance:
     })
 }
 
-export const stage3ErrorHandling: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+export const stage3ErrorHandling: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "client forcefully disconnects";
     const expectedBehavior = "Previous and new clients are able to send and receive output as expected";
 

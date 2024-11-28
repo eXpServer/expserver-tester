@@ -6,6 +6,7 @@ import path from 'path';
 import { cwd } from "process";
 import { reverseString } from "../utils/string";
 import { ChildProcessWithoutNullStreams } from "child_process";
+import { ContainerManager } from "../core/ContainerManager";
 
 
 /**
@@ -15,7 +16,8 @@ import { ChildProcessWithoutNullStreams } from "child_process";
  * @param port number
  * @returns 
  */
-export const stage8NonBlockingTest: TestFunction = async (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+export const stage8NonBlockingTest: TestFunction = async (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "a client is connected to the server and sends a large file, but does not receive any data from the server.After 30 seconds, a second client is connected to the server, and verifies if the server responds";
     const expectedBehavior = "server should be able to handle multiple connections simultaneously, and should not block on a single connection";
     return new Promise((resolve, _) => {

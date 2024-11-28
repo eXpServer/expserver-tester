@@ -1,8 +1,8 @@
 node_modules
 # Keep environment variables out of version control
 .env
-uploads/
-test.js
+uploads/*
+test.*s
 public/*.txt
 compile/
 prisma/migrations

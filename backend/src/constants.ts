@@ -14,6 +14,10 @@ export const NUM_STAGES = 5;
 
 export const TERMINAL_MAX_LIMIT = 10000;
 
+export const IMAGE_NAME = 'expserver-tester-image';
+
+export const WORKDIR = '/usr/src/app';
+
 /**
  * error types
  * prepend http_

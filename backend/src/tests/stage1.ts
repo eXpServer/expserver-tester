@@ -3,8 +3,10 @@ import { generateRandomStrings, reverseString } from "../utils/string"
 import { TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
 import { ChildProcessWithoutNullStreams } from "child_process";
+import { ContainerManager } from "../core/ContainerManager";
 
-export const stage1StringReversal: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+export const stage1StringReversal: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "client sends a randomly generated string to the server";
     const expectedBehavior = "client receives reversed version of the input"
     return new Promise((resolve, _) => {
@@ -89,7 +91,8 @@ export const stage1StringReversal: TestFunction = (port: number, spawnInstance: 
     })
 }
 
-export const stage1ErrorChecking: TestFunction = (port: number, spawnInstance: ChildProcessWithoutNullStreams) => {
+export const stage1ErrorChecking: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "Force disconnection of the client";
     const expectedBehavior = "Process exited with code 1";
     return new Promise((resolve, _) => {
