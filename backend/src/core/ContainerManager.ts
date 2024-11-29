@@ -62,9 +62,6 @@ export class ContainerManager extends EventEmitter {
             HostConfig: {
                 PublishAllPorts: true,
                 Binds: [`${process.cwd()}/uploads/:${WORKDIR}`],
-                PortBindings: {
-                    '3000/tcp': [{ HostPort: '3000' }]
-                },
             }
         }
     }
@@ -166,8 +163,6 @@ export class ContainerManager extends EventEmitter {
         for (const port of this.ports) {
             exposedPorts[`${port}/tcp`] = {};
         }
-
-        exposedPorts[`3000/tcp`] = {}
 
         return exposedPorts;
     }
