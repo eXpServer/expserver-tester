@@ -56,17 +56,10 @@ const Sidebar = () => {
     ]
 
     const handlePhaseChange = (item) => {
-        if (item.phaseId >= 0) {
+        if (item.phaseId >= 0)
             setCurrPhase(item.phaseId);
-            // router.push(`/stages/${item.stages[0]}`);
-
-        }
-        else {
+        else
             setCurrPhase(item.phaseId);
-            // router.push('/');
-        }
-
-        console.log(item)
     }
 
     const handleStageChange = (stage) => {

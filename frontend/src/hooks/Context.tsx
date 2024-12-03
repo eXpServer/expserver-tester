@@ -45,8 +45,6 @@ export const SocketContextProvider = ({
     const [description, setDescription] = useState<string>("");
 
     useEffect(() => {
-        console.log('stuff')
-        console.log(stageNo, userId, binaryId, fileName);
         getStageDescription(stageNo, userId).then(data => {
             setDescription(data);
         })
@@ -78,11 +76,9 @@ export const SocketContextProvider = ({
     }
 
     const testUpdateCallback = (data: TestDetails[]) => {
-        console.log(data);
         setResults(data);
     }
     const testCompleteCallback = (data: FinalSummary) => {
-        console.log(data);
         setSummary(data);
         setStatus('finished');
     };

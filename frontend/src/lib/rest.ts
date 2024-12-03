@@ -24,7 +24,6 @@ export const getStageDescription = async (stageNo: number, token: string) => {
         return response.data;
     }
     catch (error) {
-        console.log('error', error, stageNo);
         return null;
     }
 }

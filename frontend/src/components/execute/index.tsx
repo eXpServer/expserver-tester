@@ -16,10 +16,7 @@ const Execute = () => {
 
     const { stageNo, userId, status, fileName, binaryId, updateBinaryId, runTests } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
-    const [myFile, setMyFile] = useState<string>(() => {
-        console.log(fileName)
-        return fileName || "Choose a file"
-    });
+    const [myFile, setMyFile] = useState<string>(fileName || "Choose a file");
 
 
     useEffect(() => {
@@ -38,13 +35,10 @@ const Execute = () => {
 
     const handleUploadFile = async () => {
         if (file == null) {
-            console.log('file not selected');
+            return;
         }
-        else {
-            const response = await uploadBinary(stageNo, userId, file);
-            updateBinaryId(response);
-            console.log("file uploaded successfully");
-        }
+        const response = await uploadBinary(stageNo, userId, file);
+        updateBinaryId(response);
 
     }
 
@@ -54,7 +48,6 @@ const Execute = () => {
             updateBinaryId(null);
             setFile(null);
             setMyFile('Choose a file')
-            console.log("File deleted successfully")
         }
         else {
             console.log(Error, "failed to delete the binary")
@@ -63,7 +56,6 @@ const Execute = () => {
     }
 
     const handleFileChange = (event) => {
-        console.log(event.target.files);
         if (event.target.files && event.target.files[0]) {
             setFile(event.target.files[0]);
             setMyFile(event.target.files[0].name);
