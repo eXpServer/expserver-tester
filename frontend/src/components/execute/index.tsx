@@ -14,7 +14,7 @@ import ResourceMonitor from '../resourceMonitor'
 
 const Execute = () => {
 
-    const { stageNo, userId, status, fileName, binaryId, updateBinaryId, runTests } = useSocketContext();
+    const { stageNo, userId, status, fileName, binaryId, updateBinaryId, runTests, resetResults } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
     const [myFile, setMyFile] = useState<string>(fileName || "Choose a file");
 
@@ -39,6 +39,7 @@ const Execute = () => {
         }
         const response = await uploadBinary(stageNo, userId, file);
         updateBinaryId(response);
+        resetResults();
 
     }
 

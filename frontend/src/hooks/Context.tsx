@@ -1,6 +1,6 @@
 import { getStageDescription, getToken } from "@/lib/rest";
 import { WebSocket } from "@/lib/WebSocket";
-import { FinalSummary, TestDetails } from "@/types";
+import { FinalSummary, TestDetails, TestStatus } from "@/types";
 import { createContext, ReactNode, useEffect, useRef, useState } from "react";
 
 interface SocketContextInterface {
@@ -20,7 +20,8 @@ interface SocketContextInterface {
     updateStage: (stageNo: number) => void,
     runTests: () => void,
     stopTests: () => void,
-    updateBinaryId: (binaryId: string | null) => void;
+    updateBinaryId: (binaryId: string | null) => void,
+    resetResults: () => void,
 }
 
 export const SocketContext = createContext<SocketContextInterface>(null);
@@ -91,6 +92,10 @@ export const SocketContextProvider = ({
         socket.setTerminalCallbacks(terminalCallback);
     }
 
+    const resetResults = () => {
+        setResults(prev => prev.map(ele => ({ ...ele, status: TestStatus.Pending })));
+    }
+
     const updateStage = async (newStageNo: number) => {
         if (newStageNo == stageNo)
             return;
@@ -150,6 +155,7 @@ export const SocketContextProvider = ({
                 runTests,
                 stopTests,
                 updateBinaryId,
+                resetResults,
             }}
         >
             {children}
