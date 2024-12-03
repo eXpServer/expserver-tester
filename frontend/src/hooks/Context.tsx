@@ -11,6 +11,7 @@ interface SocketContextInterface {
     summary: FinalSummary,
     resourceMetrics: { cpu: number, mem: number },
     terminalData: string[],
+    fileName: string,
     binaryId: string,
     status: "pending" | "running" | "finished" | "force-stopped",
     loading: boolean,
@@ -30,8 +31,9 @@ export const SocketContextProvider = ({
     children: ReactNode
 }) => {
     const [stageNo, setStageNo] = useState<number>(-1);
-    const [userId, setUserId] = useState<string>("");
-    const [binaryId, setBinaryId] = useState<string>("");
+    const [userId, setUserId] = useState<string | null>("");
+    const [fileName, setFileName] = useState<string | null>(null);
+    const [binaryId, setBinaryId] = useState<string | null>(null);
     const socket = useRef<WebSocket>(new WebSocket());
     const [status, setStatus] = useState<"pending" | "running" | "finished" | "force-stopped">("pending");
     const [loading, setLoading] = useState<boolean>(false);
@@ -44,7 +46,7 @@ export const SocketContextProvider = ({
 
     useEffect(() => {
         console.log('stuff')
-        console.log(stageNo, userId, binaryId);
+        console.log(stageNo, userId, binaryId, fileName);
         getStageDescription(stageNo, userId).then(data => {
             setDescription(data);
         })
@@ -99,10 +101,11 @@ export const SocketContextProvider = ({
         setLoading(true);
 
         setStageNo(newStageNo);
-        const { binaryId, running, testDetails } = await socket.current.changeStage(newStageNo);
+        const { fileName, binaryId, running, testDetails } = await socket.current.changeStage(newStageNo);
         setBinaryId(binaryId);
         setStatus(running ? "running" : "pending");
         setResults(testDetails);
+        setFileName(fileName);
 
         setLoading(false);
     }
@@ -139,6 +142,7 @@ export const SocketContextProvider = ({
                 summary,
                 resourceMetrics,
                 terminalData,
+                fileName,
                 binaryId,
                 status,
                 loading,

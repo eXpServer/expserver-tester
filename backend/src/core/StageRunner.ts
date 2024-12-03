@@ -6,7 +6,7 @@ import { TestDetails, TestStatus } from "../types";
 import { createSpawn } from "../utils/process";
 import { ResourceMonitor } from "./ResrouceMonitor";
 import { ContainerManager } from "./ContainerManager";
-
+import { File } from "@prisma/client";
 enum StageRunnerEvents {
     TEST_STARTED = 'stage-tests-start',
     TEST_UPDATE = 'stage-tests-update',
@@ -16,7 +16,7 @@ enum StageRunnerEvents {
 
 export class StageRunner {
     private watchers: StageWatcher[];
-    private _filePath: string;
+    private file: File;
     // private spawnInstance: ChildProcessWithoutNullStreams | null;
     private containerInstance: ContainerManager | null;
     private terminalInstance: TerminalStream | null;
@@ -39,7 +39,15 @@ export class StageRunner {
     }
 
     get filePath() {
-        return this._filePath;
+        return this.file.filePath || null;
+    }
+
+    get fileName() {
+        return this.file.fileName || null;
+    }
+
+    get binaryId() {
+        return this.file.binaryId || null;
     }
 
     private _currentState: TestDetails[];
@@ -49,13 +57,12 @@ export class StageRunner {
     }
 
 
-    constructor(userId: string, stageNo: number, filePath: string) {
+    constructor(userId: string, stageNo: number, file: File) {
         this._stageNo = stageNo;
-        this._filePath = filePath;
+        this.file = file;
         this.watchers = [];
         // this.spawnInstance = null;
-        const binaryId = filePath.split('/').pop();
-        this.containerInstance = new ContainerManager(`container-${binaryId}`, binaryId, [3000, 8080, 8001, 8002, 8003, 8004]);
+        this.containerInstance = new ContainerManager(`container-${file.binaryId}`, file.binaryId, [3000, 8080, 8001, 8002, 8003, 8004]);
         this.terminalInstance = null;
         this.processStatsInstance = null;
         this.cleanupCallbacks = [];

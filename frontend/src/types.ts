@@ -16,6 +16,7 @@ export interface TestDetails {
 
 
 export interface TestState {
+    fileName: string | null,
     binaryId: string | null,
     running: boolean,
     testDetails: TestDetails[]

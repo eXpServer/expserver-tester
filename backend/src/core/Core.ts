@@ -73,12 +73,14 @@ export class Core {
         if (!testDetails) {
             return ({
                 binaryId: null,
+                fileName: null,
                 running: false,
                 testDetails: [],
             })
         }
         return ({
-            binaryId: file?.filePath || null,
+            binaryId: file?.binaryId || null,
+            fileName: file?.fileName || null,
             running: false,
             testDetails: testDetails.map<TestDetails>(test => ({
                 title: test.title,
@@ -98,7 +100,8 @@ export class Core {
         watcher.stageRunner = runner;
 
         return ({
-            binaryId: runner.filePath,
+            binaryId: runner.binaryId,
+            fileName: runner.fileName,
             running: true,
             testDetails: currentState,
         })
@@ -166,7 +169,7 @@ export class Core {
         const runner = new StageRunner(
             userId,
             stageNo,
-            file.filePath,
+            file,
         )
 
         this.runners.push(runner);

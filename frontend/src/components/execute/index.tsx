@@ -1,11 +1,7 @@
 'use client'
-import { ChangeEvent, useState, useEffect, useMemo, use } from 'react'
-import axios from 'axios'
+import { useState, useEffect, useMemo } from 'react'
 import styles from './execute.module.css'
-// import local from 'next/font/local'
 import { deleteBinary, getToken, uploadBinary } from '@/lib/rest'
-// import { WebSocket } from '@/lib/WebSocket'
-import { io, Socket } from 'socket.io-client'
 import { useSocketContext } from '@/hooks/useSocketContext'
 import Image from 'next/image'
 import add from '/public/add.svg'
@@ -18,36 +14,25 @@ import ResourceMonitor from '../resourceMonitor'
 
 const Execute = () => {
 
-    const { stageNo, userId, status, binaryId, updateBinaryId, runTests } = useSocketContext();
+    const { stageNo, userId, status, fileName, binaryId, updateBinaryId, runTests } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
     const [myFile, setMyFile] = useState<string>(() => {
-        console.log(binaryId)
-        if (binaryId)
-            return binaryId.split('/').pop();
-        else
-            return "Choose a file"
+        console.log(fileName)
+        return fileName || "Choose a file"
     });
 
 
     useEffect(() => {
-        if (binaryId)
-            setMyFile(binaryId.split('/').pop());
-        else
-            setMyFile("Choose a file")
-    }, [binaryId])
- 
+        setMyFile(fileName || "Choose a file")
+    }, [fileName])
+
 
     const disableRunButton = useMemo(() => {
         return (status == 'running' || binaryId == null);
     }, [status, binaryId]);
 
     const isFileUploaded = useMemo(() => {
-        if (binaryId) {
-            // setMyFile(file.name)
-            return true;
-        }
-        else
-            return false;
+        return (!!binaryId);
     }, [binaryId]);
 
 

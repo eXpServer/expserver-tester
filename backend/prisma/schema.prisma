@@ -11,7 +11,8 @@ datasource db {
 }
 
 model File {
-  id       String @id @default(uuid())
+  binaryId String @id
+  fileName String
   filePath String
   stageNo  Int
   userId   String

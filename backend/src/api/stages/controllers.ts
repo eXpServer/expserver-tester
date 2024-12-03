@@ -35,8 +35,10 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
         throw new Error("Stage not found");
     }
 
-    const fileName = req.file.path;
-    const filePath = getFilePath(fileName);
+    const relativePath = req.file.path;
+    const absolutePath = getFilePath(relativePath);
+    const binaryId = relativePath.split('/').pop();
+    const fileName = req.file.originalname;
 
     try {
         const existingFile = await prisma.file.findFirst({
@@ -53,14 +55,16 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 
             await prisma.file.delete({
                 where: {
-                    id: existingFile.id,
+                    binaryId: existingFile.binaryId,
                 }
             });
         }
 
         await prisma.file.create({
             data: {
-                filePath,
+                filePath: absolutePath,
+                binaryId,
+                fileName,
                 stageNo: parseInt(stageNo),
                 userId: req.user,
             }
@@ -71,7 +75,7 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
         throw new Error("error creating db entry");
     }
 
-    chmod(filePath, FILE_EXECUTABLE_PERMS, (err) => {
+    chmod(absolutePath, FILE_EXECUTABLE_PERMS, (err) => {
         if (err)
             return;
     })
@@ -111,7 +115,7 @@ const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 
             await prisma.file.delete({
                 where: {
-                    id: file.id,
+                    binaryId: file.binaryId,
                 }
             })
         }

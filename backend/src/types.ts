@@ -36,6 +36,7 @@ export type TestFunction = (...args: any[]) => Promise<{
 
 export interface TestState {
     binaryId: string | null,
+    fileName: string | null,
     running: boolean,
     testDetails: TestDetails[]
 }
@@ -60,6 +61,7 @@ export type Request = Req & {
     user: string,
     file: {
         path: string,
+        originalname: string,
     }
 };
 export type Response = Res;
