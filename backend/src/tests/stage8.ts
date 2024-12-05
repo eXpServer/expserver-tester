@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { cwd } from "process";
 import { reverseString } from "../utils/string";
-import { ChildProcessWithoutNullStreams } from "child_process";
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 import { ContainerManager } from "../core/ContainerManager";
 
 
@@ -94,14 +94,18 @@ export const stage8NonBlockingTest: TestFunction = async (hostPort: number, spaw
                         clearTimeout(secondClientWaitTimeout);
                         firstClient.end();
                         secondClient.end();
-                        clearTimeout(firstClientWaitTimeout)
+                        file.close();
+                        clearTimeout(firstClientWaitTimeout);
 
-                        return resolve({
-                            passed: false,
-                            testInput,
-                            expectedBehavior,
-                            observedBehavior: "Server did not respond to the second client within 30s"
-                        });
+                        spawnInstance.kill().then(() => {
+                            return resolve({
+                                passed: false,
+                                testInput,
+                                expectedBehavior,
+                                observedBehavior: "Server did not respond to the second client within 30s"
+                            });
+                        })
+
                     }, 30000);
                 })
             }, 5000);

@@ -65,6 +65,7 @@ export class StageRunner {
         this.containerInstance = new ContainerManager(
             `container-${file.binaryId}`,
             file.binaryId,
+            Core.requiresDummyServer(stageNo),
         );
         this.terminalInstance = new TerminalStream(
             this.containerInstance,
@@ -144,9 +145,8 @@ export class StageRunner {
         // if (this.containerInstance?.running)
         await this.containerInstance.kill();
         await this.containerInstance.start();
-
-        this.terminalInstance.run();
-        this.processStatsInstance.run();
+        // this.terminalInstance.run();
+        // this.processStatsInstance.run();
 
         //     if (this.terminalInstance || this.processStatsInstance) {
         //         if (this.terminalInstance.running)
@@ -183,6 +183,7 @@ export class StageRunner {
 
         const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
+            console.log('running test', i, this.containerInstance.running);
             const fn = functions[i];
 
             if (!this.containerInstance.running) {
@@ -191,6 +192,7 @@ export class StageRunner {
 
             // const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.spawnInstance);
             const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
+            console.log('test ran', i, passed, this.containerInstance.running);
 
             this._currentState[i].testInput = testInput;
             this._currentState[i].expectedBehavior = expectedBehavior;

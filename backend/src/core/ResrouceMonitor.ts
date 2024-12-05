@@ -57,8 +57,13 @@ export class ResourceMonitor {
         // const memUsage = await getMemUsage(this.spawnInstance.pid);
         // const { totalMemMb, usedMemMb } = await this.mem.used();
         // const memUsage = (usedMemMb / totalMemMb) * 100;
-
-        this._currentUsage = { cpu: 0, mem: 0 };
+        try {
+            const { cpuUsage, memUsage } = await this.containerInstance.getResourceStats();
+            this._currentUsage = { cpu: cpuUsage, mem: memUsage };
+        }
+        catch {
+            this._currentUsage = { cpu: 0, mem: 0 };
+        }
     }
 
     private emitToAllSockets(event: string, data: any) {
@@ -78,13 +83,13 @@ export class ResourceMonitor {
 
     public run() {
         this._running = true;
-        this.timeout = setTimeout(this.resourceStreamCallback, 1000);
+        this.timeout = setInterval(this.resourceStreamCallback, 1000);
 
         this.containerInstance.once('close', this.closeCallback)
     }
 
     public kill() {
         this._running = false;
-        clearTimeout(this.timeout);
+        clearInterval(this.timeout);
     }
 }

@@ -9,6 +9,7 @@ export const tests: StageTest = {
     stage1: {
         stageName: "TCP Server",
         descriptionFilePath: "/description/stage1.md",
+        requiresDummyServer: false,
         tests: [
             {
                 title: "Checking error handling",
@@ -37,6 +38,7 @@ export const tests: StageTest = {
     stage3: {
         stageName: 'UDP Multithreading',
         descriptionFilePath: "/description/stage3.md",
+        requiresDummyServer: false,
         tests: [
             {
                 title: "Single client - input output",
@@ -77,6 +79,7 @@ export const tests: StageTest = {
     stage4: {
         stageName: "Linux Epoll",
         descriptionFilePath: "/description/stage4.md",
+        requiresDummyServer: false,
         tests: [
             {
                 title: "Single client - input output",
@@ -117,6 +120,7 @@ export const tests: StageTest = {
     stage5: {
         stageName: 'TCP Proxy',
         descriptionFilePath: "/description/stage5.md",
+        requiresDummyServer: true,
         tests: [
             {
                 title: "proxy response checking -- multiple clients",
@@ -135,6 +139,7 @@ export const tests: StageTest = {
     stage6: {
         stageName: "Listener and Connection Module",
         descriptionFilePath: "/description/stage6.md",
+        requiresDummyServer: false,
         tests: [
             {
                 title: "Single client - input output",
@@ -196,6 +201,7 @@ export const tests: StageTest = {
     stage7: {
         stageName: "Core and Loop Modules",
         descriptionFilePath: "/description/stage7.md",
+        requiresDummyServer: false,
         tests: [
             {
                 title: "Single client - input output",
@@ -257,6 +263,7 @@ export const tests: StageTest = {
     stage8: {
         stageName: "Non-blocking Sockets",
         descriptionFilePath: "/description/stage8.md",
+        requiresDummyServer: false,
         tests: [
             {
                 title: "Non-blocking server",
@@ -329,6 +336,7 @@ export const tests: StageTest = {
     stage9: {
         stageName: "Epoll Edge Triggered",
         descriptionFilePath: "/description/stage9.md",
+        requiresDummyServer: false,
         tests: [
             {
                 title: "CPU usage",

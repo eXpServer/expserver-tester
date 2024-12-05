@@ -1,6 +1,7 @@
 import Docker, { Container } from 'dockerode';
 import { EventEmitter } from 'eventemitter3';
 import { IMAGE_NAME, WORKDIR } from '../constants';
+import { readFileSync } from 'fs';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
@@ -39,7 +40,7 @@ export class ContainerManager extends EventEmitter {
         return port || null;
     }
 
-    constructor(containerName: string, binaryId: string) {
+    constructor(containerName: string, binaryId: string, createDummaryServer: boolean) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
@@ -53,10 +54,13 @@ export class ContainerManager extends EventEmitter {
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            Cmd: [
-                'sh', '-c',
-                `python3 -m http.server 3000 > /dev/null 2>&1 & ./${this._binaryId}`
-            ],
+            Cmd: createDummaryServer
+                ? [
+                    'sh', '-c',
+                    `python3 -m http.server 3000 > /dev/null 2>&1 & ./${this._binaryId}`
+                ] : [
+                    `./${this._binaryId}`
+                ],
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
                 PublishAllPorts: true,
@@ -68,7 +72,7 @@ export class ContainerManager extends EventEmitter {
     public async start(): Promise<void> {
         if (this.initialized)
             return;
-
+        console.log("restarting container");
         await this.startContainer();
 
         for (const port of this.ports) {
@@ -93,6 +97,7 @@ export class ContainerManager extends EventEmitter {
                 this.container.inspect().then((data) => {
                     const exitCode = data.State.ExitCode;
                     this.emit('close', exitCode);
+                    console.log('died', this.containerName, exitCode);
                     if (this.initialized)
                         this.emit('error', exitCode);
 
@@ -103,16 +108,18 @@ export class ContainerManager extends EventEmitter {
     }
 
     public async kill(): Promise<void> {
-        if (!this.initialized || this.container === null)
+        if (!this.initialized || !this.running || this.container === null)
             return;
 
         this.initialized = false;
-        const inspect = await this.container.inspect();
-        if (inspect.State.Running) {
-            console.log(`Stopping container: ${this._containerName}`);
-            await this.container.kill();
-        }
+        // const inspect = await this.container.inspect();
+        // if (inspect.State.Running) {
+        //     console.log(`Stopping container: ${this._containerName}`);
+        //     await this.container.kill();
+        //     console.log('stopped container');
+        // }
         console.log(`Removing container: ${this._containerName}`);
+        console.log(this.container);
         await this.container.remove({ force: true });
 
         this.container = null;
@@ -192,6 +199,47 @@ export class ContainerManager extends EventEmitter {
                     return resolve();
                 }
             }, 1000);
+        })
+    }
+
+    public async getResourceStats(): Promise<{ cpuUsage: number, memUsage: number }> {
+        if (!this.initialized || !this.container)
+            return { cpuUsage: -1, memUsage: -1 };
+
+        const exec = await this.container.exec({
+            Cmd: ['ps', '-p', '1', '-o', '%cpu,%mem,cmd'],
+            AttachStdout: true,
+            AttachStderr: true,
+        });
+
+        const stream = await exec.start({
+            hijack: true,
+            stdin: false,
+        });
+
+        let output = '';
+        stream.on('data', chunk => {
+            output += chunk.toString();
+        })
+
+        return new Promise((resolve, reject) => {
+            stream.on('end', () => {
+                const lines = output.split('\n');
+                if (lines.length < 2)
+                    return reject('no data returned');
+
+                const data = lines[1].trim().split(/\s+/);
+                if (data.length < 2)
+                    return reject('unexpected output');
+
+                const cpuUsage = parseFloat(data[0]);
+                const memUsage = parseFloat(data[1]);
+
+                return resolve({
+                    cpuUsage,
+                    memUsage,
+                });
+            })
         })
     }
 

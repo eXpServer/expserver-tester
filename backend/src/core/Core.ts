@@ -246,4 +246,12 @@ export class Core {
 
         return this.stageTests[`stage${stageNo}`].tests;
     }
+
+
+    public static requiresDummyServer(stageNo: number | string): boolean {
+        if (!this.stageTests[`stage${stageNo}`])
+            return false;
+
+        return this.stageTests[`stage${stageNo}`].requiresDummyServer;
+    }
 }
