@@ -62,9 +62,18 @@ export class StageRunner {
         this.file = file;
         this.watchers = [];
         // this.spawnInstance = null;
-        this.containerInstance = new ContainerManager(`container-${file.binaryId}`, file.binaryId, [3000, 8080, 8001, 8002, 8003, 8004]);
-        this.terminalInstance = null;
-        this.processStatsInstance = null;
+        this.containerInstance = new ContainerManager(
+            `container-${file.binaryId}`,
+            file.binaryId,
+        );
+        this.terminalInstance = new TerminalStream(
+            this.containerInstance,
+            this.emitterCallback
+        );
+        this.processStatsInstance = new ResourceMonitor(
+            this.containerInstance,
+            this.emitterCallback
+        );
         this.cleanupCallbacks = [];
         this._userId = userId;
 
@@ -135,6 +144,9 @@ export class StageRunner {
         // if (this.containerInstance?.running)
         await this.containerInstance.kill();
         await this.containerInstance.start();
+
+        this.terminalInstance.run();
+        this.processStatsInstance.run();
 
         //     if (this.terminalInstance || this.processStatsInstance) {
         //         if (this.terminalInstance.running)
@@ -219,8 +231,8 @@ export class StageRunner {
         if (this.containerInstance.running)
             await this.containerInstance.kill();
 
-        // this.terminalInstance?.kill();
-        // this.processStatsInstance?.kill();
+        this.terminalInstance?.kill();
+        this.processStatsInstance?.kill();
 
         this.cleanupCallbacks.forEach(callback => callback());
 

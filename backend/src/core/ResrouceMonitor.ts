@@ -3,8 +3,8 @@ import { ResourceStats } from "../types";
 import { ChildProcessWithoutNullStreams } from "child_process";
 import osu from 'node-os-utils';
 import Mem from "node-os-utils/lib/mem";
-import EventEmitter from "eventemitter3";
 import { getCpuUsage, getMemUsage } from "../utils/process";
+import { ContainerManager } from "./ContainerManager";
 
 enum ResourceMonitorEvents {
     TEST_UPDATE = 'stage-stats-update',
@@ -13,7 +13,8 @@ enum ResourceMonitorEvents {
 }
 
 export class ResourceMonitor {
-    private spawnInstance: ChildProcessWithoutNullStreams;
+    // private spawnInstance: ChildProcessWithoutNullStreams;
+    private containerInstance: ContainerManager;
     private cpu: Cpu;
     private mem: Mem;
     private _currentUsage: ResourceStats;
@@ -29,8 +30,8 @@ export class ResourceMonitor {
         return this._currentUsage;
     }
 
-    constructor(spawnInstance: ChildProcessWithoutNullStreams, emitterCallback: (event: string, data: any) => void) {
-        this.spawnInstance = spawnInstance;
+    constructor(containerInstance: ContainerManager, emitterCallback: (event: string, data: any) => void) {
+        this.containerInstance = containerInstance;
         this.cpu = osu.cpu;
         this.mem = osu.mem;
 
@@ -44,12 +45,12 @@ export class ResourceMonitor {
         // this._emitter.on(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, emitterCallback);
     }
 
-    public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
-        if (this._running)
-            return;
+    // public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
+    //     if (this._running)
+    //         return;
 
-        this.spawnInstance = spawnInstance;
-    }
+    //     this.spawnInstance = spawnInstance;
+    // }
 
     private async getUsage() {
         // const cpuUsage = await getCpuUsage(this.spawnInstance.pid);
@@ -65,18 +66,21 @@ export class ResourceMonitor {
         // this._emitter.emit(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, event, data);
     }
 
+    private closeCallback = () => {
+        this.emitToAllSockets(ResourceMonitorEvents.TEST_COMPLETE, this._currentUsage);
+        this.kill();
+    }
+
+    private resourceStreamCallback = () => {
+        this.getUsage();
+        this.emitToAllSockets(ResourceMonitorEvents.TEST_UPDATE, this._currentUsage);
+    }
+
     public run() {
         this._running = true;
-        this.timeout = setTimeout(() => {
-            this.getUsage();
+        this.timeout = setTimeout(this.resourceStreamCallback, 1000);
 
-            this.emitToAllSockets(ResourceMonitorEvents.TEST_UPDATE, this._currentUsage);
-        }, 1000);
-
-        this.spawnInstance.once('close', () => {
-            this.kill();
-            this.emitToAllSockets(ResourceMonitorEvents.TEST_COMPLETE, this._currentUsage);
-        })
+        this.containerInstance.once('close', this.closeCallback)
     }
 
     public kill() {

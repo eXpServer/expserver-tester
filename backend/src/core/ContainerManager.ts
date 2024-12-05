@@ -8,7 +8,7 @@ export class ContainerManager extends EventEmitter {
     private initialized: boolean;
     private _running: boolean;
     private container: Container | null;
-    private ports: number[];
+    private readonly ports: number[] = [3000, 8001, 8002, 8003, 8004, 8080];
     private docker: Docker;
     private _stream: NodeJS.ReadWriteStream | null;
     private _pid: number;
@@ -39,11 +39,10 @@ export class ContainerManager extends EventEmitter {
         return port || null;
     }
 
-    constructor(containerName: string, binaryId: string, ports: number[]) {
+    constructor(containerName: string, binaryId: string) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
-        this.ports = ports;
         this.mappedPorts = new Map();
         this.initialized = false;
         this.container = null;
@@ -56,7 +55,7 @@ export class ContainerManager extends EventEmitter {
             name: this._containerName,
             Cmd: [
                 'sh', '-c',
-                `python3 -m http.server 3000 & ./${this._binaryId}`
+                `python3 -m http.server 3000 > /dev/null 2>&1 & ./${this._binaryId}`
             ],
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
@@ -67,7 +66,6 @@ export class ContainerManager extends EventEmitter {
     }
 
     public async start(): Promise<void> {
-        console.log("hello");
         if (this.initialized)
             return;
 
@@ -89,14 +87,12 @@ export class ContainerManager extends EventEmitter {
         eventStream.on('data', (chunk) => {
             const event = JSON.parse(chunk.toString());
             if (event.Type == 'container' && event.Actor.Attributes.name == this._containerName && (event.Action == 'stop' || event.Action == 'die')) {
-                console.log(event);
                 this._running = false;
                 if (!this.container)
                     return;
                 this.container.inspect().then((data) => {
                     const exitCode = data.State.ExitCode;
                     this.emit('close', exitCode);
-                    console.log('close');
                     if (this.initialized)
                         this.emit('error', exitCode);
 
@@ -104,18 +100,6 @@ export class ContainerManager extends EventEmitter {
 
             }
         })
-    }
-
-
-    public async attachStreams(): Promise<void> {
-        const stream = await this.container.attach({
-            stream: true,
-            stdout: true,
-            stderr: true,
-        })
-
-
-        this._stream = stream;
     }
 
     public async kill(): Promise<void> {
@@ -130,11 +114,38 @@ export class ContainerManager extends EventEmitter {
         }
         console.log(`Removing container: ${this._containerName}`);
         await this.container.remove({ force: true });
-        this._running = false;
 
         this.container = null;
+        this._stream = null;
+        this._running = false;
+        this._pid = -1;
+        this.mappedPorts = new Map();
 
         return;
+    }
+
+    private async attachStream(): Promise<void> {
+        if (!this.container)
+            return;
+
+        this._stream = await this.container.attach({
+            stream: true,
+            stdout: true,
+            stderr: true,
+        })
+
+
+        this._stream.on('data', (chunk) => {
+            this.emit('stdout', chunk.toString());
+        })
+
+        this._stream.on('error', (err) => {
+            this.emit('stderr', err);
+        })
+
+        this._stream.on('end', () => {
+            this.emit('end', '--- End of Stream ---');
+        })
     }
 
 
@@ -151,9 +162,10 @@ export class ContainerManager extends EventEmitter {
             this.container = await this.docker.createContainer(this.containerConfig);
         }
 
+        await this.attachStream();
+
         console.log(`Starting container: ${this._containerName} `);
         await this.container.start();
-
         await this.waitForContainerToRun();
     }
 
