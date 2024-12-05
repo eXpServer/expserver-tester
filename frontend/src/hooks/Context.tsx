@@ -83,8 +83,14 @@ export const SocketContextProvider = ({
         setSummary(data);
         setStatus('finished');
     };
-    const resourceMonitorCallback = (data: { cpu: number, mem: number }) => setResourceMetrics(data);
-    const terminalCallback = (data: string) => setTerminalData([...terminalData, data]);
+    const resourceMonitorCallback = (data: { cpu: number, mem: number }) => {
+        console.log('Resource Monitor:', data);
+        setResourceMetrics(data)
+    };
+    const terminalCallback = (data: string) => {
+        // console.log(data);
+        setTerminalData([...terminalData, data])
+    };
 
     const setCallbacks = async (socket: WebSocket) => {
         socket.setTestCallbacks(testUpdateCallback, testCompleteCallback);
