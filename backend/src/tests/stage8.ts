@@ -60,10 +60,11 @@ export const stage8NonBlockingTest: TestFunction = async (hostPort: number, spaw
             })
         }
 
-        firstClient.on('connectionAttemptFailed', connectionFailedHandler);
-        secondClient.on('connectionAttemptFailed', connectionFailedHandler);
 
+        firstClient.on('connectionAttemptFailed', connectionFailedHandler);
         firstClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
+
+        secondClient.on('connectionAttemptFailed', connectionFailedHandler);
         secondClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
 
         firstClient.connect(port, LOCALHOST, () => {
@@ -71,8 +72,32 @@ export const stage8NonBlockingTest: TestFunction = async (hostPort: number, spaw
             file.pipe(firstClient);
 
 
+
+
             const firstClientWaitTimeout = setTimeout(() => {
                 secondClient.connect(port, LOCALHOST, () => {
+                    const errorCallback = () => {
+                        firstClient.end();
+                        secondClient.end();
+                        clearTimeout(firstClientWaitTimeout);
+                        clearTimeout(secondClientWaitTimeout);
+
+                        return resolve({
+                            passed: false,
+                            expectedBehavior,
+                            testInput,
+                            observedBehavior: "Client connection was disconnected",
+                            cleanup: () => {
+                                firstClient.destroy();
+                                secondClient.destroy();
+                            }
+                        })
+                    };
+
+                    firstClient.on('error', errorCallback);
+                    secondClient.on('error', errorCallback)
+
+
                     const input = "hello world";
                     secondClient.write(input);
 
@@ -91,12 +116,22 @@ export const stage8NonBlockingTest: TestFunction = async (hostPort: number, spaw
                     })
 
                     const secondClientWaitTimeout = setTimeout(() => {
+
+
+                        firstClient.off('connectionAttemptFailed', connectionFailedHandler);
+                        firstClient.off('connectionAttemptTimeout', connectionTimeoutHandler);
+                        firstClient.off('error', errorCallback);
+
+                        secondClient.off('connectionAttemptFailed', connectionFailedHandler);
+                        secondClient.off('connectionAttemptTimeout', connectionTimeoutHandler);
+                        secondClient.off('error', errorCallback);
+
+
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.end();
-                        secondClient.end();
+                        firstClient.destroy();
+                        secondClient.destroy();
                         file.close();
                         clearTimeout(firstClientWaitTimeout);
-
                         spawnInstance.kill().then(() => {
                             return resolve({
                                 passed: false,
@@ -106,7 +141,8 @@ export const stage8NonBlockingTest: TestFunction = async (hostPort: number, spaw
                             });
                         })
 
-                    }, 30000);
+
+                    }, 5000);
                 })
             }, 5000);
 

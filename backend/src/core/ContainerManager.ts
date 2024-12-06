@@ -70,14 +70,24 @@ export class ContainerManager extends EventEmitter {
     }
 
     public async start(): Promise<void> {
-        if (this.initialized)
+        if (this.initialized || this.running)
             return;
-        console.log("restarting container");
-        await this.startContainer();
+        try {
+            await this.startContainer();
+        }
+        catch (error) {
+            setTimeout(() => {
+                this.start();
+            }, 1000);
+        }
 
         for (const port of this.ports) {
             const portMapping = await this.getHostPortForContainer(port);
             this.mappedPorts.set(port, portMapping);
+        }
+
+        for (const port of this.ports) {
+            console.log(`{ port: ${port}, mappedPort: ${this.mappedPorts.get(port)}}`)
         }
 
         this._pid = (await this.container.inspect()).State.Pid
@@ -97,7 +107,6 @@ export class ContainerManager extends EventEmitter {
                 this.container.inspect().then((data) => {
                     const exitCode = data.State.ExitCode;
                     this.emit('close', exitCode);
-                    console.log('died', this.containerName, exitCode);
                     if (this.initialized)
                         this.emit('error', exitCode);
 
@@ -107,28 +116,43 @@ export class ContainerManager extends EventEmitter {
         })
     }
 
+
+    public async restartContainer(): Promise<void> {
+        console.log('restarting container');
+        await this.container.restart();
+
+        for (const port of this.ports) {
+            const portMapping = await this.getHostPortForContainer(port);
+            this.mappedPorts.set(port, portMapping);
+        }
+
+        for (const port of this.ports) {
+            console.log(`{ port: ${port}, mappedPort: ${this.mappedPorts.get(port)}}`)
+        }
+    }
+
     public async kill(): Promise<void> {
-        if (!this.initialized || !this.running || this.container === null)
+        if (!this.initialized || !this.running || (this.container === null))
             return;
+        try {
+            this.initialized = false;
+            this._running = false;
+            const inspect = await this.container.inspect();
+            if (inspect.State.Running) {
+                console.log(`Stopping container: ${this._containerName}`);
+                await this.container.kill();
+            }
+            console.log(`Removing container: ${this._containerName}`);
+            await this.container.remove({ force: true });
 
-        this.initialized = false;
-        // const inspect = await this.container.inspect();
-        // if (inspect.State.Running) {
-        //     console.log(`Stopping container: ${this._containerName}`);
-        //     await this.container.kill();
-        //     console.log('stopped container');
-        // }
-        console.log(`Removing container: ${this._containerName}`);
-        console.log(this.container);
-        await this.container.remove({ force: true });
-
-        this.container = null;
-        this._stream = null;
-        this._running = false;
-        this._pid = -1;
-        this.mappedPorts = new Map();
-
-        return;
+            this.container = null;
+            this._stream = null;
+            this._pid = -1;
+            this.mappedPorts = new Map();
+        }
+        catch (error) {
+            console.log(error);
+        }
     }
 
     private async attachStream(): Promise<void> {
@@ -171,9 +195,9 @@ export class ContainerManager extends EventEmitter {
 
         await this.attachStream();
 
-        console.log(`Starting container: ${this._containerName} `);
         await this.container.start();
         await this.waitForContainerToRun();
+        console.log(`Started container: ${this._containerName} `);
     }
 
     private getExposedPortsConfig(): Record<string, {}> {
@@ -260,5 +284,7 @@ export class ContainerManager extends EventEmitter {
 
     //     // this._container.modem.followProgress(this._container, callback);
     // }
+
+
 
 }

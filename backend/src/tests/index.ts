@@ -12,23 +12,23 @@ export const tests: StageTest = {
         requiresDummyServer: false,
         tests: [
             {
-                title: "Checking error handling",
-                description: "Checks how the server behaves when the client unexpectedly disconnects. In the current version of the server, we are not implementing proper handling of such a situation and thus the server should terminate with error code 1",
-                testInput: "Force disconnection of the client",
-                expectedBehavior: "Process exited with code 1",
-                testFunction: async (...args: any[]) => {
-                    const response = await stage1ErrorChecking(8080, ...args);
-                    return response;
-                },
-                status: TestStatus.Pending,
-            },
-            {
                 title: "String reversal",
                 description: "Ensures proper working of the server by verifying if the string returned by the server matches the expected output",
                 testInput: "client sends a randomly generated string to the server",
                 expectedBehavior: "client receives reversed version of the input",
                 testFunction: async (...args: any[]) => {
                     const response = await stage1StringReversal(8080, ...args)
+                    return response;
+                },
+                status: TestStatus.Pending,
+            },
+            {
+                title: "Checking error handling",
+                description: "Checks how the server behaves when the client unexpectedly disconnects. In the current version of the server, we are not implementing proper handling of such a situation and thus the server should terminate with error code 1",
+                testInput: "Force disconnection of the client",
+                expectedBehavior: "Process exited with code 1",
+                testFunction: async (...args: any[]) => {
+                    const response = await stage1ErrorChecking(8080, ...args);
                     return response;
                 },
                 status: TestStatus.Pending,
@@ -265,6 +265,7 @@ export const tests: StageTest = {
         descriptionFilePath: "/description/stage8.md",
         requiresDummyServer: false,
         tests: [
+
             {
                 title: "Non-blocking server",
                 description: "creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection",
