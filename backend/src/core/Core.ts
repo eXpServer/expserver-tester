@@ -244,7 +244,7 @@ export class Core {
         if (!this.stageTests[`stage${stageNo}`])
             return null;
 
-        return this.stageTests[`stage${stageNo}`].tests;
+        return this.stageTests[`stage${stageNo}`].tests.map(test => ({ ...test, status: TestStatus.Pending }));
     }
 
 

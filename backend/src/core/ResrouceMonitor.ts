@@ -15,8 +15,6 @@ enum ResourceMonitorEvents {
 export class ResourceMonitor {
     // private spawnInstance: ChildProcessWithoutNullStreams;
     private containerInstance: ContainerManager;
-    private cpu: Cpu;
-    private mem: Mem;
     private _currentUsage: ResourceStats;
     private timeout: ReturnType<typeof setTimeout>;
     private _running: boolean;
@@ -32,8 +30,6 @@ export class ResourceMonitor {
 
     constructor(containerInstance: ContainerManager, emitterCallback: (event: string, data: any) => void) {
         this.containerInstance = containerInstance;
-        this.cpu = osu.cpu;
-        this.mem = osu.mem;
 
         this._currentUsage = {
             cpu: 0,
@@ -42,33 +38,22 @@ export class ResourceMonitor {
 
         this._running = false;
         this._callback = emitterCallback;
-        // this._emitter.on(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, emitterCallback);
     }
 
-    // public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
-    //     if (this._running)
-    //         return;
-
-    //     this.spawnInstance = spawnInstance;
-    // }
-
     private async getUsage() {
-        // const cpuUsage = await getCpuUsage(this.spawnInstance.pid);
-        // const memUsage = await getMemUsage(this.spawnInstance.pid);
-        // const { totalMemMb, usedMemMb } = await this.mem.used();
-        // const memUsage = (usedMemMb / totalMemMb) * 100;
         try {
             const { cpuUsage, memUsage } = await this.containerInstance.getResourceStats();
+            console.log(cpuUsage, memUsage);
             this._currentUsage = { cpu: cpuUsage, mem: memUsage };
         }
-        catch {
+        catch (err) {
+            console.log(err);
             this._currentUsage = { cpu: 0, mem: 0 };
         }
     }
 
     private emitToAllSockets(event: string, data: any) {
         this._callback(event, data);
-        // this._emitter.emit(ResourceMonitorEvents.EMIT_TO_STAGE_RUNNER, event, data);
     }
 
     private closeCallback = () => {
@@ -83,13 +68,14 @@ export class ResourceMonitor {
 
     public run() {
         this._running = true;
-        this.timeout = setInterval(this.resourceStreamCallback, 1000);
 
+        this.timeout = setInterval(this.resourceStreamCallback, 1000);
         this.containerInstance.once('close', this.closeCallback)
     }
 
     public kill() {
         this._running = false;
+
         clearInterval(this.timeout);
     }
 }

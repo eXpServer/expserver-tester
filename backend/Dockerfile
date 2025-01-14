@@ -3,7 +3,7 @@ FROM alpine:latest
 
 # Install necessary libraries (if your binary requires any)
 # Example: Install libc if it's a C/C++ binary
-RUN apk add --no-cache libc6-compat python3 py3-pip
+RUN apk add --no-cache libc6-compat python3 py3-pip procps
 
 # Set working directory inside the container
 WORKDIR /usr/src/app

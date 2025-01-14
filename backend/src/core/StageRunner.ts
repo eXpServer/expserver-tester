@@ -1,10 +1,12 @@
 import { StageWatcher } from "./StageWatcher";
 import { Core } from "./Core";
 import { TerminalStream } from "./TerminalStream";
-import { TestDetails, TestStatus } from "../types";
+import { type TestDetails, TestStatus } from "../types";
 import { ResourceMonitor } from "./ResrouceMonitor";
 import { ContainerManager } from "./ContainerManager";
 import { File } from "@prisma/client";
+
+
 enum StageRunnerEvents {
     TEST_STARTED = 'stage-tests-start',
     TEST_UPDATE = 'stage-tests-update',
@@ -57,7 +59,6 @@ export class StageRunner {
         this._stageNo = stageNo;
         this.file = file;
         this.watchers = [];
-        // this.spawnInstance = null;
         this.containerInstance = new ContainerManager(
             `container-${file.binaryId}`,
             file.binaryId,
@@ -104,12 +105,17 @@ export class StageRunner {
         this.emitToAllSockets(event, data);
     }
 
-    private async createAndLinkSpawnInstance() {
-        // await this.containerInstance.start();
+    private async containerWarmUp() {
         if (this.containerInstance.running)
             await this.containerInstance.restartContainer();
         else
             await this.containerInstance.start();
+
+        if (this.terminalInstance.running)
+            this.terminalInstance.kill();
+        if (this.processStatsInstance.running)
+            this.processStatsInstance.kill();
+
         this.terminalInstance.run();
         this.processStatsInstance.run();
     }
@@ -123,14 +129,11 @@ export class StageRunner {
 
         this.emitToAllSockets(StageRunnerEvents.TEST_STARTED, this.currentState);
 
-        // await this.createAndLinkSpawnInstance();
-
         const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
             const fn = functions[i];
 
-            await this.createAndLinkSpawnInstance();
-
+            await this.containerWarmUp();
             const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
 
             this._currentState[i].testInput = testInput;
@@ -153,14 +156,12 @@ export class StageRunner {
 
     public async kill(forced?: boolean) {
         this._running = false;
-
-        if (this.containerInstance.running)
-            await this.containerInstance.kill();
-
         this.terminalInstance?.kill();
         this.processStatsInstance?.kill();
 
+        await this.containerInstance.kill();
 
+        this.containerInstance = null;
         this.watchers.forEach(watcher => watcher.stageRunner = null);
 
 

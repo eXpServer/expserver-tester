@@ -20,7 +20,6 @@ export const tests: StageTest = {
                     const response = await stage1StringReversal(8080, ...args)
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Checking error handling",
@@ -31,7 +30,6 @@ export const tests: StageTest = {
                     const response = await stage1ErrorChecking(8080, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
         ]
     },
@@ -49,7 +47,6 @@ export const tests: StageTest = {
                     const response = await stage1StringReversal(8080, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Multiple clients to same port - input output",
@@ -60,7 +57,6 @@ export const tests: StageTest = {
                     const response = await stage3MultipleClients(8080, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Error handling",
@@ -72,7 +68,6 @@ export const tests: StageTest = {
                     return response;
 
                 },
-                status: TestStatus.Pending,
             }
         ],
     },
@@ -90,7 +85,6 @@ export const tests: StageTest = {
                     const response = await stage1StringReversal(8080, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Multiple clients to same port - input output",
@@ -101,7 +95,6 @@ export const tests: StageTest = {
                     const response = await stage3MultipleClients(8080, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Error handling",
@@ -113,7 +106,6 @@ export const tests: StageTest = {
                     return response;
 
                 },
-                status: TestStatus.Pending,
             }
         ],
     },
@@ -131,7 +123,6 @@ export const tests: StageTest = {
                     const response = await stage5ProxyMultipleConnections(8080, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
 
             },
         ]
@@ -171,7 +162,6 @@ export const tests: StageTest = {
                         })
                     }
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Multiple clients to same port - input output",
@@ -182,7 +172,6 @@ export const tests: StageTest = {
                     const response = await stage3MultipleClients(8001, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Error handling",
@@ -194,7 +183,6 @@ export const tests: StageTest = {
                     return response;
 
                 },
-                status: TestStatus.Pending,
             }
         ],
     },
@@ -233,7 +221,6 @@ export const tests: StageTest = {
                         })
                     }
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Multiple clients to same port - input output",
@@ -244,7 +231,6 @@ export const tests: StageTest = {
                     const response = await stage3MultipleClients(8001, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Error handling",
@@ -256,7 +242,6 @@ export const tests: StageTest = {
                     return response;
 
                 },
-                status: TestStatus.Pending,
             }
         ],
     },
@@ -275,7 +260,6 @@ export const tests: StageTest = {
                     const response = await stage8NonBlockingTest(8001, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Single client - input output",
@@ -307,7 +291,6 @@ export const tests: StageTest = {
                         })
                     }
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Multiple clients to same port - input output",
@@ -318,7 +301,6 @@ export const tests: StageTest = {
                     const response = await stage3MultipleClients(8001, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             },
             {
                 title: "Error handling",
@@ -330,7 +312,6 @@ export const tests: StageTest = {
                     return response;
 
                 },
-                status: TestStatus.Pending,
             },
         ],
     },
@@ -348,7 +329,6 @@ export const tests: StageTest = {
                     const response = await stage9checkCpuUsage(8001, ...args);
                     return response;
                 },
-                status: TestStatus.Pending,
             }
         ]
     }

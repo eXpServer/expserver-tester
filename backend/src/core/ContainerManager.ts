@@ -1,7 +1,7 @@
 import Docker, { Container } from 'dockerode';
 import { EventEmitter } from 'eventemitter3';
 import { IMAGE_NAME, WORKDIR } from '../constants';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
@@ -82,14 +82,9 @@ export class ContainerManager extends EventEmitter {
         }
 
         for (const port of this.ports) {
-            const portMapping = await this.getHostPortForContainer(port);
+            const portMapping = await this.parsePortMap(port);
             this.mappedPorts.set(port, portMapping);
         }
-
-        for (const port of this.ports) {
-            console.log(`{ port: ${port}, mappedPort: ${this.mappedPorts.get(port)}}`)
-        }
-
         this._pid = (await this.container.inspect()).State.Pid
 
 
@@ -119,20 +114,29 @@ export class ContainerManager extends EventEmitter {
 
     public async restartContainer(): Promise<void> {
         console.log('restarting container');
-        await this.container.restart();
+        try {
+            const dataBefore = await this.container.inspect();
+            const isRunningBefore = dataBefore.State.Running;
+            await this.container.restart();
+            const dataAfter = await this.container.inspect();
+            const isRunningAfter = dataAfter.State.Running;
 
-        for (const port of this.ports) {
-            const portMapping = await this.getHostPortForContainer(port);
-            this.mappedPorts.set(port, portMapping);
+            console.log(isRunningBefore, isRunningAfter);
+
+            for (const port of this.ports) {
+                const portMapping = await this.parsePortMap(port);
+                this.mappedPorts.set(port, portMapping);
+            }
+
         }
-
-        for (const port of this.ports) {
-            console.log(`{ port: ${port}, mappedPort: ${this.mappedPorts.get(port)}}`)
+        catch (error) {
+            console.log(error);
+            await this.container.start();
         }
     }
 
     public async kill(): Promise<void> {
-        if (!this.initialized || !this.running || (this.container === null))
+        if (!this.initialized || (this.container === null))
             return;
         try {
             this.initialized = false;
@@ -249,42 +253,35 @@ export class ContainerManager extends EventEmitter {
         return new Promise((resolve, reject) => {
             stream.on('end', () => {
                 const lines = output.split('\n');
-                if (lines.length < 2)
-                    return reject('no data returned');
 
-                const data = lines[1].trim().split(/\s+/);
-                if (data.length < 2)
+                const data = lines[1].match(/^\s*(\d+\.\d+)\s+(\d+\.\d+)/m);
+                if (data) {
+                    console.log("raw data", data);
+                    const [_, cpu, mem] = data;
+                    const cpuUsage = parseFloat(cpu);
+                    const memUsage = parseFloat(mem);
+                    return resolve({
+                        cpuUsage,
+                        memUsage,
+                    });
+                }
+                else {
                     return reject('unexpected output');
-
-                const cpuUsage = parseFloat(data[0]);
-                const memUsage = parseFloat(data[1]);
-
-                return resolve({
-                    cpuUsage,
-                    memUsage,
-                });
+                }
             })
         })
     }
 
-    private async getHostPortForContainer(portNo: number): Promise<number | null> {
+    private async parsePortMap(portNo: number): Promise<number | null> {
         if (!this.initialized || !this.container)
             return null;
 
         const data = await this.container.inspect();
+
         const portMapping = data.NetworkSettings.Ports[`${portNo}/tcp`];
 
         if (portMapping && portMapping.length > 0)
             return parseInt(portMapping[0].HostPort, 10);
         return null;
     }
-
-    // public on(event: string, callback: (...args: any[]) => void): void {
-    //     if (!this.initialized || !this.container) return;
-
-    //     // this._container.modem.followProgress(this._container, callback);
-    // }
-
-
-
 }

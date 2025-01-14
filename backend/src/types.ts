@@ -53,7 +53,7 @@ export interface StageTest {
         stageName: string,
         descriptionFilePath: string,
         requiresDummyServer: boolean,
-        tests: Test[];
+        tests: Omit<Test, 'status'>[];
     }
 }
 

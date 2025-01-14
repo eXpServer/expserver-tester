@@ -34,13 +34,6 @@ export class TerminalStream {
         this._running = false;
     }
 
-    // public reAttachSpawn(spawnInstance: ChildProcessWithoutNullStreams) {
-    //     if (this._running)
-    //         return;
-    //     this.spawnInstance = spawnInstance;
-    // }
-
-
     private emitToAllSockets(event: string, data: any) {
         this.callback(event, data);
     }
@@ -66,13 +59,8 @@ export class TerminalStream {
     }
 
 
-    public run(): void {
+    public run() {
         this._running = true;
-        // this.spawnInstance.stdout.setEncoding('ascii');
-        // this.spawnInstance.stdout.on('data', this.terminalStreamCallback);
-
-        // this.spawnInstance.on('close', this.closeCallback)
-
 
         this.containerInstance.on('stdout', this.terminalStreamCallback);
         this.containerInstance.on('stderr', this.terminalStreamCallback);
@@ -82,8 +70,6 @@ export class TerminalStream {
 
     public kill() {
         this._running = false;
-        // this.spawnInstance.off('data', this.terminalStreamCallback);
-        // this.spawnInstance.off('close', this.closeCallback);
 
         this.containerInstance.off('stdout', this.terminalStreamCallback);
         this.containerInstance.off('stderr', this.terminalStreamCallback);
