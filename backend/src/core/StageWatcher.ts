@@ -15,10 +15,6 @@ export class StageWatcher {
         return this._userId;
     }
 
-    get socket() {
-        return this._socket;
-    }
-
     constructor(socket: Socket, userId: string) {
         this._socket = socket;
         this._userId = userId;
@@ -26,6 +22,10 @@ export class StageWatcher {
 
     public changeListeningStage(stageNo: number) {
         this._stageNo = stageNo;
+    }
+
+    public emit(ev: string, ...args: any[]) {
+        return this._socket.emit(ev, ...args);
     }
 
 }

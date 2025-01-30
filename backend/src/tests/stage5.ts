@@ -77,12 +77,9 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
                         passed: false,
                         testInput,
                         expectedBehavior,
-                        observedBehavior: `Connection failed with error ${error}`
+                        observedBehavior: `[index: ${i}][port: ${port}] Connection failed with error ${error}`
                     })
                 })
         }
-
-
-        // const serverInstance = setupHttpServer(serverPort, listenerCallback, errorCallback);
     })
 }

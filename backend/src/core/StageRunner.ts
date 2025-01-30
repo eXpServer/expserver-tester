@@ -97,7 +97,7 @@ export class StageRunner {
     private emitToAllSockets(event: string, data: any) {
 
         this.watchers.forEach(watcher => {
-            watcher.socket.emit(event, data); // do watcher.emit()
+            watcher.emit(event, data); // do watcher.emit()
         })
     }
 
@@ -106,9 +106,12 @@ export class StageRunner {
     }
 
     private async containerWarmUp() {
-        if (this.containerInstance.running)
-            await this.containerInstance.restartContainer();
-        else
+        // if (this.containerInstance.running)
+        //     await this.containerInstance.restartContainer();
+        // else
+        //     await this.containerInstance.start();
+
+        if (!this.containerInstance.running)
             await this.containerInstance.start();
 
         if (this.terminalInstance.running)

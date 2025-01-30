@@ -18,6 +18,8 @@ export const IMAGE_NAME = 'expserver-tester-image';
 
 export const WORKDIR = '/usr/src/app';
 
+export const PUBLIC_DIR = '/usr/src/public';
+
 /**
  * error types
  * prepend http_

@@ -1,9 +1,4 @@
-import Cpu from "node-os-utils/lib/cpu";
 import { ResourceStats } from "../types";
-import { ChildProcessWithoutNullStreams } from "child_process";
-import osu from 'node-os-utils';
-import Mem from "node-os-utils/lib/mem";
-import { getCpuUsage, getMemUsage } from "../utils/process";
 import { ContainerManager } from "./ContainerManager";
 
 enum ResourceMonitorEvents {
@@ -43,7 +38,6 @@ export class ResourceMonitor {
     private async getUsage() {
         try {
             const { cpuUsage, memUsage } = await this.containerInstance.getResourceStats();
-            console.log(cpuUsage, memUsage);
             this._currentUsage = { cpu: cpuUsage, mem: memUsage };
         }
         catch (err) {

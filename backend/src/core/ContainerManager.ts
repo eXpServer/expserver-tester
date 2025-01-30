@@ -1,7 +1,6 @@
 import Docker, { Container } from 'dockerode';
 import { EventEmitter } from 'eventemitter3';
-import { IMAGE_NAME, WORKDIR } from '../constants';
-import { readFileSync, writeFileSync } from 'fs';
+import { IMAGE_NAME, PUBLIC_DIR, WORKDIR } from '../constants';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
@@ -14,6 +13,7 @@ export class ContainerManager extends EventEmitter {
     private _stream: NodeJS.ReadWriteStream | null;
     private _pid: number;
     private containerConfig: Object;
+    private timeoutRef: NodeJS.Timeout | null;
 
     get containerName(): string {
         return this._containerName;
@@ -50,6 +50,7 @@ export class ContainerManager extends EventEmitter {
         this.docker = new Docker();
         this._running = false;
         this.initialized = false;
+        this.timeoutRef = null;
 
         this.containerConfig = {
             Image: IMAGE_NAME,
@@ -57,28 +58,32 @@ export class ContainerManager extends EventEmitter {
             Cmd: createDummaryServer
                 ? [
                     'sh', '-c',
-                    `python3 -m http.server 3000 > /dev/null 2>&1 & ./${this._binaryId}`
+                    `python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & ./${this._binaryId}`
                 ] : [
                     `./${this._binaryId}`
                 ],
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
                 PublishAllPorts: true,
-                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`],
+                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`, `${process.cwd()}/public/:${PUBLIC_DIR}`],
             }
         }
     }
 
     public async start(): Promise<void> {
+        if (this.timeoutRef)
+            clearTimeout(this.timeoutRef)
+
         if (this.initialized || this.running)
             return;
         try {
             await this.startContainer();
         }
         catch (error) {
-            setTimeout(() => {
+            this.timeoutRef = setTimeout(() => {
                 this.start();
             }, 1000);
+            return;
         }
 
         for (const port of this.ports) {
@@ -115,18 +120,13 @@ export class ContainerManager extends EventEmitter {
     public async restartContainer(): Promise<void> {
         console.log('restarting container');
         try {
-            const dataBefore = await this.container.inspect();
-            const isRunningBefore = dataBefore.State.Running;
             await this.container.restart();
-            const dataAfter = await this.container.inspect();
-            const isRunningAfter = dataAfter.State.Running;
-
-            console.log(isRunningBefore, isRunningAfter);
 
             for (const port of this.ports) {
                 const portMapping = await this.parsePortMap(port);
                 this.mappedPorts.set(port, portMapping);
             }
+            this._pid = (await this.container.inspect()).State.Pid
 
         }
         catch (error) {
@@ -253,10 +253,8 @@ export class ContainerManager extends EventEmitter {
         return new Promise((resolve, reject) => {
             stream.on('end', () => {
                 const lines = output.split('\n');
-
-                const data = lines[1].match(/^\s*(\d+\.\d+)\s+(\d+\.\d+)/m);
+                const data = lines[1].match(/^[^\d]*(\d+\.\d+)\s+(\d+\.\d+)/m);
                 if (data) {
-                    console.log("raw data", data);
                     const [_, cpu, mem] = data;
                     const cpuUsage = parseFloat(cpu);
                     const memUsage = parseFloat(mem);

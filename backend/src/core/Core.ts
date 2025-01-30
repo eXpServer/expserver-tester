@@ -153,6 +153,8 @@ export class Core {
     }
 
     private static async handleStartRunner(socket: Socket) {
+        if (!socket.watcher)
+            return;
         const { userId, stageNo } = socket.watcher;
         const file = await prisma.file.findFirst({
             where: {
