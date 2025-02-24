@@ -1,112 +1,59 @@
 import { Socket } from "net";
-import { generateRandomStrings, reverseString } from "../utils/string";
+import { ContainerManager } from "../core/ContainerManager";
 import { TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
-import { ChildProcessWithoutNullStreams } from "child_process";
-import { ContainerManager } from "../core/ContainerManager";
+import { generateRandomStrings, reverseString } from "../utils/string";
 
-export const stage3MultipleClients: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "Connect multiple clients to server and sent string simultaneously";
-    const expectedBehavior = "Each of the clients should receive their reversed versions of the string that they sent";
-    const numClients = 10;
-
-
+    const testInput = "Force disconnection of the client";
+    const expectedBehavior = "Process exited with code 1";
     return new Promise((resolve, _) => {
-        const clients: Socket[] = [];
-        for (let i = 0; i < numClients; i++)
-            clients.push(new Socket());
+        const client = new Socket();
 
-        let responsesReceived: number = 0;
 
-        spawnInstance.on('error', (error) => {
+        const closeCallback = (code: number | null) => {
+            resolve({
+                passed: (code == 1),
+                testInput,
+                expectedBehavior: expectedBehavior,
+                observedBehavior: `Process exited with code ${code || 0}`,
+            })
+        }
+
+        spawnInstance.on('close', closeCallback);
+
+        client.on('error', () => {
             resolve({
                 passed: false,
                 testInput,
-                expectedBehavior: expectedBehavior,
-                observedBehavior: `server crashed with error ${error}`
+                expectedBehavior,
+                observedBehavior: "Client disconnected with an error",
+                cleanup: () => spawnInstance.off('close', closeCallback),
             })
         });
 
 
-        const clientRecvChecker = (client: Socket, index: number) => {
-            const input = `string-${index}\n`;
+        client.connect(port, LOCALHOST, () => {
+            client.destroy();
 
-            const receivedCallback = (data: Buffer) => {
-                const output = data.toString();
-                const expected = reverseString(input);
-                responsesReceived++;
-
-                if (output !== expected) {
-                    spawnInstance?.kill();
-                    return resolve({
+            client.on('close', () => {
+                const timeout = setTimeout(() => {
+                    spawnInstance.off('close', closeCallback);
+                    resolve({
                         passed: false,
                         testInput,
-                        expectedBehavior: `client ${index} receives ${expected}`,
-                        observedBehavior: `client ${index} received ${output}`,
-                        cleanup: () => {
-                            clients.forEach((client) => client.destroy());
-                        }
+                        expectedBehavior: expectedBehavior,
+                        observedBehavior: "Process did not exit within 3s",
+                        cleanup: () => clearTimeout(timeout),
                     })
-                }
-                client.off('data', receivedCallback);
-
-
-                if (responsesReceived == numClients) {
-                    spawnInstance?.kill();
-                    return resolve({
-                        passed: true,
-                        testInput,
-                        expectedBehavior,
-                        observedBehavior: expectedBehavior,
-                        cleanup: () => {
-                            clients.forEach(client => client.destroy());
-                        }
-                    })
-                }
-            }
-
-            client.on('data', receivedCallback);
-            client.write(input);
-        }
-
-        clients.forEach((client, index) => {
-
-            client.once('connectionAttemptFailed', () => {
-                spawnInstance?.kill();
-                return resolve({
-                    passed: false,
-                    testInput,
-                    expectedBehavior,
-                    observedBehavior: "Server refused connection",
-                    cleanup: () => {
-                        clients.forEach(client => client.destroy());
-                    }
-                })
+                }, 3000);
             })
-
-            client.once('connectionAttemptTimeout', () => {
-                spawnInstance?.kill();
-                return resolve({
-                    passed: false,
-                    testInput,
-                    expectedBehavior,
-                    observedBehavior: "Server connection timed out",
-                    cleanup: () => {
-                        clients.forEach(client => client.destroy());
-                    }
-                })
-            })
-
-            client.connect(port, LOCALHOST, () => {
-                clientRecvChecker(client, index);
-            })
-        })
-
+        });
     })
 }
 
-export const stage3ErrorHandling: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
+export const finalErrorHandling: TestFunction = (hostPort: number, reverse: boolean, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
     const testInput = "client forcefully disconnects";
     const expectedBehavior = "Previous and new clients are able to send and receive output as expected";
@@ -173,7 +120,9 @@ export const stage3ErrorHandling: TestFunction = (hostPort: number, spawnInstanc
                 const input = generateRandomStrings(10, 1)[0];
                 newClient.once('data', (data) => {
                     const output = data.toString();
-                    const expected = reverseString(input);
+                    const expected = (reverse
+                        ? reverseString(input)
+                        : input);
 
                     if (expected !== output) {
                         return resolve({
@@ -211,7 +160,9 @@ export const stage3ErrorHandling: TestFunction = (hostPort: number, spawnInstanc
             const input = generateRandomStrings(10, 1)[0];
             existingClient.on('data', (data) => {
                 const output = data.toString();
-                const expected = reverseString(input);
+                const expected = (reverse
+                    ? reverseString(input)
+                    : input);
 
                 if (expected !== output) {
                     return resolve({
@@ -240,4 +191,41 @@ export const stage3ErrorHandling: TestFunction = (hostPort: number, spawnInstanc
         })
 
     })
+}
+
+export const proxyServerCrashHandling: TestFunction = async (hostPort: number, spawnInstance: ContainerManager) => {
+    const port = spawnInstance.getMapppedPort(hostPort);
+    const testInput = "Client connects to the proxy and sends a request to be relayed to the upstream server"
+    const expectedBehavior = "Proxy server shouldn't crash, instead handle the error gracefully"
+    await spawnInstance.stopPythonServer();
+    return new Promise((resolve, _) => {
+
+        spawnInstance.on('close', (code) => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: `Server terminated with Error code ${code}`,
+            })
+        })
+
+        fetch(`http://localhost:${port}`).catch(err => {
+            if (err.cause?.code == 'UND_ERR_SOCKET') {
+                return resolve({
+                    passed: true,
+                    testInput,
+                    expectedBehavior,
+                    observedBehavior: "Server terminated client connection without any crashes",
+                })
+            }
+            else {
+                return resolve({
+                    passed: false,
+                    testInput,
+                    expectedBehavior,
+                    observedBehavior: `Server terminated client with error: ${err.code}`
+                })
+            }
+        })
+    });
 }
