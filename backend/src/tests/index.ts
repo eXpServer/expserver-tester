@@ -1,6 +1,8 @@
 import { StageTest } from "../types";
 import { stage1ErrorChecking, stage1StringReversal } from "./stage1";
 import { stage10StringWriteBack } from "./stage10";
+import { stage11ProxyErrorHandling } from "./stage11";
+import { stage12FileServerResponse } from "./stage12";
 import { stage3ErrorHandling, stage3MultipleClients } from "./stage3";
 import { stage5ProxyMultipleConnections } from "./stage5";
 import { stage8NonBlockingTest } from "./stage8";
@@ -385,18 +387,153 @@ export const tests: StageTest = {
                 },
 
             },
+            {
+                title: "Error handling",
+                description: "",
+                testInput: "",
+                expectedBehavior: "",
+                testFunction: async (...args) => {
+                    const response = await stage11ProxyErrorHandling(8001, ...args);
+                    return response;
+
+                },
+            }
         ],
     },
     stage12: {
         stageName: "File Module",
         descriptionFilePath: "/description/stage12.md",
         requiresDummyServer: true,
-        tests: [],
+        tests: [
+            {
+                title: "Single client - input output",
+                description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
+                testFunction: async (...args) => {
+                    const responses = [
+                        await stage10StringWriteBack(8003, ...args),
+                        await stage10StringWriteBack(8004, ...args)
+                    ];
+
+                    if (responses.some(response => response.passed == false)) {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: "Server didn't work as expected on all ports",
+                        })
+                    }
+                    else {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: responses[0].expectedBehavior,
+                        })
+                    }
+                },
+            },
+            {
+                title: "file esrver checking",
+                description: "",
+                testInput: "",
+                expectedBehavior: "",
+                testFunction: async (...args) => {
+                    const response = await stage12FileServerResponse(8002, ...args);
+                    return response;
+                }
+            },
+            {
+                title: "proxy response checking -- multiple clients",
+                description: "creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server",
+                testInput: "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2",
+                expectedBehavior: "client 1 receives response from /test/1 && client 2 gets response from /test/2",
+                testFunction: async (...args) => {
+                    const response = await stage5ProxyMultipleConnections(8001, ...args);
+                    return response;
+                },
+
+            },
+            {
+                title: "Error handling",
+                description: "",
+                testInput: "",
+                expectedBehavior: "",
+                testFunction: async (...args) => {
+                    const response = await stage11ProxyErrorHandling(8001, ...args);
+                    return response;
+
+                },
+            }
+        ],
     },
     stage13: {
         stageName: "Session Module",
         descriptionFilePath: "/description/stage13.md",
         requiresDummyServer: true,
-        tests: [],
+        tests: [
+            {
+                title: "Single client - input output",
+                description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
+                testInput: "client sends a randomly generated string to the server",
+                expectedBehavior: "client receives reversed version of the input",
+                testFunction: async (...args) => {
+                    const responses = [
+                        await stage10StringWriteBack(8003, ...args),
+                        await stage10StringWriteBack(8004, ...args)
+                    ];
+
+                    if (responses.some(response => response.passed == false)) {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: "Server didn't work as expected on all ports",
+                        })
+                    }
+                    else {
+                        return ({
+                            passed: true,
+                            testInput: responses[0].testInput,
+                            expectedBehavior: responses[0].expectedBehavior,
+                            observedBehavior: responses[0].expectedBehavior,
+                        })
+                    }
+                },
+            },
+            {
+                title: "file esrver checking",
+                description: "",
+                testInput: "",
+                expectedBehavior: "",
+                testFunction: async (...args) => {
+                    const response = await stage12FileServerResponse(8002, ...args);
+                    return response;
+                }
+            },
+            {
+                title: "proxy response checking -- multiple clients",
+                description: "creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server",
+                testInput: "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2",
+                expectedBehavior: "client 1 receives response from /test/1 && client 2 gets response from /test/2",
+                testFunction: async (...args) => {
+                    const response = await stage5ProxyMultipleConnections(8001, ...args);
+                    return response;
+                },
+
+            },
+            {
+                title: "Error handling",
+                description: "",
+                testInput: "",
+                expectedBehavior: "",
+                testFunction: async (...args) => {
+                    const response = await stage11ProxyErrorHandling(8001, ...args);
+                    return response;
+
+                },
+            }
+        ],
     }
 }

@@ -14,6 +14,7 @@ export class ContainerManager extends EventEmitter {
     private _pid: number;
     private containerConfig: Object;
     private timeoutRef: NodeJS.Timeout | null;
+    private pythonServerRunning: boolean;
 
     get containerName(): string {
         return this._containerName;
@@ -40,7 +41,7 @@ export class ContainerManager extends EventEmitter {
         return port || null;
     }
 
-    constructor(containerName: string, binaryId: string, createDummaryServer: boolean) {
+    constructor(containerName: string, binaryId: string, createDummaryServer: boolean, publicPath?: string) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
@@ -51,21 +52,25 @@ export class ContainerManager extends EventEmitter {
         this._running = false;
         this.initialized = false;
         this.timeoutRef = null;
+        this.pythonServerRunning = false;
+
+
+        const customPublicDir = ((publicPath)
+            ? `${process.cwd()}/public/${publicPath}`
+            : `${process.cwd()}/public/common`
+        );
 
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            Cmd: createDummaryServer
-                ? [
-                    'sh', '-c',
-                    `python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & ./${this._binaryId}`
-                ] : [
-                    `./${this._binaryId}`
-                ],
+            // Cmd: [`./${this._binaryId}`],
+            // Cmd: ['sh', '-c', `python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & ./${this._binaryId}`]
+            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId}`]
+            ,
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
                 PublishAllPorts: true,
-                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`, `${process.cwd()}/public/:${PUBLIC_DIR}`],
+                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
             }
         }
     }
@@ -198,7 +203,7 @@ export class ContainerManager extends EventEmitter {
         }
 
         await this.attachStream();
-
+        this.pythonServerRunning = false;
         await this.container.start();
         await this.waitForContainerToRun();
         console.log(`Started container: ${this._containerName} `);
@@ -267,6 +272,22 @@ export class ContainerManager extends EventEmitter {
                     return reject('unexpected output');
                 }
             })
+        })
+    }
+
+    public stopPythonServer() {
+        return new Promise(async (resolve) => {
+            const exec = await this.container.exec({
+                Cmd: ['sh', '-c', 'kill $(cat /tmp/http_server.pid) && rm -f /tmp/http_server.pid'],
+                AttachStderr: false,
+                AttachStdout: false,
+            });
+
+            await exec.start({ hijack: true, stdin: false });
+
+            setTimeout(() => {
+                resolve({ message: "shutdown" })
+            }, 1000);
         })
     }
 

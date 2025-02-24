@@ -1,6 +1,4 @@
-import { ChildProcessWithoutNullStreams } from "child_process";
 import { TestFunction } from "../types";
-import { setupHttpServer } from "../utils/dummyServer";
 import { ContainerManager } from "../core/ContainerManager";
 
 export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
@@ -10,7 +8,6 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
     const serverPort = 3000;
     const serverMappedPort = spawnInstance.getMapppedPort(serverPort);
     const numClients = 3;
-
     return new Promise((resolve, _) => {
         spawnInstance.on('error', (error) => {
             return resolve({
@@ -24,9 +21,7 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
         let numPassed = 0;
         const verifyResponse = async (proxyServerResponse: string, route: number) => {
             const uri = `http://localhost:${serverMappedPort}/${route}`;
-
             const serverResponse = await fetch(uri);
-
             const statusLine = `HTTP/1.1 ${serverResponse.status} ${serverResponse.statusText}`;
 
             const headers = [...serverResponse.headers.entries()]
@@ -77,7 +72,7 @@ export const stage5ProxyMultipleConnections: TestFunction = (hostPort: number, s
                         passed: false,
                         testInput,
                         expectedBehavior,
-                        observedBehavior: `[index: ${i}][port: ${port}] Connection failed with error ${error}`
+                        observedBehavior: `Connection failed with error ${error}`
                     })
                 })
         }
