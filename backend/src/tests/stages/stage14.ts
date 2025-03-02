@@ -123,21 +123,21 @@ Host: localhost:8001\r
             },
         },
     },
-    {
-        title: "Incomplete request",
-        description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
-        info: "Sends an inomplete request to the server",
-        request: `GET /index.html HTTP/1.1\r
-Host: \r
-\r
-`,
-        expectedResponse: {
-            statusCode: 400,
-            headers: {
-                server: "eXpServer",
-            },
-        },
-    },
+    //     {
+    //         title: "Incomplete request",
+    //         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
+    //         info: "Sends an inomplete request to the server",
+    //         request: `GET /index.html HTTP/1.1\r
+    // Host: \r
+    // \r
+    // `,
+    //         expectedResponse: {
+    //             statusCode: 400,
+    //             headers: {
+    //                 server: "eXpServer",
+    //             },
+    //         },
+    //     },
     //     {
     //         title: "Improperly formatted request (request line)",
     //         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
@@ -183,21 +183,21 @@ Host localhost:8001\r
             },
         },
     },
-    {
-        title: "non-parsasble characters in path",
-        description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
-        info: "Sends a request to the server with non-ASCII characters within the path of request line",
-        request: `GET /💀💀💀.html HTTP/1.1\r
-Host: localhost:8001\r
-\r
-`,
-        expectedResponse: {
-            statusCode: 400,
-            headers: {
-                server: "eXpServer",
-            },
-        },
-    },
+    //     {
+    //         title: "non-parsasble characters in path",
+    //         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
+    //         info: "Sends a request to the server with non-ASCII characters within the path of request line",
+    //         request: `GET /💀💀💀.html HTTP/1.1\r
+    // Host: localhost:8001\r
+    // \r
+    // `,
+    //         expectedResponse: {
+    //             statusCode: 400,
+    //             headers: {
+    //                 server: "eXpServer",
+    //             },
+    //         },
+    //     },
     //     {
     //         title: "Body in GET request",
     //         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",

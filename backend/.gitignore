@@ -2,6 +2,7 @@ node_modules
 # Keep environment variables out of version control
 .env
 uploads/*
+!uploads/xps_config.json
 test.*s
 public/*.txt
 compile/

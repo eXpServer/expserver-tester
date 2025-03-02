@@ -62,13 +62,13 @@ This test aims to ensure proper error handling of the server in case of an inval
 testInput: "Sends a request to the server without specifying the host (mandatory header field)"
 expectedBehaviour: "The server returns a 400 Bad Request response"
 ```
-
+<!-- 
 ### Incomplete Request
 This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
 ```js
 testInput: "Sends an incomplete request to the server"
 expectedBehaviour: "The server returns a 400 Bad Request response"
-```
+``` -->
 
 ### Invalid HTTP Version
 This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
@@ -83,11 +83,11 @@ This test aims to ensure proper error handling of the server in case of an inval
 testInput: "Sends a request to the server without colon separation between the key-value "pairs in the headers
 expectedBehaviour: "The server returns a 400 Bad Request response"
 ```
-
+<!-- 
 ### Non-parsable characters in path
 This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
 ```js
 testInput: "Sends a request to the server with non-ASCII characters within the path of "request line
 expectedBehaviour: "The server returns a 400 Bad Request response"
 ```
-
+ -->
