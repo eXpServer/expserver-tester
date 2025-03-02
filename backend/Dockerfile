@@ -1,15 +1,17 @@
-# Use a minimal base image (e.g., for a Go binary, use 'alpine' for smaller size)
-FROM alpine:latest
+FROM ubuntu:22.04
 
-# Install necessary libraries (if your binary requires any)
-# Example: Install libc if it's a C/C++ binary
-RUN apk add --no-cache libc6-compat python3 py3-pip procps
+RUN apt-get update
 
-# Set working directory inside the container
+RUN apt-get install -y libc6-dev \ 
+    vim git nano make gcc tar wget \ 
+    build-essential \
+    libreadline-dev \ 
+    gdb \ 
+    curl \
+    zlib1g-dev
+
 WORKDIR /usr/src/app
 
-
-# Expose port 8000 (the port your binary will listen on inside the container)
 EXPOSE 3000
 EXPOSE 8080
 EXPOSE 8001

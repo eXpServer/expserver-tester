@@ -53,9 +53,25 @@ export interface StageTest {
         stageName: string,
         descriptionFilePath: string,
         requiresDummyServer: boolean,
+        requiresXpsConfig?: boolean,
         tests: Omit<Test, 'status'>[];
     }
 }
+
+export interface HttpResponse {
+    statusCode: number,
+    headers: Record<string, string>,
+    body?: any,
+}
+
+export interface HttpRequestTest {
+    title: string,
+    description: string,
+    info: string,
+    request: string,
+    expectedResponse: HttpResponse,
+}
+
 
 
 export type Request = Req & {

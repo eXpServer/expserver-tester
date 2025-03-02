@@ -256,4 +256,12 @@ export class Core {
 
         return this.stageTests[`stage${stageNo}`].requiresDummyServer;
     }
+
+    public static requiresXpsConfig(stageNo: number | string): boolean {
+        return true;
+        if (!this.stageTests[`stage${stageNo}`])
+            return false;
+
+        return this.stageTests[`stage${stageNo}`].requiresXpsConfig;
+    }
 }

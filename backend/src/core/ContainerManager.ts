@@ -41,7 +41,7 @@ export class ContainerManager extends EventEmitter {
         return port || null;
     }
 
-    constructor(containerName: string, binaryId: string, createDummaryServer: boolean, publicPath?: string) {
+    constructor(containerName: string, binaryId: string, requiresXpsConfig: boolean, publicPath?: string) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
@@ -63,9 +63,7 @@ export class ContainerManager extends EventEmitter {
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            // Cmd: [`./${this._binaryId}`],
-            // Cmd: ['sh', '-c', `python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & ./${this._binaryId}`]
-            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId}`]
+            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? 'xps_config.json' : ''}`]
             ,
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
