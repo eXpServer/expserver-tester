@@ -1,3 +1,8 @@
+/* @font-face {
+    font-family: 'TerminalFont';
+    src:    url('/frontend/public/fonts/FiraCode-Regular.ttf')format('truetype');
+    font-style: normal;
+} */
 .terminal{
     height: 100%;
     width: 100%;
@@ -17,3 +22,7 @@
     padding-block: 2px;
     border: 1px solid red;
 } */
+
+.terminal-message{
+    font-weight: 400;
+}
