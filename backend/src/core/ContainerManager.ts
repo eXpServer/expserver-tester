@@ -255,19 +255,24 @@ export class ContainerManager extends EventEmitter {
 
         return new Promise((resolve, reject) => {
             stream.on('end', () => {
-                const lines = output.split('\n');
-                const data = lines[1].match(/^[^\d]*(\d+\.\d+)\s+(\d+\.\d+)/m);
-                if (data) {
-                    const [_, cpu, mem] = data;
-                    const cpuUsage = parseFloat(cpu);
-                    const memUsage = parseFloat(mem);
-                    return resolve({
-                        cpuUsage,
-                        memUsage,
-                    });
+                try {
+                    const lines = output.split('\n');
+                    const data = lines[1].match(/^[^\d]*(\d+\.\d+)\s+(\d+\.\d+)/m);
+                    if (data) {
+                        const [_, cpu, mem] = data;
+                        const cpuUsage = parseFloat(cpu);
+                        const memUsage = parseFloat(mem);
+                        return resolve({
+                            cpuUsage,
+                            memUsage,
+                        });
+                    }
+                    else {
+                        return reject('unexpected output');
+                    }
                 }
-                else {
-                    return reject('unexpected output');
+                catch {
+                    return reject('unexpected output')
                 }
             })
         })
