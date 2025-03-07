@@ -114,7 +114,7 @@ export class WebSocket {
         this.setCallback(SocketIncomingEvents.TestsComplete, completeCallback);
     }
 
-    public setTerminalCallbacks(callback: (data: string) => void) {
+    public setTerminalCallbacks(callback: (data: string[]) => void) {
         this._socket.on(SocketIncomingEvents.TerminalUpdate, callback);
         this._socket.on(SocketIncomingEvents.TerminalComplete, callback);
 

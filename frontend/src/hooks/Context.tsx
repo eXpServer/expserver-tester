@@ -87,9 +87,9 @@ export const SocketContextProvider = ({
         console.log('Resource Monitor:', data);
         setResourceMetrics(data)
     };
-    const terminalCallback = (data: string) => {
+    const terminalCallback = (data: string[]) => {
         // console.log(data);
-        setTerminalData([...terminalData, data])
+        setTerminalData(data)
     };
 
     const setCallbacks = async (socket: WebSocket) => {

@@ -3,17 +3,17 @@
     src:    url('/frontend/public/fonts/FiraCode-Regular.ttf')format('truetype');
     font-style: normal;
 } */
-.terminal{
+.terminal {
     height: 100%;
     width: 100%;
     overflow-y: scroll;
     background-color: var(--black-terminal);
     color: var(--white);
     font-size: 12px;
-    padding:8px 0 0 16px;
+    padding: 8px 0 0 16px;
 }
 
-.terminal-heading{
+.terminal-heading {
     font-size: 12px;
     font-weight: 700;
 }
@@ -23,6 +23,6 @@
     border: 1px solid red;
 } */
 
-.terminal-message{
+.terminal-message {
     font-weight: 400;
 }
