@@ -62,7 +62,7 @@ export class StageRunner {
         this.containerInstance = new ContainerManager(
             `container-${file.binaryId}`,
             file.binaryId,
-            Core.requiresDummyServer(stageNo),
+            Core.requiresXpsConfig(stageNo),
         );
         this.terminalInstance = new TerminalStream(
             this.containerInstance,
