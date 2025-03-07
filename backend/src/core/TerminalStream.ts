@@ -45,7 +45,7 @@ export class TerminalStream {
 
         lines.forEach(line => this._currentStream.push(line))
 
-        const toSend = this._currentStream.slice(-TERMINAL_MAX_LIMIT).join('\n');
+        const toSend = this._currentStream.slice(-TERMINAL_MAX_LIMIT);
         this.emitToAllSockets(TerminalStreamEvents.TEST_UPDATE, toSend);
     }
 
@@ -53,7 +53,7 @@ export class TerminalStream {
         const line = `Process exited with code : ${code || 0}`
         this._currentStream.push(line);
 
-        const toSend = this._currentStream.slice(-TERMINAL_MAX_LIMIT).join('\n');
+        const toSend = this._currentStream.slice(-TERMINAL_MAX_LIMIT);
         this.emitToAllSockets(TerminalStreamEvents.TEST_COMPLETE, toSend);
         this.kill();
     }

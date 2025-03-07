@@ -13,14 +13,6 @@ Tests done within this stage will ensure all the features and performance improv
 - Server should be able to accept an incoming TCP connection from any of the port, while ensuring graceful shutdown in case of errors
 
 ## Tests
-
-### Proxy single client
-This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on
-```js        
-testInput: "Client sends a randomly generated string to the server",
-expectedBehavior: "client receives reversed version of the input",
-```
-
 ### Proxy multiple clients
 Creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server
 ```js

@@ -15,7 +15,7 @@ In this stage, we shall implement the proxy server
 
 ## Tests
 
-### Proxy single client
+### String write back
 This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on
 ```js        
 testInput: "Client sends a randomly generated string to the server",
