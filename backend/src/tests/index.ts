@@ -79,5 +79,11 @@ export const tests: StageTest = {
         descriptionFilePath: "/description/stage14.md",
         requiresDummyServer: false,
         tests: stageTests.stage14,
+    },
+    stage15: {
+        stageName: "HTTP Response Module",
+        descriptionFilePath: "/description/stage15.md",
+        requiresDummyServer: false,
+        tests: stageTests.stage15,
     }
 }

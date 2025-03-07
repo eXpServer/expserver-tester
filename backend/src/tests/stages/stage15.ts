@@ -155,7 +155,7 @@ Host localhost:8001\r
 ]
 
 
-export const stage14Tests: Omit<Test, 'status'>[] = requests.map(request => ({
+export const stage15Tests: Omit<Test, 'status'>[] = requests.map(request => ({
     title: request.title,
     description: request.description,
     testInput: request.info,

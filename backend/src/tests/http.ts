@@ -36,7 +36,6 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
             client.end();
 
             const parsedResponse = parseHttpResponse(responseText);
-            console.log(responseText)
             if (!verifyResponseOutput(parsedResponse, requestInfo.expectedResponse)) {
                 return resolve({
                     passed: false,

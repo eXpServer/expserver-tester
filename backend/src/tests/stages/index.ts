@@ -12,6 +12,7 @@ import { stage11Tests } from "./stage11";
 import { stage12Tests } from "./stage12";
 import { stage13Tests } from "./stage13";
 import { stage14Tests } from "./stage14";
+import { stage15Tests } from "./stage15";
 
 export const stageTests = {
     stage1: stage1Tests,
@@ -27,4 +28,5 @@ export const stageTests = {
     stage12: stage12Tests,
     stage13: stage13Tests,
     stage14: stage14Tests,
+    stage15: stage15Tests,
 }

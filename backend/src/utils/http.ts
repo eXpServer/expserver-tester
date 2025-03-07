@@ -44,9 +44,11 @@ export const buildHttpResponse = (parsedResponse: HttpResponse) => {
 }
 
 export const verifyResponseOutput = (observedResponse: HttpResponse, expectedResponse: HttpResponse) => {
+    console.log(observedResponse.statusCode, expectedResponse.statusCode)
     if (observedResponse.statusCode != expectedResponse.statusCode)
         return false;
 
     const expectedHeaders = Object.keys(expectedResponse.headers);
+    console.log(expectedHeaders)
     return expectedHeaders.every(key => observedResponse.headers.hasOwnProperty(key) && (expectedResponse.headers[key] == observedResponse.headers[key]))
 }
