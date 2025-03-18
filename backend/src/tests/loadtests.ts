@@ -472,3 +472,4 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
         client.connect(port, LOCALHOST);
     });
 }
+

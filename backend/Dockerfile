@@ -8,7 +8,9 @@ RUN apt-get install -y libc6-dev \
     libreadline-dev \ 
     gdb \ 
     curl \
-    zlib1g-dev
+    zlib1g-dev \
+    python3 \
+    python3-pip
 
 WORKDIR /usr/src/app
 

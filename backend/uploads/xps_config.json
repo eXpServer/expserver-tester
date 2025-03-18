@@ -21,7 +21,7 @@
 					"gzip_level": 8
 				},
 				{
-					"req_path": "/hello",
+					"req_path": "/redirect",
 					"type": "redirect",
 					"http_status_code": 302,
 					"redirect_url": "http://localhost:8002/"
