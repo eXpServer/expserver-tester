@@ -1,13 +1,9 @@
 import styles from './description.module.css'
-import { useState, useEffect } from 'react';
 import { useSocketContext } from '@/hooks/useSocketContext';
-import { getStageDescription } from '@/lib/rest';
-import Markdown from '../Markdown';
+import Markdown from '@/components/Markdown';
 
 const Description = () => {
-    const { stageNo, userId, description } = useSocketContext();
-
-
+    const { description } = useSocketContext();
 
     return (
         <div className={styles.description}>

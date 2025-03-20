@@ -3,6 +3,7 @@ import styles from './terminal.module.css'
 import { useEffect, useRef } from 'react';
 import Convert from 'ansi-to-html';
 import parseHtml from 'html-react-parser';
+
 const Terminal = () => {
     const { terminalData, stageNo } = useSocketContext()
 
