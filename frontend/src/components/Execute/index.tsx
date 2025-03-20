@@ -9,8 +9,8 @@ import play from '/public/play.svg'
 import info from '/public/info.svg'
 import stop from '/public/stop.svg'
 import bin from '/public/delete.svg'
-import TestContainer from '../testContainer'
-import ResourceMonitor from '../resourceMonitor'
+import TestContainer from '../TestContainer'
+import ResourceMonitor from '../ResourceMonitor'
 
 const Execute = () => {
 

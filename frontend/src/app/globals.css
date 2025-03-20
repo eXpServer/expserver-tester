@@ -10,9 +10,9 @@
   --background: #EAF3FF;
   --foreground: #171717;
 
-  --border: rgba(0,0,0,0.25);
+  --border: rgba(0, 0, 0, 0.25);
   --black: #000000;
-  --black-terminal: rgba(0,0,0,0.75);
+  --black-terminal: rgba(0, 0, 0, 0.75);
   --pink: #E12495;
   --red: #BA422D;
   --light-red: #FCBFE0;
@@ -28,7 +28,7 @@
   --lighter-violet: #d1c7ff;
   --text-color: #4C4C4C;
   --input-field-background: #E3E3E3;
-  --input-field-text: rgba(0,0,0,0.47);
+  --input-field-text: rgba(0, 0, 0, 0.47);
   --test-container-background: #F0F0F0;
 }
 

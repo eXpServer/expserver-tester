@@ -23,6 +23,16 @@
     border: 1px solid red;
 } */
 
+.terminal-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    justify-content: center;
+    align-items: start;
+}
+
 .terminal-message {
     font-weight: 400;
+    font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 0.75rem;
 }

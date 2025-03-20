@@ -1,27 +1,26 @@
 import { useState } from 'react';
-import Description from '../description';
-import styles from './descTermianlContainer.module.css'
-import Terminal from '../terminal';
+import Description from './Description';
+import styles from './styles.module.css'
+import Terminal from './Terminal';
 
-const DescTerminalContainer = () => {
+const StageDetails = () => {
     const [terminalState, setTerminalState] = useState<boolean>(false);
 
     const handleTerminalState = (state) => {
         setTerminalState(state);
         console.log("clicked")
     }
-    return(
+    return (
         <div className={styles['desc-terminal-container']}>
             <div className={styles['desc-terminal-navbar']}>
                 <div className={`${styles['desc-terminal-nav-option']} ${!terminalState && styles['active-nav-desc']}`} onClick={() => handleTerminalState(false)}>Description</div>
-                <div className={`${styles['desc-terminal-nav-option']} ${terminalState && styles['active-nav-terminal']}`} onClick = {() => handleTerminalState(true)}>Console</div>
+                <div className={`${styles['desc-terminal-nav-option']} ${terminalState && styles['active-nav-terminal']}`} onClick={() => handleTerminalState(true)}>Console</div>
             </div>
             {
-                terminalState ? <Terminal/> : <Description/>
+                terminalState ? <Terminal /> : <Description />
             }
-            {/* <Description/> */}
         </div>
     )
 };
 
-export default DescTerminalContainer;
+export default StageDetails;

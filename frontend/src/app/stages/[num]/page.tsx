@@ -1,9 +1,12 @@
 "use client";
 
-import Testboard from "@/components/testboard";
+import Execute from "@/components/Execute";
+import Loading from "@/components/Loading";
 import { useSocketContext } from "@/hooks/useSocketContext";
 import { notFound, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import styles from './styles.module.css';
+import StageDetails from "@/components/StageDetails";
 
 const Page = () => {
   const { updateStage, loading, initializeSocket } = useSocketContext();
@@ -25,9 +28,14 @@ const Page = () => {
   return (
     <div className="h-[calc(100vh-50px)] w-[calc(100dvw-300px)]">
       {
-        loading ? <div className="fixed top-0 left-0 h-screen w-screen bg-red-200 text-black">Loading...</div> : null
+        loading &&
+        <Loading />
       }
-      <Testboard />
+
+      <div className={styles.testboard}>
+        <StageDetails />
+        <Execute />
+      </div>
     </div>
   );
 }
