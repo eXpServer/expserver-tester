@@ -3,6 +3,11 @@ import Description from './Description';
 import styles from './styles.module.css'
 import Terminal from './Terminal';
 
+
+/**
+ * 
+ * @author Mayank Gupta
+ */
 const StageDetails = () => {
     const [terminalState, setTerminalState] = useState<boolean>(false);
 

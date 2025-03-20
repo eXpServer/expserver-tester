@@ -1,12 +1,23 @@
 "use client";
 
 import { SocketContextProvider } from "@/hooks/Context";
-import { ReactNode } from "react";
+import { FC, ReactNode } from "react";
 
-const ContextWrapper = ({
+
+export interface ContextWrapperProps {
+    children: ReactNode,
+}
+
+/**
+ * ContextWrapper component that provides a socket connection context  
+ * to its children using `SocketContextProvider`.  
+ *
+ * This component should wrap parts of the application that  
+ * need access to the socket context.
+ *
+ */
+const ContextWrapper: FC<ContextWrapperProps> = ({
     children
-}: {
-    children: ReactNode
 }) => {
     return (
         <SocketContextProvider>

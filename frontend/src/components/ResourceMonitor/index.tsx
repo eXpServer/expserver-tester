@@ -7,9 +7,7 @@ import update from '/public/update.svg'
 
 
 const ResourceMonitor = () => {
-    const { binaryId, status } = useSocketContext();
-    //const [sec, setSec] = useState<number>(0);
-    //const [min, setMin]  = useState<number>(0);
+    const { status } = useSocketContext();
     const [isRunning, setIsRunning] = useState<boolean>(true);
 
     useEffect(() => {
@@ -22,7 +20,6 @@ const ResourceMonitor = () => {
     }, [status]);
 
     const [secondsElapsed, setSecondsElapsed] = useState(0);
-    // const [intervalId, setIntervalId] = useState(null); // to track the interval id for pausing
 
     const min = Math.floor(secondsElapsed / 60);
     const sec = secondsElapsed % 60;
@@ -31,19 +28,16 @@ const ResourceMonitor = () => {
         let interval: NodeJS.Timeout | null = null; // Store interval locally
 
         if (status === 'running') {
-            // Reset the timer to 0 and start counting
             setSecondsElapsed(0);
 
-            // Start the timer (runs every second)
             interval = setInterval(() => {
                 setSecondsElapsed((prevSeconds) => prevSeconds + 1);
             }, 1000);
         }
 
-        // Cleanup the interval when the component unmounts or tempStatus changes
         return () => {
             if (interval) {
-                clearInterval(interval); // Clear the interval when paused
+                clearInterval(interval);
             }
         };
     }, [status]);

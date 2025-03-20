@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, FC } from 'react'
 import styles from './execute.module.css'
 import { deleteBinary, getToken, uploadBinary } from '@/lib/rest'
 import { useSocketContext } from '@/hooks/useSocketContext'
@@ -12,8 +12,14 @@ import bin from '/public/delete.svg'
 import TestContainer from '../TestContainer'
 import ResourceMonitor from '../ResourceMonitor'
 
-const Execute = () => {
-
+/**
+ * Execute component for managing binary file uploads, execution, and monitoring.
+ *
+ * This component allows users to upload a binary file, delete it, and execute tests.
+ * It also provides real-time status updates and resource monitoring.
+ *
+ */
+const Execute: FC = () => {
     const { stageNo, userId, status, fileName, binaryId, updateBinaryId, runTests, resetResults } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
     const [myFile, setMyFile] = useState<string>(fileName || "Choose a file");
@@ -92,19 +98,6 @@ const Execute = () => {
                             )
                         }
                     </div>
-                    {/* <button
-                        disabled={disableRunButton}
-                        className={`${styles['execute-button']} ${isFileUploaded ? styles['execute-run'] : styles['execute-upload']}`}
-                        onClick={isFileUploaded ? handleRunFile : handleUploadFile}
-                    >
-                        {
-                            isFileUploaded
-                                ? status == 'running'
-                                    ? <div className={styles['execute-active-run']}><Image src={stop} alt='stop' height={20} width={20} draggable={false} />Stop</div>
-                                    : <div className={styles['execute-active-run']}><Image src={play} alt='run' height={20} width={20} draggable={false} />Run</div>
-                                : <div>Upload</div>
-                        }
-                    </button> */}
                     {
                         isFileUploaded ? (
                             <button
@@ -129,7 +122,10 @@ const Execute = () => {
                     }
                 </div>
             </div>
-            {isFileUploaded && <ResourceMonitor />}
+            {
+                isFileUploaded &&
+                <ResourceMonitor />
+            }
             <TestContainer />
         </div>
     )

@@ -1,14 +1,20 @@
 import { useSocketContext } from '@/hooks/useSocketContext';
 import styles from './testContainer.module.css'
-import { useEffect, useMemo, useState } from 'react';
+import { FC, useMemo } from 'react';
 import TestCard from '../TestCard';
 import Summary from '../Summary';
 
-const TestContainer = () => {
+
+/**
+ * TestContainer Component
+ *
+ * Manages and displays test results when a binary file is uploaded.
+ * Uses socket context to fetch test results dynamically.
+ * 
+ * @author Mayank Gupta
+ */
+const TestContainer: FC = () => {
     const { binaryId, results } = useSocketContext();
-
-    const [numOfTests, setNumOfTest] = useState<number>(3);
-
 
     const fileUploaded = useMemo(() => {
         if (binaryId)

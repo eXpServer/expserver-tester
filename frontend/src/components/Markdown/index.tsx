@@ -4,33 +4,46 @@ import { okaidia } from 'react-syntax-highlighter/dist/esm/styles/prism'; // Cho
 import styles from './styles.module.css';
 import 'github-markdown-css/github-markdown.css';
 import remarkGfm from 'remark-gfm';
-const Markdown = ({
+import { FC, useMemo } from 'react';
+
+export interface MarkdownProps {
+    text: string,
+}
+
+
+/**
+ * Markdown Component
+ * 
+ * This component renders Markdown content using `react-markdown` and supports syntax highlighting 
+ * for code blocks using `react-syntax-highlighter`.
+ */
+const Markdown: FC<MarkdownProps> = ({
     text
-}: {
-    text: string
 }) => {
+    const customComponents = useMemo(() => ({
+        code({ node, className = "", children, ...props }) {
+            const match = className.match(/language-(\w+)/);
+            return match ? (
+                <SyntaxHighlighter
+                    style={okaidia}
+                    language={match[1] || "plaintext"}
+                    PreTag="div"
+                    {...props}
+                >
+                    {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+            ) : (
+                <code className={className} {...props}>
+                    {children}
+                </code>
+            );
+        }
+    }), []);
+
     return (
         <div className={styles.markdownBody}>
             <ReactMarkdown
-                components={{
-                    code({ node, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return match ? (
-                            <SyntaxHighlighter
-                                style={okaidia}
-                                language={match[1]}
-                                PreTag="div"
-                                {...props}
-                            >
-                                {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
-                        ) : (
-                            <code className={className} {...props}>
-                                {children}
-                            </code>
-                        );
-                    }
-                }}
+                components={customComponents}
                 remarkPlugins={[remarkGfm]}
             >
                 {text}

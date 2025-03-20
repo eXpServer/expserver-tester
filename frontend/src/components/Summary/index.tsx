@@ -8,6 +8,11 @@ import Passed from '/public/passed.svg'
 import Failed from '/public/failed.svg'
 import Pending from '/public/pending.svg'
 
+
+/**
+ * 
+ * @author Mayank Gupta
+ */
 const Summary = () => {
     const { results } = useSocketContext();
     const testSummary = useMemo(() => [
@@ -39,17 +44,17 @@ const Summary = () => {
         }
     ], [results]);
 
-    return(
+    return (
         <div className={styles['summary']}>
-            {testSummary.map((item,id) => (
+            {testSummary.map((item, id) => (
 
-                <div key = {id} className={styles['summary-card']}>
+                <div key={id} className={styles['summary-card']}>
                     <div className={styles['summary-card-content']}>
                         <div className={styles['summary-card-count']}>{item.count}</div>
                         <div className={styles['summary-card-type']}>{item.summaryType}</div>
                     </div>
-                    <div className={styles['summary-card-image-container']} style={{backgroundColor:item.backgroundColor}}>
-                        <Image src = {item.imageAddr} alt = {item.summaryType} height={20} width={20}/>
+                    <div className={styles['summary-card-image-container']} style={{ backgroundColor: item.backgroundColor }}>
+                        <Image src={item.imageAddr} alt={item.summaryType} height={20} width={20} />
                     </div>
                 </div>
             ))}

@@ -4,6 +4,11 @@ import { useEffect, useRef } from 'react';
 import Convert from 'ansi-to-html';
 import parseHtml from 'html-react-parser';
 
+
+/**
+ * 
+ * @author Mayank Gupta
+ */
 const Terminal = () => {
     const { terminalData, stageNo } = useSocketContext()
 
