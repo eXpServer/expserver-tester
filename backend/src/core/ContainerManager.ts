@@ -182,7 +182,7 @@ export class ContainerManager extends EventEmitter {
         })
 
         this._stream.on('end', () => {
-            this.emit('end', '--- End of Stream ---');
+            this.emit('end', '--- End of Stream ---\n');
         })
     }
 
