@@ -258,10 +258,18 @@ export class Core {
     }
 
     public static requiresXpsConfig(stageNo: number | string): boolean {
-        return true;
         if (!this.stageTests[`stage${stageNo}`])
             return false;
 
-        return this.stageTests[`stage${stageNo}`].requiresXpsConfig;
+        return !!this.stageTests[`stage${stageNo}`].requiresXpsConfig;
+    }
+
+    public static getPublicPath(stageNo: number | string): string {
+        if (!this.stageTests[`stage${stageNo}`])
+            return 'common';
+        const customFilePath = this.stageTests[`stage${stageNo}`].customPublicPath
+        return customFilePath
+            ? customFilePath
+            : 'common'
     }
 }

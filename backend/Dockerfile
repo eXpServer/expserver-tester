@@ -10,7 +10,8 @@ RUN apt-get install -y libc6-dev \
     curl \
     zlib1g-dev \
     python3 \
-    python3-pip
+    python3-pip \
+    netcat
 
 WORKDIR /usr/src/app
 

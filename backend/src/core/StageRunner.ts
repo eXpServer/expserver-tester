@@ -5,6 +5,7 @@ import { type TestDetails, TestStatus } from "../types";
 import { ResourceMonitor } from "./ResrouceMonitor";
 import { ContainerManager } from "./ContainerManager";
 import { File } from "@prisma/client";
+import { Timer } from "./Timer";
 
 
 enum StageRunnerEvents {
@@ -20,6 +21,7 @@ export class StageRunner {
     private containerInstance: ContainerManager | null;
     private terminalInstance: TerminalStream | null;
     private processStatsInstance: ResourceMonitor | null;
+    private timerInstance: Timer | null;
     private _stageNo: number;
     private _userId: string;
     private _running: boolean;
@@ -63,6 +65,7 @@ export class StageRunner {
             `container-${file.binaryId}`,
             file.binaryId,
             Core.requiresXpsConfig(stageNo),
+            Core.getPublicPath(stageNo),
         );
         this.terminalInstance = new TerminalStream(
             this.containerInstance,
@@ -72,6 +75,10 @@ export class StageRunner {
             this.containerInstance,
             this.emitterCallback
         );
+        this.timerInstance = new Timer(
+            this.containerInstance,
+            this.emitterCallback,
+        )
         this._userId = userId;
 
         this._currentState = Core.getTests(stageNo).map(test => ({
@@ -129,7 +136,7 @@ export class StageRunner {
             ...value,
             status: TestStatus.Running,
         }))
-
+        this.timerInstance?.run();
         this.emitToAllSockets(StageRunnerEvents.TEST_STARTED, this.currentState);
 
         const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
@@ -161,7 +168,7 @@ export class StageRunner {
         this._running = false;
         this.terminalInstance?.kill();
         this.processStatsInstance?.kill();
-
+        this.timerInstance?.kill();
         await this.containerInstance.kill();
 
         this.containerInstance = null;

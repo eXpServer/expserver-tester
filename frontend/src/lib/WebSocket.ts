@@ -17,6 +17,9 @@ export enum SocketIncomingEvents {
     ResourceStatsUpdate = 'stage-stats-update',
     ResourceStatsComplete = 'stage-stats-complete',
 
+    TimerUpdate = 'stage-timer-update',
+    TimerComplete = 'stage-timer-complete',
+
 }
 
 export enum SocketOutgoingEvents {
@@ -128,6 +131,14 @@ export class WebSocket {
 
         this.setCallback(SocketIncomingEvents.ResourceStatsUpdate, callback);
         this.setCallback(SocketIncomingEvents.ResourceStatsComplete, callback);
+    }
+
+    public setTimerCallbacks(callback: (data: number) => void) {
+        this._socket.on(SocketIncomingEvents.TimerUpdate, callback);
+        this._socket.on(SocketIncomingEvents.TimerComplete, callback);
+
+        this.setCallback(SocketIncomingEvents.TimerUpdate, callback);
+        this.setCallback(SocketIncomingEvents.TimerComplete, callback);
     }
 
     public run(): Promise<TestDetails[]> {

@@ -15,6 +15,7 @@ interface SocketContextInterface {
     binaryId: string,
     status: "pending" | "running" | "finished" | "force-stopped",
     loading: boolean,
+    timer: number,
 
     initializeSocket: () => Promise<boolean>,
     updateStage: (stageNo: number) => void,
@@ -44,6 +45,7 @@ export const SocketContextProvider = ({
     const [resourceMetrics, setResourceMetrics] = useState<{ cpu: number, mem: number }>();
     const [terminalData, setTerminalData] = useState<string[]>([]);
     const [description, setDescription] = useState<string>("");
+    const [timer, setTimer] = useState<number>(-1);
 
     useEffect(() => {
         getStageDescription(stageNo, userId).then(data => {
@@ -84,22 +86,31 @@ export const SocketContextProvider = ({
         setStatus('finished');
     };
     const resourceMonitorCallback = (data: { cpu: number, mem: number }) => {
-        console.log('Resource Monitor:', data);
         setResourceMetrics(data)
     };
     const terminalCallback = (data: string[]) => {
-        // console.log(data);
         setTerminalData(data)
     };
+
+    const timerCallack = (data: number) => {
+        setTimer(data);
+    }
 
     const setCallbacks = async (socket: WebSocket) => {
         socket.setTestCallbacks(testUpdateCallback, testCompleteCallback);
         socket.setResourceMonitorCallbacks(resourceMonitorCallback);
         socket.setTerminalCallbacks(terminalCallback);
+        socket.setTimerCallbacks(timerCallack);
     }
 
     const resetResults = () => {
         setResults(prev => prev.map(ele => ({ ...ele, status: TestStatus.Pending })));
+    }
+
+    const resetContext = () => {
+        setSummary(null);
+        setTimer(-1);
+        setTerminalData([]);
     }
 
     const updateStage = async (newStageNo: number) => {
@@ -108,6 +119,7 @@ export const SocketContextProvider = ({
         setLoading(true);
 
         setStageNo(newStageNo);
+        resetContext();
         const { fileName, binaryId, running, testDetails } = await socket.current.changeStage(newStageNo);
         setBinaryId(binaryId);
         setStatus(running ? "running" : "pending");
@@ -153,6 +165,7 @@ export const SocketContextProvider = ({
                 binaryId,
                 status,
                 loading,
+                timer,
 
 
                 //functions

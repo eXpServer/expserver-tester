@@ -54,6 +54,7 @@ export interface StageTest {
         descriptionFilePath: string,
         requiresDummyServer: boolean,
         requiresXpsConfig?: boolean,
+        customPublicPath?: string,
         tests: Omit<Test, 'status'>[];
     }
 }

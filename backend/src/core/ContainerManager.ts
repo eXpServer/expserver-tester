@@ -7,7 +7,7 @@ export class ContainerManager extends EventEmitter {
     private mappedPorts: Map<number, number>;
     private initialized: boolean;
     private _running: boolean;
-    private container: Container | null;
+    private _container: Container | null;
     private readonly ports: number[] = [3000, 8001, 8002, 8003, 8004, 8080];
     private docker: Docker;
     private _stream: NodeJS.ReadWriteStream | null;
@@ -36,18 +36,22 @@ export class ContainerManager extends EventEmitter {
         return this._running;
     }
 
+    get container() {
+        return this._container;
+    }
+
     public getMapppedPort(hostPort: number): number | null {
         const port = this.mappedPorts.get(hostPort);
         return port || null;
     }
 
-    constructor(containerName: string, binaryId: string, requiresXpsConfig: boolean, publicPath?: string) {
+    constructor(containerName: string, binaryId: string, requiresXpsConfig: boolean, publicPath: string) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
         this.mappedPorts = new Map();
         this.initialized = false;
-        this.container = null;
+        this._container = null;
         this.docker = new Docker();
         this._running = false;
         this.initialized = false;
@@ -55,10 +59,7 @@ export class ContainerManager extends EventEmitter {
         this.pythonServerRunning = false;
 
 
-        const customPublicDir = ((publicPath)
-            ? `${process.cwd()}/public/${publicPath}`
-            : `${process.cwd()}/public/common`
-        );
+        const customPublicDir = `${process.cwd()}/public/${publicPath}`;
 
         this.containerConfig = {
             Image: IMAGE_NAME,
@@ -93,7 +94,7 @@ export class ContainerManager extends EventEmitter {
             const portMapping = await this.parsePortMap(port);
             this.mappedPorts.set(port, portMapping);
         }
-        this._pid = (await this.container.inspect()).State.Pid
+        this._pid = (await this._container.inspect()).State.Pid
 
 
         this.initialized = true;
@@ -105,9 +106,9 @@ export class ContainerManager extends EventEmitter {
             const event = JSON.parse(chunk.toString());
             if (event.Type == 'container' && event.Actor.Attributes.name == this._containerName && (event.Action == 'stop' || event.Action == 'die')) {
                 this._running = false;
-                if (!this.container)
+                if (!this._container)
                     return;
-                this.container.inspect().then((data) => {
+                this._container.inspect().then((data) => {
                     const exitCode = data.State.ExitCode;
                     this.emit('close', exitCode);
                     if (this.initialized)
@@ -123,36 +124,36 @@ export class ContainerManager extends EventEmitter {
     public async restartContainer(): Promise<void> {
         console.log('restarting container');
         try {
-            await this.container.restart();
+            await this._container.restart();
 
             for (const port of this.ports) {
                 const portMapping = await this.parsePortMap(port);
                 this.mappedPorts.set(port, portMapping);
             }
-            this._pid = (await this.container.inspect()).State.Pid
+            this._pid = (await this._container.inspect()).State.Pid
 
         }
         catch (error) {
             console.log(error);
-            await this.container.start();
+            await this._container.start();
         }
     }
 
     public async kill(): Promise<void> {
-        if (!this.initialized || (this.container === null))
+        if (!this.initialized || (this._container === null))
             return;
         try {
             this.initialized = false;
             this._running = false;
-            const inspect = await this.container.inspect();
+            const inspect = await this._container.inspect();
             if (inspect.State.Running) {
                 console.log(`Stopping container: ${this._containerName}`);
-                await this.container.kill();
+                await this._container.kill();
             }
             console.log(`Removing container: ${this._containerName}`);
-            await this.container.remove({ force: true });
+            await this._container.remove({ force: true });
 
-            this.container = null;
+            this._container = null;
             this._stream = null;
             this._pid = -1;
             this.mappedPorts = new Map();
@@ -162,15 +163,29 @@ export class ContainerManager extends EventEmitter {
         }
     }
 
-    private async attachStream(): Promise<void> {
-        if (!this.container)
+    public async detachStream(): Promise<void> {
+        if (!this._container)
             return;
 
-        this._stream = await this.container.attach({
+        this.emit('stdout', "-- stream paused to prevent overflow in case of unnecessary print statements --\n");
+
+        if (this._stream) {
+            this._stream.removeAllListeners();
+            this._stream = null;
+        }
+    }
+
+    public async attachStream(): Promise<void> {
+        if (!this._container)
+            return;
+
+        this._stream = await this._container.attach({
             stream: true,
             stdout: true,
             stderr: true,
         })
+
+        this.emit('stdout', '-- stream started / resumed --\n');
 
 
         this._stream.on('data', (chunk) => {
@@ -190,19 +205,19 @@ export class ContainerManager extends EventEmitter {
 
     private async startContainer(): Promise<void> {
         try {
-            this.container = await this.docker.createContainer(this.containerConfig);
+            this._container = await this.docker.createContainer(this.containerConfig);
         }
         catch {
             const existingContainer = this.docker.getContainer(this._containerName);
             if (existingContainer)
                 await existingContainer.remove({ force: true });
 
-            this.container = await this.docker.createContainer(this.containerConfig);
+            this._container = await this.docker.createContainer(this.containerConfig);
         }
 
         await this.attachStream();
         this.pythonServerRunning = false;
-        await this.container.start();
+        await this._container.start();
         await this.waitForContainerToRun();
         console.log(`Started container: ${this._containerName} `);
     }
@@ -222,7 +237,7 @@ export class ContainerManager extends EventEmitter {
             if (this.initialized)
                 return resolve();
             const interval = setInterval(async () => {
-                const data = await this.container.inspect();
+                const data = await this._container.inspect();
                 const isRunning = data.State.Running;
                 if (isRunning) {
                     clearInterval(interval);
@@ -234,10 +249,10 @@ export class ContainerManager extends EventEmitter {
     }
 
     public async getResourceStats(): Promise<{ cpuUsage: number, memUsage: number }> {
-        if (!this.initialized || !this.container)
+        if (!this.initialized || !this._container)
             return { cpuUsage: -1, memUsage: -1 };
 
-        const exec = await this.container.exec({
+        const exec = await this._container.exec({
             Cmd: ['ps', '-p', '1', '-o', '%cpu,%mem,cmd'],
             AttachStdout: true,
             AttachStderr: true,
@@ -268,11 +283,17 @@ export class ContainerManager extends EventEmitter {
                         });
                     }
                     else {
-                        return reject('unexpected output');
+                        return reject({
+                            cpuUsage: 0,
+                            memUsage: 0,
+                        });
                     }
                 }
-                catch {
-                    return reject('unexpected output')
+                catch (e) {
+                    return reject({
+                        cpuUsage: 0,
+                        memUsage: 0,
+                    });
                 }
             })
         })
@@ -280,7 +301,7 @@ export class ContainerManager extends EventEmitter {
 
     public stopPythonServer() {
         return new Promise(async (resolve) => {
-            const exec = await this.container.exec({
+            const exec = await this._container.exec({
                 Cmd: ['sh', '-c', 'kill $(cat /tmp/http_server.pid) && rm -f /tmp/http_server.pid'],
                 AttachStderr: false,
                 AttachStdout: false,
@@ -295,10 +316,10 @@ export class ContainerManager extends EventEmitter {
     }
 
     private async parsePortMap(portNo: number): Promise<number | null> {
-        if (!this.initialized || !this.container)
+        if (!this.initialized || !this._container)
             return null;
 
-        const data = await this.container.inspect();
+        const data = await this._container.inspect();
 
         const portMapping = data.NetworkSettings.Ports[`${portNo}/tcp`];
 

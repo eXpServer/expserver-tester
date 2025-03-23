@@ -1,11 +1,12 @@
 import { Socket } from "net";
 import { ContainerManager } from "../core/ContainerManager";
-import { TestFunction } from "../types";
+import { Test, TestFunction } from "../types";
 import { reverseString } from "../utils/string";
 import { LOCALHOST } from "../constants";
 import path from "path";
 import { createReadStream, readFileSync } from 'fs'
 import { getCpuUsage } from "../utils/process";
+import { cwd } from "process";
 
 
 export const multipleClients: TestFunction = (hostPort: number, reverse: boolean, spawnInstance: ContainerManager) => {
@@ -248,7 +249,7 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         secondClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
 
         firstClient.connect(port, LOCALHOST, () => {
-            const file = createReadStream(path.join(process.cwd(), 'public', '4gb.txt'));
+            const file = createReadStream(path.join(process.cwd(), 'public', 'large-files', '4gb.txt'));
             file.pipe(firstClient);
 
             const firstClientWaitTimeout = setTimeout(() => {
@@ -386,16 +387,124 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
                         testInput,
                         expectedBehavior,
                         observedBehavior,
-                        passed: average <= 0.10,
+                        passed: average <= 10,
                     });
                 }
 
-                const cpuUsage = await getCpuUsage(spawnInstance.pid);
+                const { cpuUsage } = await spawnInstance.getResourceStats();
                 results[NUM_ITERATIONS - index - 1] = cpuUsage;
                 index--;
             }, 1000);
         })
     });
+}
+
+export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => {
+    const testInput = "Transfers a 4gb file over the network and tracks memory usage over time";
+    const expectedBehavior = "Memory usage should be less than 10%";
+    return new Promise(async resolve => {
+        await spawnInstance.detachStream();
+        const results: number[] = [];
+        spawnInstance.on('error', error => {
+            return resolve({
+                passed: false,
+                testInput,
+                expectedBehavior,
+                observedBehavior: `Server crashed with error ${error}`
+            })
+        });
+
+        const calcAverageUsage = (results: number[]) => {
+            if (results.length == 0)
+                return 0;
+            let total = 0;
+            for (let i = 0; i < results.length; i++)
+                total += results[i]
+            const average = total / results.length;
+            return average;
+        }
+
+        const container = spawnInstance.container;
+        const exec = await container.exec({
+            AttachStderr: false,
+            AttachStdout: false,
+            Tty: false,
+            AttachStdin: false,
+            Cmd: ['sh', '-c', 'cat /usr/src/public/4gb.txt | netcat -q 0 localhost 8001']
+        });
+
+
+        await exec.start({ hijack: false, stdin: false });
+
+        const interval = setInterval(() => {
+            spawnInstance.getResourceStats()
+                .then(({ memUsage }) => {
+                    results.push(memUsage);
+                })
+                .catch(() => {
+                    console.log("[Fetching resource stats]: Container already terminated...")
+                })
+        }, 1000);
+
+        try {
+            const exitCode = await new Promise((resolve, reject) => {
+                const checkExec = () => {
+                    exec.inspect((err, data) => {
+                        if (err)
+                            return reject(err);
+                        if (data.Running)
+                            return setTimeout(checkExec, 500);
+                        else
+                            return resolve(data.ExitCode);
+                    })
+                }
+
+                checkExec();
+            })
+
+
+            if (exitCode != 0) {
+                clearInterval(interval);
+                await spawnInstance.attachStream();
+                return resolve({
+                    passed: false,
+                    testInput,
+                    expectedBehavior,
+                    observedBehavior: `netcat localhost 8001 failed with exit code ${exitCode}`
+                })
+            }
+            const average = calcAverageUsage(results);
+            clearInterval(interval);
+            if (average > 10) {
+                await spawnInstance.attachStream();
+                return resolve({
+                    passed: false,
+                    testInput,
+                    expectedBehavior,
+                    observedBehavior: `Observed an average memory usage of ${average}%`
+                })
+            }
+            else {
+                await spawnInstance.attachStream();
+                return resolve({
+                    passed: true,
+                    testInput,
+                    expectedBehavior,
+                    observedBehavior: `Observed an average memory usage of ${average}%`
+                })
+            }
+        }
+        catch {
+            clearInterval(interval);
+            await spawnInstance.attachStream();
+            return resolve({
+                passed: false,
+                testInput,
+                observedBehavior: "something went wrong",
+                expectedBehavior,
+            })
+        }
+    })
 }
 
 export const prematureFileServerTest: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {

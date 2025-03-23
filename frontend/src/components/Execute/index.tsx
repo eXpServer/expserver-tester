@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo, FC } from 'react'
+import { useState, useEffect, useMemo, FC, useCallback, ChangeEventHandler, MouseEventHandler } from 'react'
 import styles from './execute.module.css'
 import { deleteBinary, getToken, uploadBinary } from '@/lib/rest'
 import { useSocketContext } from '@/hooks/useSocketContext'
@@ -11,6 +11,7 @@ import stop from '/public/stop.svg'
 import bin from '/public/delete.svg'
 import TestContainer from '../TestContainer'
 import ResourceMonitor from '../ResourceMonitor'
+import { TestStatus } from '@/types'
 
 /**
  * Execute component for managing binary file uploads, execution, and monitoring.
@@ -20,7 +21,17 @@ import ResourceMonitor from '../ResourceMonitor'
  *
  */
 const Execute: FC = () => {
-    const { stageNo, userId, status, fileName, binaryId, updateBinaryId, runTests, resetResults } = useSocketContext();
+    const {
+        stageNo,
+        userId,
+        status,
+        fileName,
+        binaryId,
+        updateBinaryId,
+        runTests,
+        stopTests,
+        resetResults
+    } = useSocketContext();
     const [file, setFile] = useState<File | null>(null);
     const [myFile, setMyFile] = useState<string>(fileName || "Choose a file");
 
@@ -39,17 +50,16 @@ const Execute: FC = () => {
     }, [binaryId]);
 
 
-    const handleUploadFile = async () => {
+    const handleUploadFile = useCallback(async () => {
         if (file == null) {
             return;
         }
         const response = await uploadBinary(stageNo, userId, file);
         updateBinaryId(response);
         resetResults();
+    }, [file, stageNo, userId, updateBinaryId, resetResults]);
 
-    }
-
-    const handleDeleteFile = async () => {
+    const handleDeleteFile = useCallback(async () => {
         const response = await deleteBinary(stageNo, userId);
         if (response == true) {
             updateBinaryId(null);
@@ -59,23 +69,26 @@ const Execute: FC = () => {
         else {
             console.log(Error, "failed to delete the binary")
         }
+    }, [stageNo, userId, updateBinaryId]);
 
-    }
-
-    const handleFileChange = (event) => {
+    const handleFileChange: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
         if (event.target.files && event.target.files[0]) {
             setFile(event.target.files[0]);
             setMyFile(event.target.files[0].name);
         }
-    }
+    }, []);
 
-    const handleRunFile = async () => {
-        runTests();
-    }
 
-    const handleInfoClick = () => {
+    const handleButtonClick: MouseEventHandler<HTMLButtonElement> = useCallback(() => {
+        if (status == TestStatus.Running)
+            stopTests();
+        else
+            runTests();
+    }, [status, stopTests, runTests]);
+
+    const handleInfoClick = useCallback(() => {
         alert('Information about binary file here');
-    }
+    }, []);
 
     return (
         <div className={styles.execute}>
@@ -102,7 +115,7 @@ const Execute: FC = () => {
                         isFileUploaded ? (
                             <button
                                 className={`${styles['execute-button']} ${styles['execute-run']}`}
-                                onClick={handleRunFile}
+                                onClick={handleButtonClick}
                                 disabled={disableRunButton}
                             >
                                 {

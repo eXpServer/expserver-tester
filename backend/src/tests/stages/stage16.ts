@@ -33,7 +33,7 @@ export const stage16Tests: Omit<Test, 'status'>[] = [
         }
     },
     {
-        title: "Redirect",
+        title: "Redirect (1)",
         description: "",
         testInput: "",
         expectedBehavior: "",
@@ -51,5 +51,5 @@ export const stage16Tests: Omit<Test, 'status'>[] = [
             const response = httpProxyTest('cat.jpg', 8002, 3000, ...args);
             return response;
         }
-    }
+    },
 ]

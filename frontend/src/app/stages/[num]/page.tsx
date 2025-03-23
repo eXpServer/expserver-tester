@@ -7,6 +7,7 @@ import { notFound, useParams } from "next/navigation";
 import { useEffect } from "react";
 import styles from './styles.module.css';
 import StageDetails from "@/components/StageDetails";
+import { AnimatePresence } from "framer-motion";
 
 const Page = () => {
   const { updateStage, loading, initializeSocket } = useSocketContext();
@@ -27,10 +28,12 @@ const Page = () => {
 
   return (
     <div className="h-[calc(100vh-50px)] w-[calc(100dvw-300px)]">
-      {
-        loading &&
-        <Loading />
-      }
+      <AnimatePresence>
+        {
+          loading &&
+          <Loading />
+        }
+      </AnimatePresence>
 
       <div className={styles.testboard}>
         <StageDetails />

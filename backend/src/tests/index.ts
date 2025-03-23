@@ -54,6 +54,7 @@ export const tests: StageTest = {
         stageName: "Pipe Module",
         descriptionFilePath: "/description/stage10.md",
         requiresDummyServer: false,
+        customPublicPath: 'large-files',
         tests: stageTests.stage10,
     },
     stage11: {

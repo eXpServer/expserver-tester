@@ -8,9 +8,9 @@
     "setup": "prisma migrate dev --name dev && mkdir uploads && npm run docker-build",
     "reset": "prisma migrate reset && cd uploads && rm -rf *",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.ts",
+    "dev": "NODE_OPTIONS=\"--max-old-space-size=4096\" nodemon src/index.ts",
     "build": "rm -rf ./dist && tsc",
-    "start": "node dist/index.js",
+    "start": "node --max-old-space-size=4096 dist/index.js",
     "precompile": "rm -rf ./compile && mkdir compile && npm run build",
     "compile": "npm run precompile && esbuild dist/index.js --bundle --outfile=compile/build.cjs --format=cjs --platform=node --external:*.node && cd compile && npx pkg build.cjs && npm run postcompile",
     "postcompile": "cd compile && rm -rf build.cjs"

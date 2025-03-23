@@ -13,11 +13,19 @@ Due to current hardware advances, the actual difference in memory usage can not 
 
 ## Tests
 
+
 ### CPU Usage
 This test verifies that the process doesn't consume CPU time unnecessarily by creating an idle client connection and tracks CPU usage over the course of 20 seconds
 ```js
 testInput: "Creates an idle client connection and tracks CPU usage over the course of 20 seconds",
 expectedBehavior: "CPU usage should be less than 10%",
+```
+
+### Memory Usage
+This test verifies that the process doesn't consume memory time unnecessarily by transfering a large file through a connection and tracking memory usage over time
+```js
+testInput: "Transfers a 4gb file over the network and tracks memory usage over time",
+expectedBehavior: "Memory usage should be less than 10%",
 ```
 
 ### Non-blocking server
@@ -32,14 +40,14 @@ expectedBehavior: "the second connection is able to send and receive data from t
 This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on
 ```js
 testInput: "client sends a randomly generated string to the server"
-expectedBehavior: "client receives reversed version of the input"
+expectedBehavior: "client receives copy of the string it sent"
 ```
 
 ### Multiple clients on same port -- input / output
 This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client
 ```js
 testInput: "Connect multiple clients to server and sent string simultaneously",
-expectedBehavior: "Each of the clients should receive their reversed versions of the string that they sent",
+expectedBehavior: "Each client receives copy of the string it sentt",
 ```
 
 ### Error Handling

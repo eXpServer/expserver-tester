@@ -1,7 +1,7 @@
 import { Test } from "../../types";
 import { finalErrorHandling } from "../errorhandling";
-import { checkCpuUsage, multipleClients, nonBlockingSocket } from "../loadtests";
-import { stringReversal, stringWriteBack } from "../string";
+import { checkCpuUsage, checkMemUsage, multipleClients, nonBlockingSocket } from "../loadtests";
+import { stringWriteBack } from "../string";
 
 export const stage10Tests: Omit<Test, 'status'>[] = [
     {
@@ -11,6 +11,16 @@ export const stage10Tests: Omit<Test, 'status'>[] = [
         expectedBehavior: "CPU usage should be less than 10%",
         testFunction: async (...args) => {
             const response = await checkCpuUsage(8001, ...args);
+            return response;
+        },
+    },
+    {
+        title: "Memory usage",
+        description: "This test verifies that the process doesn't consume memory time unnecessarily by transfering a large file through a connection and tracking memory usage over time",
+        testInput: "Transfers a 4gb file over the network and tracks memory usage over time",
+        expectedBehavior: "Memory usage should be less than 10%",
+        testFunction: async (...args) => {
+            const response = await checkMemUsage(...args);
             return response;
         },
     },
@@ -28,7 +38,7 @@ export const stage10Tests: Omit<Test, 'status'>[] = [
         title: "Single client - input output",
         description: "This test ensures that the server runs as expected when a singular client is connected on each of the different port that the server runs on",
         testInput: "client sends a randomly generated string to the server",
-        expectedBehavior: "client receives reversed version of the input",
+        expectedBehavior: "client receives copy of the string it sent",
         testFunction: async (...args) => {
             const responses = [
                 await stringWriteBack(8001, ...args),
@@ -59,7 +69,7 @@ export const stage10Tests: Omit<Test, 'status'>[] = [
         title: "Multiple clients to same port - input output",
         description: "This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client",
         testInput: "Connect multiple clients to server and sent string simultaneously",
-        expectedBehavior: "Each of the clients should receive the reversed versions of the string that they sent",
+        expectedBehavior: "Each client receives copy of the string it sent",
         testFunction: async (...args) => {
             const response = await multipleClients(8001, false, ...args);
             return response;

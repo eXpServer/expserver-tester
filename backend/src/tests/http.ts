@@ -176,6 +176,7 @@ export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string
                 observedBehavior: `Expected redirect to ${redirectUrl} but received ${receivedRedirectUrl || 'N/A'}`,
             })
         }
+
         return resolve({
             passed: true,
             testInput,

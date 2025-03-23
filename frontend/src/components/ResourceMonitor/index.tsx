@@ -1,13 +1,14 @@
 import { useSocketContext } from '@/hooks/useSocketContext';
 import styles from './resourceMonitor.module.css'
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import update from '/public/update.svg'
+import Speedometer from './Speedometer';
 
 
 
 const ResourceMonitor = () => {
-    const { status } = useSocketContext();
+    const { status, resourceMetrics, timer } = useSocketContext();
     const [isRunning, setIsRunning] = useState<boolean>(true);
 
     useEffect(() => {
@@ -19,28 +20,20 @@ const ResourceMonitor = () => {
         }
     }, [status]);
 
-    const [secondsElapsed, setSecondsElapsed] = useState(0);
 
-    const min = Math.floor(secondsElapsed / 60);
-    const sec = secondsElapsed % 60;
+    const timerDetails = useMemo(() => {
+        const mins = timer == -1
+            ? "--"
+            : Math.floor(timer / 60).toString()
+        const secs = timer == -1
+            ? "--"
+            : (timer % 60).toString();
 
-    useEffect(() => {
-        let interval: NodeJS.Timeout | null = null; // Store interval locally
-
-        if (status === 'running') {
-            setSecondsElapsed(0);
-
-            interval = setInterval(() => {
-                setSecondsElapsed((prevSeconds) => prevSeconds + 1);
-            }, 1000);
+        return {
+            mins,
+            secs,
         }
-
-        return () => {
-            if (interval) {
-                clearInterval(interval);
-            }
-        };
-    }, [status]);
+    }, [timer]);
 
     return (
         <div className={styles['resource-monitor']}>
@@ -56,11 +49,16 @@ const ResourceMonitor = () => {
 
                 <div className={styles['time-elapsed-container']}>
                     <div className={styles['time-elapsed-heading']}>Time elapsed</div>
-                    <div className={styles['time-elapsed-timer']}>{min}<span>min </span>{sec}<span>s </span></div>
+                    <div className={styles['time-elapsed-timer']}>{timerDetails.mins}:{timerDetails.secs}</div>
                 </div>
             </div>
             <div className={styles['resource-monitor-container']}>
-
+                <div className={styles['resource-monitor-elements']}>
+                    <Speedometer value={resourceMetrics?.cpu || 0} label="CPU Usage" />
+                </div>
+                <div className={styles['resource-monitor-elements']}>
+                    <Speedometer value={resourceMetrics?.mem || 0} label="Memory Usage" />
+                </div>
             </div>
         </div>
     )

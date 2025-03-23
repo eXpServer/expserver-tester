@@ -1,15 +1,15 @@
 "use client"
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './sidebar.module.css'
 import { useSocketContext } from '@/hooks/useSocketContext';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import NavOptionIcon from './NavOptionIcon';
 
 export type PhaseId = 'INTRO' | 'CUSTOM' | number
 export interface NavOption {
     phase: string,
-    phaseId: 'INTRO' | 'CUSTOM' | number,
+    phaseId: PhaseId,
     dropDownPresent: boolean,
     stages: number[],
 }
@@ -22,6 +22,7 @@ const Sidebar: FC = () => {
     const router = useRouter();
     const [currPhase, setCurrPhase] = useState<PhaseId>('INTRO');
     const { stageNo } = useSocketContext();
+    const pathname = usePathname();
 
     const navOptions: NavOption[] = useMemo(() => [
         {
@@ -40,7 +41,7 @@ const Sidebar: FC = () => {
             phase: 'Phase 0',
             phaseId: 0,
             dropDownPresent: true,
-            stages: [1, 2, 3, 4, 5]
+            stages: [1, 3, 4, 5]
         },
         {
             phase: 'Phase 1',
@@ -88,12 +89,24 @@ const Sidebar: FC = () => {
             currPhase == item.phaseId
                 ? isRoadmapPhase(item.phaseId)
                     ? styles['active-option-container']
-                    : styles['active-option-custom']
+                    : styles['active-option-custom-intro']
                 : styles['inactive-option-container']
         ]
 
         return containerStyles.join(' ');
     }, [currPhase, isRoadmapPhase]);
+
+    useEffect(() => {
+        if (pathname == '/') {
+            setCurrPhase('INTRO')
+        }
+        else if (pathname.startsWith('/stages')) {
+            const currentStage = parseInt(pathname.split('/')[2]);
+            const currentPhase = navOptions.filter((item) => item.stages.includes(currentStage))[0];
+            const currentPhaseId = currentPhase.phaseId || navOptions[0].phaseId
+            setCurrPhase(currentPhaseId);
+        }
+    }, [pathname, navOptions]);
 
     return (
         <div className={styles.sidebar}>
