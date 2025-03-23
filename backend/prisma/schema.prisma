@@ -17,3 +17,24 @@ model File {
   stageNo  Int
   userId   String
 }
+
+model TestResults {
+  id        String @id @default(uuid())
+  timeTaken Int
+  userId    String
+  stageNo   Int
+
+  testDetails TestDetails[]
+
+  @@unique([userId, stageNo])
+}
+
+model TestDetails {
+  id                String       @id @default(uuid())
+  testInput         String
+  expectedBehaviour String
+  observedBehaviour String
+  status            String
+  TestResults       TestResults? @relation(fields: [testResultsId], references: [id], onDelete: Cascade)
+  testResultsId     String?
+}

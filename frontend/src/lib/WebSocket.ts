@@ -10,6 +10,7 @@ export enum SocketIncomingEvents {
     TestsUpdate = 'stage-tests-update',
     TestsComplete = 'stage-tests-complete',
     TestsForceQuit = 'stage-tests-force-quit',
+    TestsPreflight = 'stage-tests-preflight',
 
     TerminalUpdate = 'stage-terminal-update',
     TerminalComplete = 'stage-terminal-complete',
@@ -109,12 +110,14 @@ export class WebSocket {
             this.callbacks.set(event, [callback]);
     }
 
-    public setTestCallbacks(updateCallback: (data: TestDetails[]) => void, completeCallback: (data: FinalSummary) => void) {
+    public setTestCallbacks(updateCallback: (data: TestDetails[]) => void, completeCallback: (data: FinalSummary) => void, preflightCallback: (data: { timeTaken: number, testDetails: TestDetails[] }) => void) {
         this._socket.on(SocketIncomingEvents.TestsUpdate, updateCallback);
         this._socket.on(SocketIncomingEvents.TestsComplete, completeCallback);
+        this._socket.on(SocketIncomingEvents.TestsPreflight, preflightCallback);
 
         this.setCallback(SocketIncomingEvents.TestsUpdate, updateCallback);
         this.setCallback(SocketIncomingEvents.TestsComplete, completeCallback);
+        this.setCallback(SocketIncomingEvents.TestsPreflight, preflightCallback);
     }
 
     public setTerminalCallbacks(callback: (data: string[]) => void) {

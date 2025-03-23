@@ -4,15 +4,17 @@ import { TerminalStream } from "./TerminalStream";
 import { type TestDetails, TestStatus } from "../types";
 import { ResourceMonitor } from "./ResrouceMonitor";
 import { ContainerManager } from "./ContainerManager";
-import { File } from "@prisma/client";
+import { File, PrismaClient } from "@prisma/client";
 import { Timer } from "./Timer";
 
+const prisma = new PrismaClient()
 
 enum StageRunnerEvents {
     TEST_STARTED = 'stage-tests-start',
     TEST_UPDATE = 'stage-tests-update',
     TEST_COMPLETE = 'stage-tests-complete',
     FORCE_QUIT = 'stage-tests-force-quit',
+    TEST_PREFLIGHT = 'stage-tests-preflight',
 }
 
 export class StageRunner {
@@ -33,6 +35,7 @@ export class StageRunner {
     get stageNo() {
         return this._stageNo;
     }
+
 
     get userId() {
         return this._userId;
@@ -80,21 +83,82 @@ export class StageRunner {
             this.emitterCallback,
         )
         this._userId = userId;
+    }
 
-        this._currentState = Core.getTests(stageNo).map(test => ({
-            title: test.title,
-            description: test.description,
-            testInput: test.testInput,
-            expectedBehavior: test.expectedBehavior,
-            observedBehavior: null,
-            status: TestStatus.Pending,
-        }))
+    public async fetchPreviousData(): Promise<{ timeTaken: number, testDetails: Omit<TestDetails, 'description' | 'title'>[] }> {
+        const result = await prisma.testResults.findUnique({
+            where: {
+                userId_stageNo: {
+                    stageNo: this.stageNo,
+                    userId: this.userId,
+                }
+            },
+
+            include: {
+                testDetails: true
+            }
+        });
+
+        if (!result)
+            return null;
+
+        return {
+            timeTaken: result.timeTaken,
+            testDetails: result.testDetails.map((test, index) => ({
+                testInput: test.testInput,
+                expectedBehavior: test.expectedBehaviour,
+                observedBehavior: test.observedBehaviour,
+                status: test.status as TestStatus,
+            }))
+        }
+    }
+
+    public async storePreviousData(): Promise<void> {
+        await prisma.$transaction([
+            prisma.testResults.deleteMany({
+                where: {
+                    userId: this.userId,
+                    stageNo: this.stageNo
+                }
+            }),
+            prisma.testResults.create({
+                data: {
+                    userId: this.userId,
+                    stageNo: this.stageNo,
+                    timeTaken: this.timerInstance.currentTime,
+                    testDetails: {
+                        create: this._currentState.map(test => ({
+                            testInput: test.testInput,
+                            expectedBehaviour: test.expectedBehavior,
+                            observedBehaviour: test.observedBehavior,
+                            status: test.status,
+                        }))
+                    }
+                }
+            })
+        ]);
     }
 
 
-    public attachNewSubscriber(watcher: StageWatcher): void {
+    public async attachNewSubscriber(watcher: StageWatcher) {
         this.watchers.push(watcher);
 
+
+        if (!this.running) {
+            const prevData = await this.fetchPreviousData();
+
+            watcher.emit(StageRunnerEvents.TEST_PREFLIGHT, {
+                timeTaken: prevData.timeTaken,
+                testDetails: this.currentState.map((test, index) => ({
+                    title: test.title,
+                    description: test.description,
+                    testInput: prevData[index].testDetails.testInput,
+                    expectedBehavior: prevData[index].testDetails.expectedBehaviour,
+                    observedBehavior: prevData[index].testDetails.observedBehaviour,
+                    status: prevData[index].testDetails.status,
+                }))
+            })
+        }
     }
 
     public detachSubscriber(watcher: StageWatcher): void {
@@ -174,6 +238,7 @@ export class StageRunner {
         this.containerInstance = null;
         this.watchers.forEach(watcher => watcher.stageRunner = null);
 
+        await this.storePreviousData();
 
         const numTestCases = this._currentState.length;
         const numPassed = this._currentState.filter(test => test.status == TestStatus.Passed).length;

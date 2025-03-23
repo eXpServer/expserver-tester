@@ -81,13 +81,22 @@ export const SocketContextProvider = ({
     const testUpdateCallback = (data: TestDetails[]) => {
         setResults(data);
     }
+
     const testCompleteCallback = (data: FinalSummary) => {
         setSummary(data);
         setStatus('finished');
     };
+
+    const testPreflightCallback = (data: { timeTaken: number, testDetails: TestDetails[] }) => {
+        console.log('hi', data);
+        setResults(data.testDetails);
+        setTimer(data.timeTaken);
+    };
+
     const resourceMonitorCallback = (data: { cpu: number, mem: number }) => {
         setResourceMetrics(data)
     };
+
     const terminalCallback = (data: string[]) => {
         setTerminalData(data)
     };
@@ -97,7 +106,7 @@ export const SocketContextProvider = ({
     }
 
     const setCallbacks = async (socket: WebSocket) => {
-        socket.setTestCallbacks(testUpdateCallback, testCompleteCallback);
+        socket.setTestCallbacks(testUpdateCallback, testCompleteCallback, testPreflightCallback);
         socket.setResourceMonitorCallbacks(resourceMonitorCallback);
         socket.setTerminalCallbacks(terminalCallback);
         socket.setTimerCallbacks(timerCallack);

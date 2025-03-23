@@ -10,7 +10,7 @@ enum TimerEvents {
 export class Timer {
     private _currentTime: number;
     private _running: boolean;
-    private timeout: ReturnType<typeof setTimeout>;
+    private interval: ReturnType<typeof setTimeout>;
     private callback: (event: string, data: any) => void;
     private containerInstance: ContainerManager;
 
@@ -46,13 +46,14 @@ export class Timer {
 
     public run() {
         this._running = true;
+        this._currentTime = 0;
         this.emitToAllSockets(TimerEvents.TEST_UPDATE, this._currentTime);
-        this.timeout = setInterval(this.timerStreamCallback, 1000);
+        this.interval = setInterval(this.timerStreamCallback, 1000);
         this.containerInstance.once('close', this.closeCallback);
     }
 
     public kill() {
         this._running = false;
-        clearInterval(this.timeout);
+        clearInterval(this.interval);
     }
 }
