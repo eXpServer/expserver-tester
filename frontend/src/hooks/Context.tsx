@@ -129,11 +129,12 @@ export const SocketContextProvider = ({
 
         setStageNo(newStageNo);
         resetContext();
-        const { fileName, binaryId, running, testDetails } = await socket.current.changeStage(newStageNo);
+        const { fileName, binaryId, running, testDetails, timeTaken } = await socket.current.changeStage(newStageNo);
         setBinaryId(binaryId);
         setStatus(running ? "running" : "pending");
         setResults(testDetails);
         setFileName(fileName);
+        setTimer(timeTaken || -1);
 
         setLoading(false);
     }

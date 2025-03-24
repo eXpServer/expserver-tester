@@ -19,7 +19,8 @@ export interface TestState {
     fileName: string | null,
     binaryId: string | null,
     running: boolean,
-    testDetails: TestDetails[]
+    testDetails: TestDetails[],
+    timeTaken?: number,
 }
 
 export interface FinalSummary {

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 const Loading = () => {
     return (
         <motion.div
-            className="fixed top-0 left-0 h-screen w-screen bg-red-200 text-black"
+            className="fixed top-0 z-[100] left-0 h-screen w-screen bg-red-200 text-black"
             initial={{
                 opacity: 0,
             }}
