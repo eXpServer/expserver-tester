@@ -128,7 +128,7 @@ export class Core {
         watcher.stageRunner = runner;
 
         const previousResult = await runner.fetchPreviousData();
-        if (previousResult) {
+        if (previousResult && !runner.running) {
             return ({
                 binaryId: runner.binaryId,
                 fileName: runner.fileName,
