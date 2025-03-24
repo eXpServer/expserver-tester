@@ -14,7 +14,6 @@ enum StageRunnerEvents {
     TEST_UPDATE = 'stage-tests-update',
     TEST_COMPLETE = 'stage-tests-complete',
     FORCE_QUIT = 'stage-tests-force-quit',
-    TEST_PREFLIGHT = 'stage-tests-preflight',
 }
 
 export class StageRunner {
@@ -83,7 +82,18 @@ export class StageRunner {
             this.emitterCallback,
         )
         this._userId = userId;
+
+        this._currentState = Core.getTests(stageNo).map(test => ({
+            title: test.title,
+            description: test.description,
+            testInput: test.testInput,
+            expectedBehavior: test.expectedBehavior,
+            observedBehavior: null,
+            status: TestStatus.Pending,
+        }))
     }
+
+
 
     public async fetchPreviousData(): Promise<{ timeTaken: number, testDetails: Omit<TestDetails, 'description' | 'title'>[] }> {
         const result = await prisma.testResults.findUnique({
@@ -101,7 +111,6 @@ export class StageRunner {
 
         if (!result)
             return null;
-
         return {
             timeTaken: result.timeTaken,
             testDetails: result.testDetails.map((test, index) => ({
@@ -114,6 +123,7 @@ export class StageRunner {
     }
 
     public async storePreviousData(): Promise<void> {
+        console.log('storeing prev data');
         await prisma.$transaction([
             prisma.testResults.deleteMany({
                 where: {
@@ -142,23 +152,6 @@ export class StageRunner {
 
     public async attachNewSubscriber(watcher: StageWatcher) {
         this.watchers.push(watcher);
-
-
-        if (!this.running) {
-            const prevData = await this.fetchPreviousData();
-
-            watcher.emit(StageRunnerEvents.TEST_PREFLIGHT, {
-                timeTaken: prevData.timeTaken,
-                testDetails: this.currentState.map((test, index) => ({
-                    title: test.title,
-                    description: test.description,
-                    testInput: prevData[index].testDetails.testInput,
-                    expectedBehavior: prevData[index].testDetails.expectedBehaviour,
-                    observedBehavior: prevData[index].testDetails.observedBehaviour,
-                    status: prevData[index].testDetails.status,
-                }))
-            })
-        }
     }
 
     public detachSubscriber(watcher: StageWatcher): void {

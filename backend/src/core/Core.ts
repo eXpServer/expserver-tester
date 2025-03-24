@@ -68,7 +68,15 @@ export class Core {
             }
         })
 
-        // const testDetails = this.stageTests[`stage${stageNo}`].tests;
+
+        const runner = new StageRunner(
+            userId,
+            stageNo,
+            file,
+        )
+
+        this.runners.push(runner);
+
         const testDetails = this.getTests(stageNo);
         if (!testDetails) {
             return ({
@@ -78,6 +86,26 @@ export class Core {
                 testDetails: [],
             })
         }
+
+        const previousResult = await runner.fetchPreviousData();
+        if (previousResult) {
+            return ({
+                binaryId: file?.binaryId || null,
+                fileName: file?.fileName || null,
+                running: false,
+                timeTaken: previousResult.timeTaken,
+                testDetails: testDetails.map<TestDetails>((test, index) => ({
+                    title: test.title,
+                    description: test.description,
+                    testInput: test.testInput,
+                    expectedBehavior: test.expectedBehavior,
+                    observedBehavior: previousResult.testDetails[index].observedBehavior,
+                    status: previousResult.testDetails[index].status,
+                }))
+            })
+        }
+
+
         return ({
             binaryId: file?.binaryId || null,
             fileName: file?.fileName || null,
@@ -99,10 +127,29 @@ export class Core {
         const currentState = runner.currentState;
         watcher.stageRunner = runner;
 
+        const previousResult = await runner.fetchPreviousData();
+        if (previousResult) {
+            return ({
+                binaryId: runner.binaryId,
+                fileName: runner.fileName,
+                running: false,
+                timeTaken: previousResult.timeTaken,
+                testDetails: currentState.map<TestDetails>((test, index) => ({
+                    title: test.title,
+                    description: test.description,
+                    testInput: test.testInput,
+                    expectedBehavior: test.expectedBehavior,
+                    observedBehavior: previousResult.testDetails[index].observedBehavior,
+                    status: previousResult.testDetails[index].status,
+                }))
+            })
+        }
+
+
         return ({
             binaryId: runner.binaryId,
             fileName: runner.fileName,
-            running: true,
+            running: runner.running,
             testDetails: currentState,
         })
     }
@@ -168,18 +215,13 @@ export class Core {
         if (!file)
             return socket.emit(EmitEvents.NoBinary);
 
-        const runner = new StageRunner(
-            userId,
-            stageNo,
-            file,
-        )
-
-        this.runners.push(runner);
+        const runner = this.findStageRunner(socket.watcher);
 
         this.watchers.forEach(watcher => {
-            watcher.stageRunner = runner;
-            if (watcher.userId == userId && watcher.stageNo == stageNo)
+            if (watcher.userId == userId && watcher.stageNo == stageNo) {
+                watcher.stageRunner = runner;
                 runner.attachNewSubscriber(watcher);
+            }
         })
 
         await runner.run();

@@ -38,7 +38,8 @@ export interface TestState {
     binaryId: string | null,
     fileName: string | null,
     running: boolean,
-    testDetails: TestDetails[]
+    testDetails: TestDetails[],
+    timeTaken?: number,
 }
 
 export enum TestStatus {
