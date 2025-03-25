@@ -64,7 +64,7 @@ export class ContainerManager extends EventEmitter {
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? 'xps_config.json' : ''}`]
+            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? `${PUBLIC_DIR}/xps_config.json` : ''}`]
             ,
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {

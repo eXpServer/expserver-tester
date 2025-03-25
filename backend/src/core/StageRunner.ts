@@ -170,10 +170,7 @@ export class StageRunner {
     }
 
     private async containerWarmUp() {
-        // if (this.containerInstance.running)
-        //     await this.containerInstance.restartContainer();
-        // else
-        //     await this.containerInstance.start();
+        console.log("Warming up the container")
 
         if (!this.containerInstance.running)
             await this.containerInstance.start();
@@ -199,8 +196,8 @@ export class StageRunner {
         const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
             const fn = functions[i];
-
             await this.containerWarmUp();
+            console.log(`[CONTAINER ${this.stageNo} ${this.userId}]: Running test case ${i}`);
             const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
 
             this._currentState[i].testInput = testInput;
