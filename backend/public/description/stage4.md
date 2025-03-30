@@ -9,17 +9,18 @@ We have explored UDP and multithreading in the previous stage. We now move back 
 - Server should receive string and reverse it, while leaving any trailing `\n` intact.
     - eg: `abcd\n` should be reversed as `dcba\n`
 
-
 ## Tests
-
-### Test 1: String reversal - Single client
+### Test 1: Single client - input output
 This test ensures that the server runs as expected when a singular client is connected
+
 ```js
-testInput: "Client sends a randomly generated string to the server"
-expectedBehavior: "Client receives reversed version of the input"
+testInput: "client sends a randomly generated string to the server"
+expectedBehavior: "client receives reversed version of the input"
 ```
-### Test 2: String reversal - Multiple clients
+
+### Test 2: Multiple clients to same port - input output
 This test ensures that the server is able to handle multiple connections at once and verifies the response received by each of the client
+
 ```js
 testInput: "Connect multiple clients to server and sends unique string simultaneously"
 expectedBehavior: "Each of the clients should receive reversed versions of their input"
@@ -27,7 +28,9 @@ expectedBehavior: "Each of the clients should receive reversed versions of their
 
 ### Test 3: Error handling
 In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected
+
 ```js
-testInput: "Three clients are created, two of which are connected to the server. One of them is forcefully terminated. Upon successfuly termination of the client, the third client connects to server"
-expectedBehavior: "The server should not crash upon disconnection of the client. Both the previous and the new client should be able to send and receive strings, which are tested."
+testInput: "client forcefully disconnects"
+expectedBehavior: "Previous and new clients are able to send and receive output as expected"
 ```
+

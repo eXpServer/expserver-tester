@@ -13,66 +13,105 @@ The tests done within this stage will ensure the parser has been written properl
 - The `public/` directory should be expected to be present within the same relative path to the executable as given within the documentation
 
 ## Tests
+### Test 1: Valid request - jpg
+This test aims to ensure that the requested file is served and verifies that the headers match what is expected
 
-### Valid request (jpg file)
-This test aims to ensure that the requested file is served and verifies that the headers match what is expected.
 ```js
 testInput: "Sends a request to the server requesting for a .jpg file"
-expectedBehaviour: "The server sends the file to the client with appropriate mime-types and other headers"
+expectedBehavior: "HTTP/1.1 200} OK
+Content-Type: image/jpeg
+Server: eXpServer
+
+"
 ```
 
-### Valid request (pdf file)
-This test aims to ensure that the requested file is served and verifies that the headers match what is expected.
+### Test 2: Valid request - pdf
+This test aims to ensure that the requested file is served and verifies that the headers match what is expected
+
 ```js
 testInput: "Sends a request to the server requesting for a .pdf file"
-expectedBehaviour: "The server sends the file to the client with appropriate mime-types and other headers"
+expectedBehavior: "HTTP/1.1 200} OK
+Content-Type: application/pdf
+Server: eXpServer
+
+"
 ```
 
-### Valid request (plain text file)
-This test aims to ensure that the requested file is served and verifies that the headers match what is expected.
+### Test 3: Valid request - plain
+This test aims to ensure that the requested file is served and verifies that the headers match what is expected
+
 ```js
 testInput: "Sends a request to the server requesting for a .txt file"
-expectedBehaviour: "The server sends the file to the client with appropriate mime-types and other headers"
+expectedBehavior: "HTTP/1.1 200} OK
+Content-Type: text/plain
+Server: eXpServer
+
+"
 ```
 
-### File not found
-This test aims to ensure the error handling in case the user requests a file that isn't found within the public directory.
+### Test 4: File not found
+This test aims to ensure the error handling in case the user requests for a file that isn't found within the public directory
+
 ```js
-testInput: "Sends a request to the server requesting for a file that doesn't exist"
-expectedBehaviour: "The server returns a 404 Not Found response"
+testInput: "Sends a request to the server request for a file that doesn't exist"
+expectedBehavior: "HTTP/1.1 404} Not Found
+Server: eXpServer
+
+"
 ```
 
-### Missing HTTP Version
-This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
+### Test 5: Missing HTTP Version
+This test aims to ensure proper error handling of the server in case of an invalid HTTP request
+
 ```js
 testInput: "Sends a request to the server without specifying HTTP version"
-expectedBehaviour: "The server returns a 400 Bad Request response"
+expectedBehavior: "HTTP/1.1 400} Bad Request
+Server: eXpServer
+
+"
 ```
 
-### Invalid HTTP Method
-This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
+### Test 6: Invalid HTTP method
+This test aims to ensure proper error handling of the server in case of an invalid HTTP request
+
 ```js
 testInput: "Sends a request to the server with an invalid HTTP method"
-expectedBehaviour: "The server returns a 400 Bad Request response"
+expectedBehavior: "HTTP/1.1 400} Bad Request
+Server: eXpServer
+
+"
 ```
 
-### Missing Host Header
-This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
+### Test 7: Missing host header
+This test aims to ensure proper error handling of the server in case of an invalid HTTP request
+
 ```js
 testInput: "Sends a request to the server without specifying the host (mandatory header field)"
-expectedBehaviour: "The server returns a 400 Bad Request response"
+expectedBehavior: "HTTP/1.1 400} Bad Request
+Server: eXpServer
+
+"
 ```
 
-### Invalid HTTP Version
-This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
+### Test 8: Invalid HTTP Version
+This test aims to ensure proper error handling of the server in case of an invalid HTTP request
+
 ```js
 testInput: "Sends a request to the server with a non-existent HTTP Version"
-expectedBehaviour: "The server returns a 400 Bad Request response"
+expectedBehavior: "HTTP/1.1 400} Bad Request
+Server: eXpServer
+
+"
 ```
 
-### Improperly formatted request (headers)
-This test aims to ensure proper error handling of the server in case of an invalid HTTP request.
+### Test 9: Improperly formatted request (headers)
+This test aims to ensure proper error handling of the server in case of an invalid HTTP request
+
 ```js
-testInput: "Sends a request to the server without colon separation between the key-value "pairs in the headers
-expectedBehaviour: "The server returns a 400 Bad Request response"
+testInput: "Sends a request to the server without colon separation between the key-value pairs in the headers"
+expectedBehavior: "HTTP/1.1 400} Bad Request
+Server: eXpServer
+
+"
 ```
+

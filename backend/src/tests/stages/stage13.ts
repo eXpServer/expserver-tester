@@ -16,9 +16,9 @@ export const stage13Tests: Omit<Test, 'status'>[] = [
     },
     {
         title: "Error handling",
-        description: "",
-        testInput: "",
-        expectedBehavior: "",
+        description: "This test ensures the server responds properly in the case of unexpected crashes from the upstream server",
+        testInput: "Client connects to the proxy and sends a request to be relayed to the upstream server, which is terminated",
+        expectedBehavior: "Proxy server shouldn't crash, instead handle the error gracefully",
         testFunction: async (...args) => {
             const response = await proxyServerCrashHandling(8001, ...args);
             return response;

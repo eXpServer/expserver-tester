@@ -6,8 +6,6 @@ import { generateRandomStrings, reverseString } from "../utils/string";
 
 export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "Force disconnection of the client";
-    const expectedBehavior = "Process exited with code 1";
     return new Promise((resolve, _) => {
         const client = new Socket();
 
@@ -15,8 +13,6 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
         const closeCallback = (code: number | null) => {
             resolve({
                 passed: (code == 1),
-                testInput,
-                expectedBehavior: expectedBehavior,
                 observedBehavior: `Process exited with code ${code || 0}`,
             })
         }
@@ -26,8 +22,6 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
         client.on('error', () => {
             resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "Client disconnected with an error",
                 cleanup: () => spawnInstance.off('close', closeCallback),
             })
@@ -42,8 +36,6 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
                     spawnInstance.off('close', closeCallback);
                     resolve({
                         passed: false,
-                        testInput,
-                        expectedBehavior: expectedBehavior,
                         observedBehavior: "Process did not exit within 3s",
                         cleanup: () => clearTimeout(timeout),
                     })
@@ -55,8 +47,6 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
 
 export const finalErrorHandling: TestFunction = (hostPort: number, reverse: boolean, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "client forcefully disconnects";
-    const expectedBehavior = "Previous and new clients are able to send and receive output as expected";
 
     return new Promise((resolve, _) => {
         const existingClient = new Socket();
@@ -67,8 +57,6 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         const connectionAttemptFailedCallback = () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server refused connection",
                 cleanup: () => {
                     existingClient.destroy();
@@ -81,8 +69,6 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         const connectionTimeoutCallback = () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server connection timed out",
                 cleanup: () => {
                     existingClient.destroy();
@@ -103,8 +89,6 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         spawnInstance.on('close', (code) => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Server terminated with Error code ${code || 0}`,
                 cleanup: () => {
                     existingClient.destroy();
@@ -127,8 +111,6 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
                     if (expected !== output) {
                         return resolve({
                             passed: false,
-                            testInput,
-                            expectedBehavior,
                             observedBehavior: "new client didn't receive string it expected",
                             cleanup: () => {
                                 existingClient.destroy();
@@ -140,9 +122,6 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
                     else {
                         return resolve({
                             passed: true,
-                            testInput,
-                            expectedBehavior,
-                            observedBehavior: expectedBehavior,
                             cleanup: () => {
                                 existingClient.destroy();
                                 clientToBeDisconnected.destroy();
@@ -167,8 +146,6 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
                 if (expected !== output) {
                     return resolve({
                         passed: false,
-                        testInput,
-                        expectedBehavior,
                         observedBehavior: "existing client didn't receive string it expected",
                         cleanup: () => {
                             existingClient.destroy();
@@ -195,16 +172,12 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
 
 export const proxyServerCrashHandling: TestFunction = async (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "Client connects to the proxy and sends a request to be relayed to the upstream server"
-    const expectedBehavior = "Proxy server shouldn't crash, instead handle the error gracefully"
     await spawnInstance.stopPythonServer();
     return new Promise((resolve, _) => {
 
         spawnInstance.on('close', (code) => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Server terminated with Error code ${code}`,
             })
         })
@@ -213,16 +186,12 @@ export const proxyServerCrashHandling: TestFunction = async (hostPort: number, s
             if (err.cause?.code == 'UND_ERR_SOCKET') {
                 return resolve({
                     passed: true,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: "Server terminated client connection without any crashes",
                 })
             }
             else {
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: `Server terminated client with error: ${err.code}`
                 })
             }

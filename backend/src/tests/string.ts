@@ -6,15 +6,11 @@ import { ContainerManager } from "../core/ContainerManager";
 
 export const stringReversal: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "client sends a randomly generated string to the server";
-    const expectedBehavior = "client receives reversed version of the input"
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {
             resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `server crashed with error ${error}`
             })
         });
@@ -26,8 +22,6 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         client.on('connectionAttemptFailed', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server refused connection",
             })
         })
@@ -35,8 +29,6 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         client.on('connectionAttemptTimeout', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server connection timed out",
             })
         })
@@ -92,15 +84,11 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
 
 export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "client sends a randomly generated string to the server";
-    const expectedBehavior = "client receives the same string that was sent as input"
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {
             resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `server crashed with error ${error}`
             })
         });
@@ -112,8 +100,6 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
         client.on('connectionAttemptFailed', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server refused connection",
             })
         })
@@ -121,8 +107,6 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
         client.on('connectionAttemptTimeout', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server connection timed out",
             })
         })

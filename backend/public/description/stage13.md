@@ -13,23 +13,27 @@ Tests done within this stage will ensure all the features and performance improv
 - Server should be able to accept an incoming TCP connection from any of the port, while ensuring graceful shutdown in case of errors
 
 ## Tests
-### Proxy multiple clients
-Creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server
+### Test 1: proxy response checking -- multiple clients
+creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server
+
 ```js
-testInput: "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2",
-expectedBehavior: "client 1 receives response from /test/1 && client 2 gets response from /test/2",
+testInput: "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2"
+expectedBehavior: "client 1 receives response from /test/1 && client 2 gets response from /test/2"
 ```
 
-### Proxy error handling
-Checks the behaviour of the proxy server in the event that the upstream server is unavailable
+### Test 2: Error handling
+This test ensures the server responds properly in the case of unexpected crashes from the upstream server
+
 ```js
-testInput: "Client connects to the proxy and sends a request to be relayed to the upstream server",
-expectedBehavior: "Proxy server shouldn't crash, instead handle the error gracefully",
+testInput: "Client connects to the proxy and sends a request to be relayed to the upstream server, which is terminated"
+expectedBehavior: "Proxy server shouldn't crash, instead handle the error gracefully"
 ```
 
-### File server response
-This test ensures the file server responds with the 'sample.txt' file stored within the public directory
+### Test 3: File server response
+This test ensures the file server responds with the 'sample.txt' file stored within the public folder
+
 ```js
-testInput: "Connects to the file server",
-expectedBehavior: "Server responds with the contents of 'sample.txt' without needing any input from the client",
+testInput: "Connects to the file server"
+expectedBehavior: "Server responds with the contents of 'sample.txt' without needing any input from the client"
 ```
+

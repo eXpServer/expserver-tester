@@ -88,7 +88,7 @@ export class StageRunner {
             description: test.description,
             testInput: test.testInput,
             expectedBehavior: test.expectedBehavior,
-            observedBehavior: null,
+            observedBehavior: test.expectedBehavior,
             status: TestStatus.Pending,
         }))
     }
@@ -123,7 +123,6 @@ export class StageRunner {
     }
 
     public async storePreviousData(): Promise<void> {
-        console.log('storeing prev data');
         await prisma.$transaction([
             prisma.testResults.deleteMany({
                 where: {
@@ -197,16 +196,18 @@ export class StageRunner {
         for (let i = 0; i < functions.length; i++) {
             const fn = functions[i];
             await this.containerWarmUp();
-            console.log(`[CONTAINER ${this.stageNo} ${this.userId}]: Running test case ${i}`);
             const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
 
-            this._currentState[i].testInput = testInput;
-            this._currentState[i].expectedBehavior = expectedBehavior;
+            if (testInput)
+                this._currentState[i].testInput = testInput;
+            if (expectedBehavior)
+                this._currentState[i].expectedBehavior = expectedBehavior;
+            if (observedBehavior)
+                this._currentState[i].observedBehavior = observedBehavior;
             this._currentState[i].status = (passed
                 ? TestStatus.Passed
                 : TestStatus.Failed
             );
-            this._currentState[i].observedBehavior = observedBehavior;
 
 
             if (cleanup)

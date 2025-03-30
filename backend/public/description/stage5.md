@@ -9,12 +9,12 @@ In this stage, we shall deviate a bit from our current implementation to explore
 - The proxy server should expect the upstream server to run on port `3000`
 - The proxy server should handle any unexpected error scenarios accordingly
 
-
 ## Tests
+### Test 1: proxy response checking -- multiple clients
+creates multiple clients and verifies if the clients receive the responses meant for them, as well as if the response is matching the response received directly from the dummy server
 
-### Checking Proxy Response
-Creates multiple clients, each of them connects to the proxy server and _simultaneously_ sends an auto-genereated `GET` request unique to each client. Upon receiving a response from the proxy, a similar client connects to the upstream server directly and ensures both the responses are identical.
 ```js
-testInput: "Multiple clients are created and each of them sends a unique message and expects a unique response"
-expectedBehavior: "The response received by each client from the proxy server, should match the expected resopnse, as if the client was directly connected to the upstream server"
+testInput: "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2"
+expectedBehavior: "client 1 receives response from /test/1 && client 2 gets response from /test/2"
 ```
+

@@ -11,8 +11,6 @@ import { cwd } from "process";
 
 export const multipleClients: TestFunction = (hostPort: number, reverse: boolean, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "Connect multiple clients to server and sent string simultaneously";
-    const expectedBehavior = "Each of the clients should receive the reversed versions of the string that they sent";
     const numClients = 10;
 
 
@@ -26,8 +24,6 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
         spawnInstance.on('error', (error) => {
             resolve({
                 passed: false,
-                testInput,
-                expectedBehavior: expectedBehavior,
                 observedBehavior: `server crashed with error ${error}`
             })
         });
@@ -47,7 +43,6 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
                     spawnInstance?.kill();
                     return resolve({
                         passed: false,
-                        testInput,
                         expectedBehavior: `client ${index} receives ${expected}`,
                         observedBehavior: `client ${index} received ${output}`,
                         cleanup: () => {
@@ -62,9 +57,6 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
                     spawnInstance?.kill();
                     return resolve({
                         passed: true,
-                        testInput,
-                        expectedBehavior,
-                        observedBehavior: expectedBehavior,
                         cleanup: () => {
                             clients.forEach(client => client.destroy());
                         }
@@ -82,8 +74,6 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
                 spawnInstance?.kill();
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: "Server refused connection",
                     cleanup: () => {
                         clients.forEach(client => client.destroy());
@@ -95,8 +85,6 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
                 spawnInstance?.kill();
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: "Server connection timed out",
                     cleanup: () => {
                         clients.forEach(client => client.destroy());
@@ -114,8 +102,6 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
 
 export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "client 1 sends a GET on /test/1 && client 2 sends a GET on /test/2";
-    const expectedBehavior = "client 1 receives response from /test/1 && client 2 gets response from /test/2";
     const serverPort = 3000;
     const serverMappedPort = spawnInstance.getMapppedPort(serverPort);
     const numClients = 3;
@@ -123,8 +109,6 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
         spawnInstance.on('error', (error) => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Server crashed with error ${error}`
             })
         })
@@ -145,8 +129,6 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
             if (fullResponse !== proxyServerResponse) {
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: "Response received from the proxy server didn't match the response received directly from the main server",
                 })
             }
@@ -155,9 +137,6 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
                 if (numPassed == numClients) {
                     return resolve({
                         passed: true,
-                        testInput,
-                        expectedBehavior,
-                        observedBehavior: expectedBehavior,
                     })
                 }
             }
@@ -181,8 +160,6 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
                 .catch(error => {
                     return resolve({
                         passed: false,
-                        testInput,
-                        expectedBehavior,
                         observedBehavior: `Connection failed with error ${error}`
                     })
                 })
@@ -199,8 +176,6 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
  */
 export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "a client is connected to the server and sends a large file, but does not receive any data from the server.After 30 seconds, a second client is connected to the server, and verifies if the server responds";
-    const expectedBehavior = "server should be able to handle multiple connections simultaneously, and should not block on a single connection";
     return new Promise((resolve, _) => {
         const firstClient = new Socket();
         const secondClient = new Socket();
@@ -208,8 +183,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         spawnInstance.on('error', error => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Server crashed with error ${error}`
             })
         })
@@ -218,8 +191,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         const connectionFailedHandler = () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "Server refused connection",
                 cleanup: () => {
                     firstClient.destroy();
@@ -231,8 +202,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         const connectionTimeoutHandler = () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "Server connection timeout",
                 cleanup: () => {
                     firstClient.destroy();
@@ -262,8 +231,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
                         return resolve({
                             passed: false,
-                            expectedBehavior,
-                            testInput,
                             observedBehavior: "Client connection was disconnected",
                             cleanup: () => {
                                 firstClient.destroy();
@@ -287,9 +254,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
                         return resolve({
                             passed: true,
-                            testInput,
-                            expectedBehavior,
-                            observedBehavior: expectedBehavior
                         })
                     })
 
@@ -313,8 +277,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
                         spawnInstance.kill().then(() => {
                             return resolve({
                                 passed: false,
-                                testInput,
-                                expectedBehavior,
                                 observedBehavior: "Server did not respond to the second client within 30s"
                             });
                         })
@@ -330,8 +292,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
 export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "Creates an idle client connection and tracks CPU usage over the course of 20 seconds";
-    const expectedBehavior = "CPU usage should be less than 10%";
     return new Promise((resolve, _) => {
         const NUM_ITERATIONS = 30;
         const client = new Socket();
@@ -339,8 +299,6 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
         spawnInstance.on('error', error => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Server crashed with error ${error}`
             })
         })
@@ -357,8 +315,6 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
         client.on('connectionAttemptFailed', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "Server refused connection",
             })
         });
@@ -366,8 +322,6 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
         client.on('connectionAttemptTimeout', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "Server connection timed out",
             })
         })
@@ -384,8 +338,6 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
                     client.destroy();
                     clearInterval(interval);
                     return resolve({
-                        testInput,
-                        expectedBehavior,
                         observedBehavior,
                         passed: average <= 10,
                     });
@@ -400,16 +352,12 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
 }
 
 export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => {
-    const testInput = "Transfers a 4gb file over the network and tracks memory usage over time";
-    const expectedBehavior = "Memory usage should be less than 10%";
     return new Promise(async resolve => {
         await spawnInstance.detachStream();
         const results: number[] = [];
         spawnInstance.on('error', error => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Server crashed with error ${error}`
             })
         });
@@ -468,8 +416,6 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
                 await spawnInstance.attachStream();
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: `netcat localhost 8001 failed with exit code ${exitCode}`
                 })
             }
@@ -479,8 +425,6 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
                 await spawnInstance.attachStream();
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: `Observed an average memory usage of ${average}%`
                 })
             }
@@ -488,8 +432,6 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
                 await spawnInstance.attachStream();
                 return resolve({
                     passed: true,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: `Observed an average memory usage of ${average}%`
                 })
             }
@@ -499,9 +441,7 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
             await spawnInstance.attachStream();
             return resolve({
                 passed: false,
-                testInput,
                 observedBehavior: "something went wrong",
-                expectedBehavior,
             })
         }
     })
@@ -509,14 +449,10 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
 
 export const prematureFileServerTest: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "Connects to the file server";
-    const expectedBehavior = "Server responds with the contents of 'sample.txt' without needing any input from the client";
     return new Promise((resolve) => {
         spawnInstance.once('error', (error) => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `server crashed with error ${error}`
             })
         })
@@ -525,8 +461,6 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
         client.once('connectionAttemptFailed', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server refused connection",
             })
         })
@@ -534,8 +468,6 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
         client.once('connectionAttemptTimeout', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server connection timed out",
             })
         })
@@ -546,8 +478,6 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
             timeout = setTimeout(() => {
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: "Server didn't respond with any data",
                 })
             }, 30000);
@@ -562,16 +492,11 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
             if (data.toString() == expectedString) {
                 return resolve({
                     passed: true,
-                    testInput,
-                    expectedBehavior,
-                    observedBehavior: expectedBehavior
                 });
             }
             else {
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: `Expected string: ${data.toString()}, received ${expectedString}`
                 })
             }

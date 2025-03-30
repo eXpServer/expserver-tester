@@ -2,13 +2,10 @@ import { Socket } from "net";
 import { ContainerManager } from "../core/ContainerManager";
 import { HttpRequestTest, TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
-import { buildHttpResponse, parseHttpResponse, verifyResponseOutput } from "../utils/http";
-import exp from "constants";
+import { parseHttpResponse, verifyResponseOutput } from "../utils/http";
 
 export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = requestInfo.info;
-    const expectedBehavior = buildHttpResponse(requestInfo.expectedResponse)
 
     return new Promise((resolve, _) => {
         const client = new Socket();
@@ -16,8 +13,6 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
         client.on('connectionAttemptFailed', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server refused connection",
             })
         })
@@ -25,8 +20,6 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
         client.on('connectionAttemptTimeout', () => {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "server connection timed out",
             })
         })
@@ -40,8 +33,6 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
             if (!verifyResponseOutput(parsedResponse, requestInfo.expectedResponse)) {
                 return resolve({
                     passed: false,
-                    testInput,
-                    expectedBehavior,
                     observedBehavior: responseText,
                     cleanup: () => client.destroy()
                 })
@@ -49,9 +40,6 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
             else {
                 return resolve({
                     passed: true,
-                    testInput,
-                    expectedBehavior,
-                    observedBehavior: expectedBehavior,
                     cleanup: () => client.destroy()
                 })
             }
@@ -77,21 +65,25 @@ const matchBody = (proxyBody: string, serverBody: string) => {
 }
 
 export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, proxyHostPort, spawnInstance: ContainerManager) => {
-    const testInput = "";
-    const expectedBehavior = "";
-
     const port = spawnInstance.getMapppedPort(hostPort)
     const proxyPort = spawnInstance.getMapppedPort(proxyHostPort);
 
     return new Promise(async resolve => {
-        let responseFromProxy;
+        let responseFromProxy: Response;
         try {
             responseFromProxy = await fetch(`http://localhost:${proxyPort}/${fileName}`);
         }
-        catch {
-            console.log("Proxy server not responding");
+        catch (error) {
+            console.log(`Error: ${error.cause.code}`)
         }
-        const responseFromServer = await fetch(`http://localhost:${port}/${fileName}`);
+        let responseFromServer: Response;
+
+        try {
+            responseFromServer = await fetch(`http://localhost:${port}/${fileName}`);
+        }
+        catch (error) {
+            console.log(`Error: ${error.cause.code}`)
+        }
 
         if (
             (responseFromProxy.status != responseFromServer.status) ||
@@ -100,17 +92,12 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
         ) {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: "Response received from server didn't match that received from proxy",
             });
         }
         else {
             return resolve({
                 passed: true,
-                testInput,
-                expectedBehavior,
-                observedBehavior: expectedBehavior,
             })
         }
 
@@ -119,34 +106,35 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
 
 export const httpFileServerTest: TestFunction = (fileName: string, mimeType: string, hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "";
-    const expectedBehavior = "";
 
     return new Promise(async resolve => {
-        const response = await fetch(`http://localhost:${port}/${fileName}`);
+        let response: Response;
+        try {
+            response = await fetch(`http://localhost:${port}/${fileName}`);
+        }
+        catch (error) {
+            return resolve({
+                passed: false,
+                observedBehavior: `Error: ${error.cause.code}`,
+            })
+        }
+
         const receivedMimeType = response.headers.get('Content-Type');
         if (response.status != 200) {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Expected status 200, received ${response.status}`,
             })
         }
         else if (receivedMimeType != mimeType) {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Expected file of type ${mimeType}, recieved ${receivedMimeType}`
             })
         }
         else {
             return resolve({
                 passed: true,
-                testInput,
-                expectedBehavior,
-                observedBehavior: expectedBehavior,
             })
         }
     })
@@ -154,34 +142,35 @@ export const httpFileServerTest: TestFunction = (fileName: string, mimeType: str
 
 export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string, hostPort: number, spawnInstance: ContainerManager) => {
     const port = spawnInstance.getMapppedPort(hostPort);
-    const testInput = "";
-    const expectedBehavior = "";
 
     return new Promise(async resolve => {
-        const response = await fetch(`http://localhost:${port}/${path}`, { redirect: 'manual' });
+        let response: Response;
+        try {
+            response = await fetch(`http://localhost:${port}/${path}`, { redirect: 'manual' });
+        }
+        catch (error) {
+            return resolve({
+                passed: false,
+                observedBehavior: `Error: ${error.cause.code}`,
+            })
+        }
+
         const receivedRedirectUrl = response.headers.get('location');
         if (response.status != 302) {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Expected a status code 302 but received ${response.status}`,
             })
         }
         else if (response.headers.get('location') !== redirectUrl) {
             return resolve({
                 passed: false,
-                testInput,
-                expectedBehavior,
                 observedBehavior: `Expected redirect to ${redirectUrl} but received ${receivedRedirectUrl || 'N/A'}`,
             })
         }
 
         return resolve({
             passed: true,
-            testInput,
-            expectedBehavior,
-            observedBehavior: expectedBehavior,
         })
     })
 }
