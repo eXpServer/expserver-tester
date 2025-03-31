@@ -9,6 +9,7 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {
+            spawnInstance?.kill();
             resolve({
                 passed: false,
                 observedBehavior: `server crashed with error ${error}`
@@ -32,6 +33,23 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
                 observedBehavior: "server connection timed out",
             })
         })
+
+        client.on('error', () => {
+            client.destroy();
+            spawnInstance?.kill();
+            return resolve({
+                passed: false,
+                observedBehavior: "Cannot establish a connection with server",
+            })
+        })
+
+        client.on('close', () => {
+            return resolve({
+                passed: false,
+                observedBehavior: "Connection terminated / server not running on desired port",
+            })
+        })
+
 
         const writeToServer = (index: number) => {
             const input = testStrings[index];
@@ -87,6 +105,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {
+            spawnInstance?.kill();
             resolve({
                 passed: false,
                 observedBehavior: `server crashed with error ${error}`
@@ -110,6 +129,23 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
                 observedBehavior: "server connection timed out",
             })
         })
+
+        client.on('error', () => {
+            client.destroy();
+            spawnInstance?.kill();
+            return resolve({
+                passed: false,
+                observedBehavior: "Cannot establish a connection with server",
+            })
+        })
+
+        client.on('close', () => {
+            return resolve({
+                passed: false,
+                observedBehavior: "Connection terminated / server not running on desired port",
+            })
+        })
+
 
         const writeToServer = (index: number) => {
             const input = testStrings[index];

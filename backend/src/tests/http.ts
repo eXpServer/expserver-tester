@@ -24,6 +24,22 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
             })
         })
 
+        client.on('error', () => {
+            client.destroy();
+            spawnInstance?.kill();
+            return resolve({
+                passed: false,
+                observedBehavior: "cannot establish a connection with server",
+            })
+        })
+
+        client.on('close', () => {
+            return resolve({
+                passed: false,
+                observedBehavior: "connection terminated / server isn't running on desired port",
+            })
+        })
+
         const verifyResponseCallback = (data: Buffer) => {
             const responseText = data.toString();
             client.off('data', verifyResponseCallback);

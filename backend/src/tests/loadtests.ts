@@ -16,12 +16,60 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
 
     return new Promise((resolve, _) => {
         const clients: Socket[] = [];
-        for (let i = 0; i < numClients; i++)
-            clients.push(new Socket());
+        for (let i = 0; i < numClients; i++) {
+            const newClient = new Socket();
+            newClient.on('connectionAttemptFailed', () => {
+                spawnInstance?.kill();
+                return resolve({
+                    passed: false,
+                    observedBehavior: "Server refused connection",
+                    cleanup: () => {
+                        clients.forEach(client => client.destroy());
+                    }
+                })
+            })
+
+            newClient.on('connectionAttemptTimeout', () => {
+                spawnInstance?.kill();
+                return resolve({
+                    passed: false,
+                    observedBehavior: "Server connection timed out",
+                    cleanup: () => {
+                        clients.forEach(client => client.destroy());
+                    }
+                })
+            })
+
+            newClient.on('error', () => {
+                spawnInstance?.kill();
+                return resolve({
+                    passed: false,
+                    observedBehavior: "cannot establish a connection with server",
+                    cleanup: () => {
+                        clients.forEach(client => client.destroy());
+                    }
+                })
+            })
+
+            newClient.on('close', () => {
+                spawnInstance?.kill();
+                return resolve({
+                    passed: false,
+                    observedBehavior: "connection terminated / server not running on desired port",
+                    cleanup: () => {
+                        clients.forEach(client => client.destroy());
+                    }
+                })
+            })
+
+
+            clients.push(newClient);
+        }
 
         let responsesReceived: number = 0;
 
         spawnInstance.on('error', (error) => {
+            spawnInstance?.kill();
             resolve({
                 passed: false,
                 observedBehavior: `server crashed with error ${error}`
@@ -69,29 +117,6 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
         }
 
         clients.forEach((client, index) => {
-
-            client.once('connectionAttemptFailed', () => {
-                spawnInstance?.kill();
-                return resolve({
-                    passed: false,
-                    observedBehavior: "Server refused connection",
-                    cleanup: () => {
-                        clients.forEach(client => client.destroy());
-                    }
-                })
-            })
-
-            client.once('connectionAttemptTimeout', () => {
-                spawnInstance?.kill();
-                return resolve({
-                    passed: false,
-                    observedBehavior: "Server connection timed out",
-                    cleanup: () => {
-                        clients.forEach(client => client.destroy());
-                    }
-                })
-            })
-
             client.connect(port, LOCALHOST, () => {
                 clientRecvChecker(client, index);
             })
@@ -107,6 +132,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
     const numClients = 3;
     return new Promise((resolve, _) => {
         spawnInstance.on('error', (error) => {
+            spawnInstance?.kill();
             return resolve({
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`
@@ -181,6 +207,7 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         const secondClient = new Socket();
 
         spawnInstance.on('error', error => {
+            spawnInstance?.kill();
             return resolve({
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`
@@ -192,10 +219,6 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
             return resolve({
                 passed: false,
                 observedBehavior: "Server refused connection",
-                cleanup: () => {
-                    firstClient.destroy();
-                    secondClient.destroy();
-                }
             })
         };
 
@@ -211,11 +234,34 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         }
 
 
+        const connectionCloseHandler = () => {
+            firstClient.end();
+            secondClient.end();
+            return resolve({
+                passed: false,
+                observedBehavior: "Connection terminated / server not running on desired port",
+            })
+        }
+
+        const connectionErrorHandler = () => {
+            firstClient.end();
+            secondClient.end();
+            return resolve({
+                passed: false,
+                observedBehavior: "Cannot establish connection to server",
+            })
+        }
+
+
         firstClient.on('connectionAttemptFailed', connectionFailedHandler);
         firstClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
+        firstClient.on('error', connectionErrorHandler);
+        firstClient.on('close', connectionCloseHandler);
 
         secondClient.on('connectionAttemptFailed', connectionFailedHandler);
         secondClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
+        secondClient.on('error', connectionErrorHandler);
+        secondClient.on('close', connectionCloseHandler);
 
         firstClient.connect(port, LOCALHOST, () => {
             const file = createReadStream(path.join(process.cwd(), 'public', 'large-files', '4gb.txt'));
@@ -239,8 +285,11 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
                         })
                     };
 
+                    firstClient.off('error', connectionErrorHandler);
+                    secondClient.off('error', connectionErrorHandler);
                     firstClient.on('error', errorCallback);
                     secondClient.on('error', errorCallback)
+
 
 
                     const input = "hello world";
@@ -270,8 +319,8 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
 
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.destroy();
-                        secondClient.destroy();
+                        firstClient.end();
+                        secondClient.end();
                         file.close();
                         clearTimeout(firstClientWaitTimeout);
                         spawnInstance.kill().then(() => {
@@ -326,6 +375,22 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
             })
         })
 
+        client.on('error', () => {
+            client.destroy();
+            spawnInstance?.kill();
+            return resolve({
+                passed: false,
+                observedBehavior: "Cannot establish a connection with server",
+            })
+        })
+
+        client.on('close', () => {
+            return resolve({
+                passed: false,
+                observedBehavior: "Connection terminated / server not running on desired port",
+            })
+        })
+
         client.connect(port, LOCALHOST, () => {
             const results = Array<number>(NUM_ITERATIONS);
             let index = NUM_ITERATIONS - 1;
@@ -356,6 +421,7 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
         await spawnInstance.detachStream();
         const results: number[] = [];
         spawnInstance.on('error', error => {
+            spawnInstance?.kill();
             return resolve({
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`
@@ -458,20 +524,35 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
         })
 
         const client = new Socket();
-        client.once('connectionAttemptFailed', () => {
+        client.on('connectionAttemptFailed', () => {
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
             })
         })
 
-        client.once('connectionAttemptTimeout', () => {
+        client.on('connectionAttemptTimeout', () => {
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
             })
         })
 
+        client.on('error', () => {
+            client.destroy();
+            spawnInstance?.kill();
+            return resolve({
+                passed: false,
+                observedBehavior: "Cannot establish a connection with server",
+            })
+        })
+
+        client.on('close', () => {
+            return resolve({
+                passed: false,
+                observedBehavior: "Connection terminated / server not running on desired port",
+            })
+        })
 
         let timeout = null;
         client.on('connect', () => {

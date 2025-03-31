@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM debian:bookworm-slim
 
 RUN apt-get update
 
@@ -11,7 +11,7 @@ RUN apt-get install -y libc6-dev \
     zlib1g-dev \
     python3 \
     python3-pip \
-    netcat
+    netcat-openbsd
 
 WORKDIR /usr/src/app
 

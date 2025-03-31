@@ -20,12 +20,21 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
         spawnInstance.on('close', closeCallback);
 
         client.on('error', () => {
+            client.destroy();
             resolve({
                 passed: false,
                 observedBehavior: "Client disconnected with an error",
                 cleanup: () => spawnInstance.off('close', closeCallback),
             })
         });
+
+        client.on('close', () => {
+            resolve({
+                passed: false,
+                observedBehavior: "Connection was terminated / server is not running on desired port",
+                cleanup: () => spawnInstance?.off('close', closeCallback),
+            })
+        })
 
 
         client.connect(port, LOCALHOST, () => {
@@ -55,28 +64,46 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
 
 
         const connectionAttemptFailedCallback = () => {
+            existingClient.destroy();
+            clientToBeDisconnected.destroy();
+            newClient.destroy();
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
-                cleanup: () => {
-                    existingClient.destroy();
-                    clientToBeDisconnected.destroy();
-                    newClient.destroy();
-                }
             })
         }
 
         const connectionTimeoutCallback = () => {
+            existingClient.destroy();
+            clientToBeDisconnected.destroy();
+            newClient.destroy();
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
-                cleanup: () => {
-                    existingClient.destroy();
-                    clientToBeDisconnected.destroy();
-                    newClient.destroy();
-                }
             })
         }
+
+        const connectionErrorCallback = () => {
+            existingClient.destroy();
+            clientToBeDisconnected.destroy();
+            newClient.destroy();
+            spawnInstance?.kill();
+            return resolve({
+                passed: false,
+                observedBehavior: "cannot establish a connection with server",
+            })
+        }
+
+        const clientCloseCallback = () => {
+            existingClient.destroy();
+            clientToBeDisconnected.destroy();
+            newClient.destroy();
+            return resolve({
+                passed: false,
+                observedBehavior: "Connection was terminated / server is not running on desired port",
+            })
+        }
+
 
         existingClient.on('connectionAttemptTimeout', connectionTimeoutCallback);
         clientToBeDisconnected.on('connectionAttemptTimeout', connectionTimeoutCallback);
@@ -85,6 +112,14 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         existingClient.on('connectionAttemptFailed', connectionAttemptFailedCallback);
         clientToBeDisconnected.on('connectionAttemptFailed', connectionAttemptFailedCallback);
         newClient.on('connectionAttemptFailed', connectionAttemptFailedCallback);
+
+        existingClient.on('error', connectionErrorCallback);
+        clientToBeDisconnected.on('error', connectionErrorCallback);
+        newClient.on('error', connectionErrorCallback);
+
+        existingClient.on('close', clientCloseCallback);
+        clientToBeDisconnected.on('close', clientCloseCallback);
+        newClient.on('close', clientCloseCallback);
 
         spawnInstance.on('close', (code) => {
             return resolve({

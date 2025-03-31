@@ -15,6 +15,7 @@ export class ContainerManager extends EventEmitter {
     private containerConfig: Object;
     private timeoutRef: NodeJS.Timeout | null;
     private pythonServerRunning: boolean;
+    public static removingContainers = new Set<string>();
 
     get containerName(): string {
         return this._containerName;
@@ -142,6 +143,12 @@ export class ContainerManager extends EventEmitter {
     public async kill(): Promise<void> {
         if (!this.initialized || (this._container === null))
             return;
+        if (ContainerManager.removingContainers.has(this._containerName)) {
+            console.log(`Container: ${this._containerName} is already being removed`);
+            return;
+        }
+
+        ContainerManager.removingContainers.add(this._containerName);
         try {
             this.initialized = false;
             this._running = false;
@@ -159,8 +166,10 @@ export class ContainerManager extends EventEmitter {
             this.mappedPorts = new Map();
         }
         catch (error) {
-            console.log(error);
+            if (error.statusCode != 409)
+                console.log(error);
         }
+        ContainerManager.removingContainers.delete(this._containerName);
     }
 
     public async detachStream(): Promise<void> {
