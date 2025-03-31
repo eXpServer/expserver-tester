@@ -194,6 +194,7 @@ export class StageRunner {
 
         const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
+            console.log("[STARTED] " + i)
             const fn = functions[i];
             await this.containerWarmUp();
             const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
@@ -213,6 +214,7 @@ export class StageRunner {
             if (cleanup)
                 cleanup();
 
+            console.log("[ENDED] " + i)
             this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this._currentState);
         }
         if (this.running)

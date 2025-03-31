@@ -41,7 +41,6 @@ export class ResourceMonitor {
             this._currentUsage = { cpu: cpuUsage, mem: memUsage };
         }
         catch (err) {
-            console.log(err);
             this._currentUsage = { cpu: 0, mem: 0 };
         }
     }

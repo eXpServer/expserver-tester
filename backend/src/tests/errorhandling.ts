@@ -28,14 +28,6 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
             })
         });
 
-        client.on('close', () => {
-            resolve({
-                passed: false,
-                observedBehavior: "Connection was terminated / server is not running on desired port",
-                cleanup: () => spawnInstance?.off('close', closeCallback),
-            })
-        })
-
 
         client.connect(port, LOCALHOST, () => {
             client.destroy();
@@ -64,9 +56,9 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
 
 
         const connectionAttemptFailedCallback = () => {
-            existingClient.destroy();
-            clientToBeDisconnected.destroy();
-            newClient.destroy();
+            existingClient.removeAllListeners();
+            clientToBeDisconnected.removeAllListeners();
+            newClient.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
@@ -74,9 +66,9 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         }
 
         const connectionTimeoutCallback = () => {
-            existingClient.destroy();
-            clientToBeDisconnected.destroy();
-            newClient.destroy();
+            existingClient.removeAllListeners();
+            clientToBeDisconnected.removeAllListeners();
+            newClient.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
@@ -84,9 +76,9 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         }
 
         const connectionErrorCallback = () => {
-            existingClient.destroy();
-            clientToBeDisconnected.destroy();
-            newClient.destroy();
+            existingClient.removeAllListeners();
+            clientToBeDisconnected.removeAllListeners();
+            newClient.removeAllListeners();
             spawnInstance?.kill();
             return resolve({
                 passed: false,
@@ -95,9 +87,9 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         }
 
         const clientCloseCallback = () => {
-            existingClient.destroy();
-            clientToBeDisconnected.destroy();
-            newClient.destroy();
+            existingClient.removeAllListeners();
+            clientToBeDisconnected.removeAllListeners();
+            newClient.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "Connection was terminated / server is not running on desired port",
@@ -117,11 +109,10 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         clientToBeDisconnected.on('error', connectionErrorCallback);
         newClient.on('error', connectionErrorCallback);
 
-        existingClient.on('close', clientCloseCallback);
-        clientToBeDisconnected.on('close', clientCloseCallback);
-        newClient.on('close', clientCloseCallback);
-
         spawnInstance.on('close', (code) => {
+            existingClient.removeAllListeners();
+            clientToBeDisconnected.removeAllListeners();
+            newClient.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: `Server terminated with Error code ${code || 0}`,
@@ -144,6 +135,9 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
                         : input);
 
                     if (expected !== output) {
+                        existingClient.removeAllListeners();
+                        clientToBeDisconnected.removeAllListeners();
+                        newClient.removeAllListeners();
                         return resolve({
                             passed: false,
                             observedBehavior: "new client didn't receive string it expected",
@@ -155,6 +149,9 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
                         })
                     }
                     else {
+                        existingClient.removeAllListeners();
+                        clientToBeDisconnected.removeAllListeners();
+                        newClient.removeAllListeners();
                         return resolve({
                             passed: true,
                             cleanup: () => {
@@ -179,6 +176,9 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
                     : input);
 
                 if (expected !== output) {
+                    existingClient.removeAllListeners();
+                    clientToBeDisconnected.removeAllListeners();
+                    newClient.removeAllListeners();
                     return resolve({
                         passed: false,
                         observedBehavior: "existing client didn't receive string it expected",

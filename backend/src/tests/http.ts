@@ -11,6 +11,7 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
         const client = new Socket();
 
         client.on('connectionAttemptFailed', () => {
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
@@ -18,6 +19,7 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
         })
 
         client.on('connectionAttemptTimeout', () => {
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
@@ -27,16 +29,10 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
         client.on('error', () => {
             client.destroy();
             spawnInstance?.kill();
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "cannot establish a connection with server",
-            })
-        })
-
-        client.on('close', () => {
-            return resolve({
-                passed: false,
-                observedBehavior: "connection terminated / server isn't running on desired port",
             })
         })
 
@@ -47,6 +43,7 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
 
             const parsedResponse = parseHttpResponse(responseText);
             if (!verifyResponseOutput(parsedResponse, requestInfo.expectedResponse)) {
+                client.removeAllListeners();
                 return resolve({
                     passed: false,
                     observedBehavior: responseText,
@@ -54,6 +51,7 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
                 })
             }
             else {
+                client.removeAllListeners();
                 return resolve({
                     passed: true,
                     cleanup: () => client.destroy()

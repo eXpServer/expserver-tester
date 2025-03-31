@@ -26,13 +26,15 @@ export interface Test {
     testFunction: TestFunction;
 }
 
-export type TestFunction = (...args: any[]) => Promise<{
+export type TestFunctionReturnType = {
     passed: boolean,
     testInput?: string,
     expectedBehavior?: string,
     observedBehavior?: string,
     cleanup?: () => void,
-}>
+}
+
+export type TestFunction = (...args: any[]) => Promise<TestFunctionReturnType>
 
 export interface TestState {
     binaryId: string | null,

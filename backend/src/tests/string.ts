@@ -21,6 +21,7 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         const client = new Socket();
 
         client.on('connectionAttemptFailed', () => {
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
@@ -28,6 +29,16 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         })
 
         client.on('connectionAttemptTimeout', () => {
+            client.removeAllListeners();
+            return resolve({
+                passed: false,
+                observedBehavior: "server connection timed out",
+            })
+        })
+
+        client.on('close', () => {
+            client.removeAllListeners();
+            spawnInstance?.kill();
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
@@ -37,19 +48,12 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         client.on('error', () => {
             client.destroy();
             spawnInstance?.kill();
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
             })
         })
-
-        client.on('close', () => {
-            return resolve({
-                passed: false,
-                observedBehavior: "Connection terminated / server not running on desired port",
-            })
-        })
-
 
         const writeToServer = (index: number) => {
             const input = testStrings[index];
@@ -61,6 +65,7 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
                 const output = data.toString();
 
                 if (output !== expected) {
+                    client.removeAllListeners();
                     return resolve({
                         passed: false,
                         testInput: input,
@@ -73,6 +78,7 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
                 }
                 else {
                     if (index == testStrings.length - 1) {
+                        client.removeAllListeners();
                         return resolve({
                             passed: true,
                             testInput: input,
@@ -117,6 +123,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
         const client = new Socket();
 
         client.on('connectionAttemptFailed', () => {
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
@@ -124,6 +131,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
         })
 
         client.on('connectionAttemptTimeout', () => {
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
@@ -133,6 +141,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
         client.on('error', () => {
             client.destroy();
             spawnInstance?.kill();
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
@@ -140,6 +149,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
         })
 
         client.on('close', () => {
+            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "Connection terminated / server not running on desired port",
@@ -157,6 +167,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
                 const output = data.toString();
 
                 if (output !== expected) {
+                    client.removeAllListeners();
                     return resolve({
                         passed: false,
                         testInput: input,
@@ -169,6 +180,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
                 }
                 else {
                     if (index == testStrings.length - 1) {
+                        client.removeAllListeners();
                         return resolve({
                             passed: true,
                             testInput: input,

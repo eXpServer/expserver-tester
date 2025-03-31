@@ -10,8 +10,12 @@ export const stage8Tests: Omit<Test, 'status'>[] = [
         testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds",
         expectedBehavior: "the second connection is able to send and receive data from the server",
         testFunction: async (...args) => {
-            const response = await nonBlockingSocket(8001, ...args);
-            return response;
+            // const response = await nonBlockingSocket(8001, ...args);
+            // return response;
+            return {
+                passed: false,
+                observedBehavior: "dummy"
+            }
         },
     },
     {
@@ -29,7 +33,7 @@ export const stage8Tests: Omit<Test, 'status'>[] = [
 
             if (responses.some(response => response.passed == false)) {
                 return ({
-                    passed: true,
+                    passed: false,
                     testInput: responses[0].testInput,
                     expectedBehavior: responses[0].expectedBehavior,
                     observedBehavior: "Server didn't work as expected on all ports",
