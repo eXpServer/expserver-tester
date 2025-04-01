@@ -3,6 +3,31 @@
 ## Prerequisites
 - `node v18+`
 
+## Directory Structure
+```plaintext
+eXpServer Frontend
+├── public/
+├── src/
+│   ├── app/
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   └── <route>/
+│   │       ├── page.tsx
+│   │       └── styles.module.css
+│   ├── components/
+│   │   └── <Component>/
+│   │       ├── index.tsx
+│   │       └── <component>.module.css
+│   ├── fonts/
+│   │   └── index.ts
+│   ├── hooks/
+│   ├── lib/
+│   └── types.ts
+├── tailwind.config.ts
+└── tsconfig.json
+```
 
 ## Installation
 - clone the repo 

@@ -1,7 +1,49 @@
 ## eXpServer Tester Utility -- Backend
 
 ## Prerequisites
-- `node v18+`
+- [node v18+](https://www.freecodecamp.org/news/node-version-manager-nvm-install-guide/)
+- [Docker](https://docs.docker.com/engine/install/)
+- preferably a unix environment
+
+## Directory structure
+```plaintext
+eXpServer Backend/
+├── Dockerfile
+├── package.json
+├── prisma/
+│   └── schema.prisma           ## Database schema
+├── public/                     ## Statically served files
+│   ├── description
+│   └── large-files
+├── src/
+│   ├── api/
+│   │   └── <api router>/
+│   │       ├── controllers.ts      ## Handlers for each route      
+│   │       └── routes.ts           ## Routes for the given api router
+│   ├── constants.ts                ## Common constants
+│   ├── core/
+│   │   ├── ContainerManager.ts
+│   │   ├── Core.ts
+│   │   ├── ResrouceMonitor.ts
+│   │   ├── StageRunner.ts
+│   │   ├── StageWatcher.ts
+│   │   ├── TerminalStream.ts
+│   │   └── Timer.ts
+│   ├── generate-description.ts
+│   ├── index.ts                    ## Entry point
+│   ├── middleware/
+│   ├── tests/
+│   │   ├── index.ts
+│   │   └── stages/
+│   │       ├── index.ts
+│   │       ├── stage<num>.ts
+│   ├── types.ts
+│   └── utils/
+├── README.md
+├── release.md
+├── tsconfig.json
+└── uploads
+```
 
 
 ## Installation
