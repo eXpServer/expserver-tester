@@ -30,6 +30,7 @@
   --input-field-background: #E3E3E3;
   --input-field-text: rgba(0, 0, 0, 0.47);
   --test-container-background: #F0F0F0;
+  --black-dial: #D9D9D9;
 }
 
 /* @media (prefers-color-scheme: dark) {

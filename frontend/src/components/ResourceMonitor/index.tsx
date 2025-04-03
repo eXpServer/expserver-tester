@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import update from '/public/update.svg'
 import Speedometer from './Speedometer';
+import CpuDial from '../CpuDial';
 
 
 
@@ -53,11 +54,21 @@ const ResourceMonitor = () => {
                 </div>
             </div>
             <div className={styles['resource-monitor-container']}>
-                <div className={styles['resource-monitor-elements']}>
+                {/* <div className={styles['resource-monitor-elements']}>
                     <Speedometer value={resourceMetrics?.cpu || 0} label="CPU Usage" />
                 </div>
                 <div className={styles['resource-monitor-elements']}>
                     <Speedometer value={resourceMetrics?.mem || 0} label="Memory Usage" />
+                </div> */}
+                <div className={styles['resource-cpu-dial']}>
+                    <div> CPU Usage</div>
+                    <div className={styles['resource-cpu-dial-container']}>
+                        <CpuDial/>
+                    </div>
+                </div>
+                <div className={styles['resource-cpu-dial']}>
+
+                    <CpuDial/>
                 </div>
             </div>
         </div>
