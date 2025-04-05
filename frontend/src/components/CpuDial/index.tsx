@@ -4,6 +4,7 @@ import styles from "./cpuDial.module.css"
 const CpuDial = () => {
     // just to test\
     const [convertedNumber, setConvertedNumber] = useState<number>(0);
+    const [num, setNum] = useState<number>(0);
 
     useEffect(()=>{
         let counter = 0;
@@ -13,6 +14,7 @@ const CpuDial = () => {
                 return;
             }
             const randomNumber = Math.floor(Math.random()*101);
+            setNum(randomNumber)
             const convertedVal = Math.round((randomNumber/100)*270);
             setConvertedNumber(convertedVal);
             counter++;
@@ -42,10 +44,14 @@ const CpuDial = () => {
 
                         </div>
                         <div className={styles['inner-circle']}>
-                            {convertedNumber}
+                            {/* {num} */}
                         </div>
                         <div className={styles['outer-quadrant']}>
 
+                        </div>
+                        <div className={styles['dial-display']}>
+                            <div className={styles['dial-display-value']}>{num}%</div>
+                            <div className={styles['dial-display-label']}>All core combined usage</div>
                         </div>
                     </div>
                 </div>

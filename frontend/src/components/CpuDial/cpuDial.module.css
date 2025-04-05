@@ -1,7 +1,7 @@
 .cpu-dial{
     height: 200px;
     width: 200px;
-    border: 1px solid var(--border);
+    /* border: 1px solid var(--border); */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -70,10 +70,34 @@
     transform: rotateZ(45deg);
 }
 
+.dial-display{
+    position: absolute;
+    top:50%;
+    left:50%;
+    transform: translate(-50%, -50%);
+    /* border: 1PX solid red; */
+    width: 80px;
+}
+
+.dial-display-value{
+    font-size: 28px;
+    color: var(--dark-blue);
+    font-weight: 700;
+    text-align: center;
+}
+
+.dial-display-label{
+    font-size: 10px;
+    text-align: center;
+    /* border: 1px solid red; */
+    width: 80px;
+    color: var(--text-color);
+}
+
 .inner-quadrant{
     height: 149px;
     width: 149px;
-    background: blue;
+    background: var(--dark-blue);
     clip-path: polygon(50% 50%, 100% 50%, 100% 100%, 50% 100%);
     border-radius: 50%;
     position: absolute;

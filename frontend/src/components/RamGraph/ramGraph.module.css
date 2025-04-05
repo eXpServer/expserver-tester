@@ -1,0 +1,23 @@
+.ram-graph{
+    position: relative;
+    display: flex;
+}
+
+.ram-graph-vertical-scale{
+    width: 5px;;
+    height: 150px;
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    
+}
+
+.scale{
+    border-top: 2px solid black;
+}
+.ram-graph-container{
+    height: 150px;
+    width: 200px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    /* background-color: #3B3B3B; */
+}

@@ -81,9 +81,17 @@
 .resource-cpu-dial{
     position: relative;
     border: 1px solid red;
-    width: 200px;
+    /* width: 200px; */
     height: 200px;
     flex: 1;
+}
+
+.resource-monitor-head{
+    margin-top: 14px;
+    margin-left: 14px;
+    font-size: 14px;
+    line-height: 14px;
+    color: var(--text-color);
 }
 
 .resource-cpu-dial-container{

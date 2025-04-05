@@ -5,6 +5,8 @@ import Image from 'next/image';
 import update from '/public/update.svg'
 import Speedometer from './Speedometer';
 import CpuDial from '../CpuDial';
+import { s } from 'framer-motion/client';
+import RamGraph from '../RamGraph';
 
 
 
@@ -56,19 +58,20 @@ const ResourceMonitor = () => {
             <div className={styles['resource-monitor-container']}>
                 {/* <div className={styles['resource-monitor-elements']}>
                     <Speedometer value={resourceMetrics?.cpu || 0} label="CPU Usage" />
-                </div>
-                <div className={styles['resource-monitor-elements']}>
+                </div> */}
+                {/* <div className={styles['resource-monitor-elements']}>
                     <Speedometer value={resourceMetrics?.mem || 0} label="Memory Usage" />
                 </div> */}
                 <div className={styles['resource-cpu-dial']}>
-                    <div> CPU Usage</div>
+                    <div className={styles['resource-monitor-head']}> CPU Usage</div>
                     <div className={styles['resource-cpu-dial-container']}>
                         <CpuDial/>
                     </div>
                 </div>
                 <div className={styles['resource-cpu-dial']}>
 
-                    <CpuDial/>
+                    {/* <CpuDial/> */}
+                    <RamGraph/>
                 </div>
             </div>
         </div>
