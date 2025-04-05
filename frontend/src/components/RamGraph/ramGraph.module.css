@@ -4,16 +4,32 @@
 }
 
 .ram-graph-vertical-scale{
-    width: 5px;;
+    width: 5px;
     height: 150px;
     display: grid;
     grid-template-rows: repeat(4, 1fr);
+    font-size: 10px;
+    color: var(--text-color);
+    background-color: aquamarine;
     
 }
 
 .scale{
-    border-top: 2px solid black;
+    position: relative;
 }
+
+.scale:nth-child(n+2){
+    border-top: 1px solid black;
+}
+
+
+.scale-value{
+    position: absolute;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+}
+
 .ram-graph-container{
     height: 150px;
     width: 200px;
