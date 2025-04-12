@@ -11,7 +11,8 @@ RUN apt-get install -y libc6-dev \
     zlib1g-dev \
     python3 \
     python3-pip \
-    netcat-openbsd
+    netcat-openbsd \
+    procps
 
 WORKDIR /usr/src/app
 

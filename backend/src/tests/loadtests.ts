@@ -201,7 +201,11 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
             secondClient.removeAllListeners();
             return resolve({
                 passed: false,
-                observedBehavior: `Server crashed with error ${error}`
+                observedBehavior: `Server crashed with error ${error}`,
+                cleanup: () => {
+                    firstClient.end();
+                    secondClient.end();
+                }
             })
         })
 
@@ -212,6 +216,10 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
             return resolve({
                 passed: false,
                 observedBehavior: "Server refused connection",
+                cleanup: () => {
+                    firstClient.end();
+                    secondClient.end();
+                }
             })
         };
 
@@ -222,8 +230,8 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
                 passed: false,
                 observedBehavior: "Server connection timeout",
                 cleanup: () => {
-                    firstClient.destroy();
-                    secondClient.destroy();
+                    firstClient.end();
+                    secondClient.end();
                 }
             })
         }
@@ -232,22 +240,26 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         const connectionCloseHandler = () => {
             firstClient.removeAllListeners();
             secondClient.removeAllListeners();
-            firstClient.end();
-            secondClient.end();
             return resolve({
                 passed: false,
                 observedBehavior: "Connection terminated / server not running on desired port",
+                cleanup: () => {
+                    firstClient.end();
+                    secondClient.end();
+                }
             })
         }
 
         const connectionErrorHandler = () => {
             firstClient.removeAllListeners();
             secondClient.removeAllListeners();
-            firstClient.end();
-            secondClient.end();
             return resolve({
                 passed: false,
                 observedBehavior: "Cannot establish connection to server",
+                cleanup: () => {
+                    firstClient.end();
+                    secondClient.end();
+                }
             })
         }
 
@@ -269,8 +281,7 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
             const firstClientWaitTimeout = setTimeout(() => {
                 secondClient.connect(port, LOCALHOST, () => {
                     const errorCallback = () => {
-                        firstClient.end();
-                        secondClient.end();
+                        ;
                         clearTimeout(firstClientWaitTimeout);
                         clearTimeout(secondClientWaitTimeout);
                         firstClient.removeAllListeners();
@@ -280,8 +291,8 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
                             passed: false,
                             observedBehavior: "Client connection was disconnected",
                             cleanup: () => {
-                                firstClient.destroy();
-                                secondClient.destroy();
+                                firstClient.end();
+                                secondClient.end();
                             }
                         })
                     };
@@ -298,14 +309,16 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
                     secondClient.on('data', () => {
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.end();
-                        secondClient.end();
                         clearTimeout(firstClientWaitTimeout)
                         firstClient.removeAllListeners();
                         secondClient.removeAllListeners();
 
                         return resolve({
                             passed: true,
+                            cleanup: () => {
+                                firstClient.end();
+                                secondClient.end();
+                            }
                         })
                     })
 
@@ -320,14 +333,16 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
 
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.end();
-                        secondClient.end();
                         file.close();
                         clearTimeout(firstClientWaitTimeout);
                         spawnInstance.kill().then(() => {
                             return resolve({
                                 passed: false,
-                                observedBehavior: "Server did not respond to the second client within 30s"
+                                observedBehavior: "Server did not respond to the second client within 30s",
+                                cleanup: () => {
+                                    firstClient.end();
+                                    secondClient.end();
+                                }
                             });
                         })
 
@@ -406,10 +421,15 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
                         passed: average <= 10,
                     });
                 }
-
-                const { cpuUsage } = await spawnInstance.getResourceStats();
-                results[NUM_ITERATIONS - index - 1] = cpuUsage;
-                index--;
+                try {
+                    const { cpuUsage } = await spawnInstance.getResourceStats();
+                    results[NUM_ITERATIONS - index - 1] = cpuUsage;
+                    index--;
+                }
+                catch {
+                    results[NUM_ITERATIONS - index - 1] = Infinity;
+                    index--;
+                }
             }, 1000);
         })
     });
