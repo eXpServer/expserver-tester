@@ -4,8 +4,7 @@ import { TestFunction } from "../types";
 import { generateRandomStrings, reverseString } from "../utils/string";
 import { ContainerManager } from "../core/ContainerManager";
 
-export const stringReversal: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const stringReversal: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {
@@ -106,8 +105,7 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
     })
 }
 
-export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const stringWriteBack: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {

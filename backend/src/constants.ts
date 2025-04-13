@@ -20,6 +20,8 @@ export const WORKDIR = '/usr/src/app';
 
 export const PUBLIC_DIR = '/usr/src/public';
 
+export const HOST_PWD = process.env.HOST_PWD
+
 /**
  * error types
  * prepend http_

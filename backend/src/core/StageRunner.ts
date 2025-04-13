@@ -1,7 +1,7 @@
 import { StageWatcher } from "./StageWatcher";
 import { Core } from "./Core";
 import { TerminalStream } from "./TerminalStream";
-import { type TestDetails, TestStatus } from "../types";
+import { type TestDetails, TestFunction, TestStatus } from "../types";
 import { ResourceMonitor } from "./ResrouceMonitor";
 import { ContainerManager } from "./ContainerManager";
 import { File, PrismaClient } from "@prisma/client";
@@ -168,19 +168,50 @@ export class StageRunner {
         this.emitToAllSockets(event, data);
     }
 
-    private async containerWarmUp() {
-        console.log("Warming up the container")
-
-        if (!this.containerInstance.running)
-            await this.containerInstance.start();
-
-        if (this.terminalInstance.running)
+    private containerWarmUp() {
+        return new Promise(async (resolve, reject) => {
+            await this.containerInstance.kill();
             this.terminalInstance.kill();
-        if (this.processStatsInstance.running)
             this.processStatsInstance.kill();
+            await this.containerInstance.start();
+            if (this.containerInstance.running == false)
+                return reject(false);
+            this.terminalInstance.run();
+            this.processStatsInstance.run();
+            return resolve(true);
+        })
+    }
 
-        this.terminalInstance.run();
-        this.processStatsInstance.run();
+
+    private runTest = async (func: TestFunction, index: number) => {
+        try {
+            await this.containerWarmUp();
+        }
+        catch {
+            this._currentState[index].observedBehavior = "Server didn't start up as expected, ensure it has been compiled with the provided Dockerfile and is of an appropriate stage"
+            this._currentState[index].status = TestStatus.Failed;
+            this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
+            return;
+        }
+
+        const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await func(this.containerInstance);
+
+        if (testInput)
+            this._currentState[index].testInput = testInput;
+        if (expectedBehavior)
+            this._currentState[index].expectedBehavior = expectedBehavior;
+        if (observedBehavior)
+            this._currentState[index].observedBehavior = observedBehavior;
+        this._currentState[index].status = (passed
+            ? TestStatus.Passed
+            : TestStatus.Failed
+        );
+
+
+        if (cleanup)
+            cleanup();
+
+        this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
     }
 
     public async run() {
@@ -194,29 +225,11 @@ export class StageRunner {
 
         const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
-            console.log("[STARTED] " + i)
-            const fn = functions[i];
-            await this.containerWarmUp();
-            const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
-
-            if (testInput)
-                this._currentState[i].testInput = testInput;
-            if (expectedBehavior)
-                this._currentState[i].expectedBehavior = expectedBehavior;
-            if (observedBehavior)
-                this._currentState[i].observedBehavior = observedBehavior;
-            this._currentState[i].status = (passed
-                ? TestStatus.Passed
-                : TestStatus.Failed
-            );
-
-
-            if (cleanup)
-                cleanup();
-
-            console.log("[ENDED] " + i)
-            this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this._currentState);
+            await this.runTest(functions[i], i);
         }
+
+
+
         if (this.running)
             this.kill();
     }

@@ -19,4 +19,9 @@ RUN node -v && npm -v && docker --version
 
 WORKDIR /app
 
-COPY . .
+COPY package.json package.json
+COPY tsconfig.json tsconfig.json
+COPY prisma/schema.prisma prisma/schema.prisma
+
+
+RUN npm install

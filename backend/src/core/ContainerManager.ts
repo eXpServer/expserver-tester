@@ -1,10 +1,9 @@
 import Docker, { Container } from 'dockerode';
 import { EventEmitter } from 'eventemitter3';
-import { IMAGE_NAME, PUBLIC_DIR, WORKDIR } from '../constants';
+import { HOST_PWD, IMAGE_NAME, PUBLIC_DIR, WORKDIR } from '../constants';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
-    private mappedPorts: Map<number, number>;
     private initialized: boolean;
     private _running: boolean;
     private _container: Container | null;
@@ -41,16 +40,10 @@ export class ContainerManager extends EventEmitter {
         return this._container;
     }
 
-    public getMapppedPort(hostPort: number): number | null {
-        const port = this.mappedPorts.get(hostPort);
-        return port || null;
-    }
-
     constructor(containerName: string, binaryId: string, requiresXpsConfig: boolean, publicPath: string) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
-        this.mappedPorts = new Map();
         this.initialized = false;
         this._container = null;
         this.docker = new Docker();
@@ -60,17 +53,15 @@ export class ContainerManager extends EventEmitter {
         this.pythonServerRunning = false;
 
 
-        const customPublicDir = `${process.cwd()}/public/${publicPath}`;
+        const customPublicDir = `${HOST_PWD}/public/${publicPath}`;
 
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
             Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? `${PUBLIC_DIR}/xps_config.json` : ''}`],
-            ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
-                // PublishAllPorts: true,
-                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
-                NetworkMode: "mynet",
+                Binds: [`${HOST_PWD}/uploads:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
+                NetworkMode: "backend_mynet",
             }
         }
     }
@@ -81,26 +72,6 @@ export class ContainerManager extends EventEmitter {
 
         if (this.initialized || this.running)
             return;
-        try {
-            await this.startContainer();
-        }
-        catch (error) {
-            this.timeoutRef = setTimeout(() => {
-                this.start();
-            }, 1000);
-            return;
-        }
-
-        for (const port of this.ports) {
-            const portMapping = await this.parsePortMap(port);
-            this.mappedPorts.set(port, portMapping);
-        }
-        this._pid = (await this._container.inspect()).State.Pid
-
-
-        this.initialized = true;
-        this._running = true;
-
 
         const eventStream = await this.docker.getEvents();
         eventStream.on('data', (chunk) => {
@@ -119,6 +90,24 @@ export class ContainerManager extends EventEmitter {
 
             }
         })
+
+        try {
+            await this.startContainer();
+            if (!this.initialized) {
+                return;
+            }
+        }
+        catch (error) {
+            this.timeoutRef = setTimeout(() => {
+                this.start();
+            }, 1000);
+            return;
+        }
+
+        this._pid = (await this._container.inspect()).State.Pid
+
+
+        this._running = true;
     }
 
 
@@ -126,11 +115,6 @@ export class ContainerManager extends EventEmitter {
         console.log('restarting container');
         try {
             await this._container.restart();
-
-            for (const port of this.ports) {
-                const portMapping = await this.parsePortMap(port);
-                this.mappedPorts.set(port, portMapping);
-            }
             this._pid = (await this._container.inspect()).State.Pid
 
         }
@@ -163,7 +147,6 @@ export class ContainerManager extends EventEmitter {
             this._container = null;
             this._stream = null;
             this._pid = -1;
-            this.mappedPorts = new Map();
         }
         catch (error) {
             if (error.statusCode != 409)
@@ -225,34 +208,35 @@ export class ContainerManager extends EventEmitter {
         }
 
         await this.attachStream();
-        this.pythonServerRunning = false;
+        this.pythonServerRunning = true;
         await this._container.start();
-        await this.waitForContainerToRun();
-        console.log(`Started container: ${this._containerName} `);
-    }
-
-    private getExposedPortsConfig(): Record<string, {}> {
-        const exposedPorts: Record<string, {}> = {};
-
-        for (const port of this.ports) {
-            exposedPorts[`${port}/tcp`] = {};
+        try {
+            const message = await this.waitForContainerToRun();
+            console.log(message);
         }
-
-        return exposedPorts;
+        catch (error) {
+            console.log(error)
+        }
     }
 
-    private waitForContainerToRun(): Promise<void> {
-        return new Promise((resolve) => {
+    private waitForContainerToRun(): Promise<string> {
+        return new Promise((resolve, reject) => {
             if (this.initialized)
-                return resolve();
+                return resolve("already initialized");
             const interval = setInterval(async () => {
                 const data = await this._container.inspect();
                 const isRunning = data.State.Running;
-                console.log(data);
+                const hasExited = data.State.Status == 'exited';
+                const exitCode = data.State.ExitCode;
+                if (hasExited) {
+                    clearInterval(interval);
+                    this.initialized = false;
+                    return reject(`Container ${this._containerName} exited with code ${exitCode}`);
+                }
                 if (isRunning) {
                     clearInterval(interval);
                     this.initialized = true;
-                    return resolve();
+                    return resolve(`Started container: ${this._containerName} `);
                 }
             }, 1000);
         })
@@ -323,18 +307,5 @@ export class ContainerManager extends EventEmitter {
                 resolve({ message: "shutdown" })
             }, 1000);
         })
-    }
-
-    private async parsePortMap(portNo: number): Promise<number | null> {
-        if (!this.initialized || !this._container)
-            return null;
-
-        const data = await this._container.inspect();
-
-        const portMapping = data.NetworkSettings.Ports[`${portNo}/tcp`];
-
-        if (portMapping && portMapping.length > 0)
-            return parseInt(portMapping[0].HostPort, 10);
-        return null;
     }
 }

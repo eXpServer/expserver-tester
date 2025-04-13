@@ -4,7 +4,7 @@ import { Server as HttpServer } from 'http'
 import { StageWatcher } from "./StageWatcher";
 import { StageRunner } from "./StageRunner";
 import { Express } from "express";
-import { TESTER_PORT, WEBSOCKET_PORT } from "../constants";
+import { HOST_PWD, TESTER_PORT, WEBSOCKET_PORT } from "../constants";
 import { PrismaClient } from "@prisma/client";
 import { tests } from "../tests";
 const prisma = new PrismaClient();
@@ -273,6 +273,7 @@ export class Core {
     public static initializeServer = (): void => {
         this.expressApp.listen(TESTER_PORT, () => console.log(`Server running on port ${TESTER_PORT}`));
         this.httpServer.listen(WEBSOCKET_PORT, () => console.log(`Websocket running on port ${WEBSOCKET_PORT}`));
+        console.log("current working directory: ", HOST_PWD);
 
         this.socketIo.on(ReceiveEvents.Connection, (socket: Socket) => {
             socket.emit(EmitEvents.ConnectionAck);

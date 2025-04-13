@@ -9,8 +9,7 @@ import { getCpuUsage } from "../utils/process";
 import { cwd } from "process";
 
 
-export const multipleClients: TestFunction = (hostPort: number, reverse: boolean, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const multipleClients: TestFunction = (port: number, reverse: boolean, spawnInstance: ContainerManager) => {
     const numClients = 10;
 
 
@@ -106,7 +105,7 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
         }
 
         clients.forEach((client, index) => {
-            client.connect(hostPort, spawnInstance.containerName, () => {
+            client.connect(port, spawnInstance.containerName, () => {
                 clientRecvChecker(client, index);
             })
         })
@@ -114,10 +113,8 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
     })
 }
 
-export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const proxyMultipleConnections: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     const serverPort = 3000;
-    const serverMappedPort = spawnInstance.getMapppedPort(serverPort);
     const numClients = 3;
     return new Promise((resolve, _) => {
         spawnInstance.on('error', (error) => {
@@ -158,7 +155,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
         }
 
         for (let i = 0; i < numClients; i++) {
-            fetch(`http://${spawnInstance.containerName}:${hostPort}/${i}`)
+            fetch(`http://${spawnInstance.containerName}:${port}/${i}`)
                 .then(res => {
 
                     const statusLine = `HTTP/1.1 ${res.status} ${res.statusText}`;
@@ -189,8 +186,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
  * waits for 5 seconds, then creates a second connection
  * @param port number
  */
-export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const nonBlockingSocket: TestFunction = async (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
         const firstClient = new Socket();
         const secondClient = new Socket();
@@ -274,12 +270,12 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         secondClient.on('error', connectionErrorHandler);
         // secondClient.on('close', connectionCloseHandler);
 
-        firstClient.connect(hostPort, spawnInstance.containerName, () => {
+        firstClient.connect(port, spawnInstance.containerName, () => {
             const file = createReadStream(path.join(process.cwd(), 'public', 'large-files', '4gb.txt'));
             file.pipe(firstClient);
 
             const firstClientWaitTimeout = setTimeout(() => {
-                secondClient.connect(hostPort, spawnInstance.containerName, () => {
+                secondClient.connect(port, spawnInstance.containerName, () => {
                     const errorCallback = () => {
                         ;
                         clearTimeout(firstClientWaitTimeout);
@@ -355,8 +351,7 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
     })
 }
 
-export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const checkCpuUsage: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
         const NUM_ITERATIONS = 30;
         const client = new Socket();
@@ -404,7 +399,7 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
             })
         })
 
-        client.connect(hostPort, spawnInstance.containerName, () => {
+        client.connect(port, spawnInstance.containerName, () => {
             const results = Array<number>(NUM_ITERATIONS);
             let index = NUM_ITERATIONS - 1;
 
@@ -532,8 +527,7 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
     })
 }
 
-export const prematureFileServerTest: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const prematureFileServerTest: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve) => {
         spawnInstance.once('error', (error) => {
             return resolve({
@@ -602,7 +596,7 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
         }
 
         client.on('data', verifyResultCallback);
-        client.connect(hostPort, spawnInstance.containerName);
+        client.connect(port, spawnInstance.containerName);
     });
 }
 

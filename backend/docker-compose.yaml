@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "6969:6969"
+      - "6970:6970"
+    networks:
+      - mynet
+    volumes:
+      - ./uploads:/app/uploads
+      - ./src:/app/src 
+      - ./public:/app/public
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - HOST_PWD=${PWD}
+    container_name: expserver-backend
+    command: sh -c "npx prisma generate; npm run setup; npm run reset; npm run dev"
+    restart: always
+
+networks:
+  mynet:
+    driver: bridge
