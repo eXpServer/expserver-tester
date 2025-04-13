@@ -1,5 +1,8 @@
 import { FinalSummary, TestDetails, TestState } from "@/types";
 import { io, Socket } from "socket.io-client";
+import events from 'events'
+
+events.defaultMaxListeners = 100;
 
 export enum SocketIncomingEvents {
     CurrentState = 'current-state',
@@ -59,7 +62,6 @@ export class WebSocket {
                 this._socket = null;
                 reject("socket connection not established");
             }
-
 
             socket.once(SocketIncomingEvents.Error, errorCallback);
 

@@ -61,7 +61,7 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
 
         client.on('data', verifyResponseCallback);
 
-        client.connect(port, LOCALHOST, () => client.write(requestInfo.request))
+        client.connect(hostPort, spawnInstance.containerName, () => client.write(requestInfo.request(spawnInstance.containerName)))
     })
 }
 
@@ -85,7 +85,7 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
     return new Promise(async resolve => {
         let responseFromProxy: Response;
         try {
-            responseFromProxy = await fetch(`http://localhost:${proxyPort}/${fileName}`);
+            responseFromProxy = await fetch(`http://${spawnInstance.containerName}:${proxyHostPort}/${fileName}`);
         }
         catch (error) {
             console.log(`Error: ${error.cause.code}`)
@@ -93,7 +93,7 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
         let responseFromServer: Response;
 
         try {
-            responseFromServer = await fetch(`http://localhost:${port}/${fileName}`);
+            responseFromServer = await fetch(`http://${spawnInstance.containerName}:${hostPort}/${fileName}`);
         }
         catch (error) {
             console.log(`Error: ${error.cause.code}`)
@@ -124,7 +124,7 @@ export const httpFileServerTest: TestFunction = (fileName: string, mimeType: str
     return new Promise(async resolve => {
         let response: Response;
         try {
-            response = await fetch(`http://localhost:${port}/${fileName}`);
+            response = await fetch(`http://${spawnInstance.containerName}:${hostPort}/${fileName}`);
         }
         catch (error) {
             return resolve({
@@ -160,7 +160,7 @@ export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string
     return new Promise(async resolve => {
         let response: Response;
         try {
-            response = await fetch(`http://localhost:${port}/${path}`, { redirect: 'manual' });
+            response = await fetch(`http://${spawnInstance.containerName}:${hostPort}/${path}`, { redirect: 'manual' });
         }
         catch (error) {
             return resolve({

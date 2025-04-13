@@ -29,7 +29,7 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
         });
 
 
-        client.connect(port, LOCALHOST, () => {
+        client.connect(hostPort, spawnInstance.containerName, () => {
             client.destroy();
 
             client.on('close', () => {
@@ -126,7 +126,7 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         })
 
         const createNewClient = () => {
-            newClient.connect(port, LOCALHOST, () => {
+            newClient.connect(hostPort, spawnInstance.containerName, () => {
                 const input = generateRandomStrings(10, 1)[0];
                 newClient.once('data', (data) => {
                     const output = data.toString();
@@ -196,8 +196,8 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
             existingClient.write(input);
         })
 
-        clientToBeDisconnected.connect(port, LOCALHOST, () => {
-            existingClient.connect(port, LOCALHOST, () => {
+        clientToBeDisconnected.connect(hostPort, spawnInstance.containerName, () => {
+            existingClient.connect(hostPort, spawnInstance.containerName, () => {
                 clientToBeDisconnected.destroy();
             })
         })
@@ -217,7 +217,7 @@ export const proxyServerCrashHandling: TestFunction = async (hostPort: number, s
             })
         })
 
-        fetch(`http://localhost:${port}`).catch(err => {
+        fetch(`http://${spawnInstance.containerName}:${hostPort}`).catch(err => {
             if (err.cause?.code == 'UND_ERR_SOCKET') {
                 return resolve({
                     passed: true,

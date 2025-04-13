@@ -106,7 +106,7 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
         }
 
         clients.forEach((client, index) => {
-            client.connect(port, LOCALHOST, () => {
+            client.connect(hostPort, spawnInstance.containerName, () => {
                 clientRecvChecker(client, index);
             })
         })
@@ -130,7 +130,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
 
         let numPassed = 0;
         const verifyResponse = async (proxyServerResponse: string, route: number) => {
-            const uri = `http://localhost:${serverMappedPort}/${route}`;
+            const uri = `http://${spawnInstance.containerName}:${serverPort}/${route}`;
             const serverResponse = await fetch(uri);
             const statusLine = `HTTP/1.1 ${serverResponse.status} ${serverResponse.statusText}`;
 
@@ -158,7 +158,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
         }
 
         for (let i = 0; i < numClients; i++) {
-            fetch(`http://localhost:${port}/${i}`)
+            fetch(`http://${spawnInstance.containerName}:${hostPort}/${i}`)
                 .then(res => {
 
                     const statusLine = `HTTP/1.1 ${res.status} ${res.statusText}`;
@@ -274,12 +274,12 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         secondClient.on('error', connectionErrorHandler);
         // secondClient.on('close', connectionCloseHandler);
 
-        firstClient.connect(port, LOCALHOST, () => {
+        firstClient.connect(hostPort, spawnInstance.containerName, () => {
             const file = createReadStream(path.join(process.cwd(), 'public', 'large-files', '4gb.txt'));
             file.pipe(firstClient);
 
             const firstClientWaitTimeout = setTimeout(() => {
-                secondClient.connect(port, LOCALHOST, () => {
+                secondClient.connect(hostPort, spawnInstance.containerName, () => {
                     const errorCallback = () => {
                         ;
                         clearTimeout(firstClientWaitTimeout);
@@ -404,7 +404,7 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
             })
         })
 
-        client.connect(port, LOCALHOST, () => {
+        client.connect(hostPort, spawnInstance.containerName, () => {
             const results = Array<number>(NUM_ITERATIONS);
             let index = NUM_ITERATIONS - 1;
 
@@ -602,7 +602,7 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
         }
 
         client.on('data', verifyResultCallback);
-        client.connect(port, LOCALHOST);
+        client.connect(hostPort, spawnInstance.containerName);
     });
 }
 

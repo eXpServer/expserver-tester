@@ -65,12 +65,12 @@ export class ContainerManager extends EventEmitter {
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? `${PUBLIC_DIR}/xps_config.json` : ''}`]
-            ,
+            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? `${PUBLIC_DIR}/xps_config.json` : ''}`],
             ExposedPorts: this.getExposedPortsConfig(),
             HostConfig: {
-                PublishAllPorts: true,
+                // PublishAllPorts: true,
                 Binds: [`${process.cwd()}/uploads/:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
+                NetworkMode: "mynet",
             }
         }
     }
@@ -248,6 +248,7 @@ export class ContainerManager extends EventEmitter {
             const interval = setInterval(async () => {
                 const data = await this._container.inspect();
                 const isRunning = data.State.Running;
+                console.log(data);
                 if (isRunning) {
                     clearInterval(interval);
                     this.initialized = true;

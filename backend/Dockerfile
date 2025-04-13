@@ -1,24 +1,22 @@
-FROM debian:bookworm-slim
+# Base image with Node.js 22
+FROM node:23-slim
 
-RUN apt-get update
-
-RUN apt-get install -y libc6-dev \ 
-    vim git nano make gcc tar wget \ 
-    build-essential \
-    libreadline-dev \ 
-    gdb \ 
+# Install Docker CLI
+RUN apt-get update && \
+    apt-get install -y \
+    ca-certificates \
     curl \
-    zlib1g-dev \
-    python3 \
-    python3-pip \
-    netcat-openbsd \
-    procps
+    gnupg \
+    lsb-release && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y docker-ce-cli
 
-WORKDIR /usr/src/app
+# Confirm installation
+RUN node -v && npm -v && docker --version
 
-EXPOSE 3000
-EXPOSE 8080
-EXPOSE 8001
-EXPOSE 8002
-EXPOSE 8003
-EXPOSE 8004
+WORKDIR /app
+
+COPY . .

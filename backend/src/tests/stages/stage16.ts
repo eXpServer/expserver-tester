@@ -35,18 +35,18 @@ export const stage16Tests: Omit<Test, 'status'>[] = [
     {
         title: "Redirect (1)",
         description: "This test checks the server's redirect functionality",
-        testInput: "Client makes a request to the route http://localhost:8001/redirect",
-        expectedBehavior: "Client should receive a response of status 302 and redirect to http://localhost:8002/",
+        testInput: "Client makes a request to the route http://spawnInstance.containerName:8001/redirect",
+        expectedBehavior: "Client should receive a response of status 302 and redirect to http://spawnInstance.containerName:8002/",
         testFunction: async (...args) => {
-            const response = httpRedirectTest('redirect', 'http://localhost:8002/', 8001, ...args);
+            const response = httpRedirectTest('redirect', 'http://spawnInstance.containerName:8002/', 8001, ...args);
             return response;
         }
     },
     {
         title: "HTTP Proxy",
         description: "This test checks the server's upstream functionality",
-        testInput: "Client makes a request to http://localhost:8002/cat.jpg",
-        expectedBehavior: "The response that the client receives should match what is received from http://localhost:3000/cat.jpg",
+        testInput: "Client makes a request to http://spawnInstance.containerName:8002/cat.jpg",
+        expectedBehavior: "The response that the client receives should match what is received from http://spawnInstance.containerName:3000/cat.jpg",
         testFunction: async (...args) => {
             const response = httpProxyTest('cat.jpg', 8002, 3000, ...args);
             return response;

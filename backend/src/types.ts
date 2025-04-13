@@ -72,7 +72,7 @@ export interface HttpRequestTest {
     title: string,
     description: string,
     info: string,
-    request: string,
+    request: (containerName: string) => string,
     expectedResponse: HttpResponse,
 }
 

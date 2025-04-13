@@ -101,7 +101,7 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
             client.write(input);
         }
 
-        client.connect(port, LOCALHOST, () => writeToServer(0));
+        client.connect(port, spawnInstance.containerName, () => writeToServer(0));
 
     })
 }
@@ -203,7 +203,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
             client.write(input);
         }
 
-        client.connect(port, LOCALHOST, () => writeToServer(0));
+        client.connect(port, spawnInstance.containerName, () => writeToServer(0));
 
     })
 }
