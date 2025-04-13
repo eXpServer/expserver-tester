@@ -1,5 +1,7 @@
 services:
   backend:
+    depends_on:
+      - redis
     build: .
     ports:
       - "6969:6969"
@@ -16,7 +18,20 @@ services:
     container_name: expserver-backend
     command: sh -c "npx prisma generate; npm run setup; npm run reset; npm run dev"
     restart: always
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+       - mynet
 
 networks:
   mynet:
     driver: bridge
+
+
+volumes:
+  redis-data:

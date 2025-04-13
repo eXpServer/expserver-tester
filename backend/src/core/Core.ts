@@ -7,6 +7,7 @@ import { Express } from "express";
 import { HOST_PWD, TESTER_PORT, WEBSOCKET_PORT } from "../constants";
 import { PrismaClient } from "@prisma/client";
 import { tests } from "../tests";
+import { createClient } from 'redis'
 const prisma = new PrismaClient();
 
 enum EmitEvents {
@@ -270,15 +271,51 @@ export class Core {
     }
 
 
-    public static initializeServer = (): void => {
+    public static initializeServer = async (): Promise<void> => {
         this.expressApp.listen(TESTER_PORT, () => console.log(`Server running on port ${TESTER_PORT}`));
         this.httpServer.listen(WEBSOCKET_PORT, () => console.log(`Websocket running on port ${WEBSOCKET_PORT}`));
         console.log("current working directory: ", HOST_PWD);
 
-        this.socketIo.on(ReceiveEvents.Connection, (socket: Socket) => {
-            socket.emit(EmitEvents.ConnectionAck);
-            socket.on(ReceiveEvents.RequestState, (data: { stageNo: number, userId: string }) => {
+        const redis = createClient({ url: 'redis://redis:6379' });
+        await redis.connect();
+
+        this.socketIo.use((socket, next) => {
+            console.log(socket.handshake.auth)
+            const clientId = socket.handshake.auth.clientId;
+            if (!clientId)
+                return next(new Error("clientId required"))
+            next();
+        });
+
+        this.socketIo.on(ReceiveEvents.Connection, async (socket: Socket) => {
+            const clientId = socket.data.clientId;
+
+            const sessionData = await redis.get(`session:${clientId}`);
+            if (sessionData) {
+                const data: { stageNo: number, userId: string } = JSON.parse(sessionData);
+                const watcher = new StageWatcher(socket, data.userId);
+                socket.watcher = watcher;
+
+                watcher.changeListeningStage(data.stageNo);
+                this.watchers.push(watcher);
+
+                const runner = this.findStageRunner(watcher);
+                if (runner) {
+                    const currentState = await this.handleNewSubscriber(runner, watcher);
+                    socket.emit(EmitEvents.ConnectionAck, { data: currentState });
+                }
+                else {
+                    const currentState = await this.handleNoExistingRunner(watcher);
+                    socket.emit(EmitEvents.ConnectionAck, { data: currentState });
+                }
+            }
+            else {
+                socket.emit(EmitEvents.ConnectionAck, { data: null });
+            }
+
+            socket.on(ReceiveEvents.RequestState, async (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
+                await redis.set(`session:${clientId}`, JSON.stringify({ stageNo, userId }));
                 void this.handleRequestState(socket, stageNo, userId);
             })
 
