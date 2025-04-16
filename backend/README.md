@@ -38,11 +38,16 @@ eXpServer Backend/
 │   │       ├── index.ts
 │   │       ├── stage<num>.ts
 │   ├── types.ts
-│   └── utils/
+│   ├── utils/
+│   └── Dockerfile
 ├── README.md
 ├── release.md
 ├── tsconfig.json
-└── uploads
+├── uploads/
+├── Dockerfile.prod
+├── Dockerfile
+├── docker-compose.yaml
+└── docker-compose.prod.yaml
 ```
 
 

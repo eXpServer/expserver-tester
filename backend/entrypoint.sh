@@ -34,6 +34,8 @@ echo "postgresdb is up - running migrations and collectstatic"
 
 npx prisma generate
 
+npm run generate-large-file
+npm run generate-desc
 if [ "$DEBUG" = "true" ]; then
     npm run setup
     npm run dev

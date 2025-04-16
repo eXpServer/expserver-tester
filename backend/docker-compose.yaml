@@ -15,7 +15,7 @@ services:
     restart: always
     depends_on:
       - redis
-      - postgresdb
+      - postgresdb-dev
     build: .
     ports:
       - "6969:6969"
