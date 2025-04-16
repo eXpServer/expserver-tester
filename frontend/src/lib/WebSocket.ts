@@ -1,6 +1,9 @@
 import { FinalSummary, TestDetails, TestState } from "@/types";
 import { io, Socket } from "socket.io-client";
 import events from 'events'
+import { v4 as uuidv4 } from 'uuid';
+const clientId = uuidv4();
+
 
 events.defaultMaxListeners = 100;
 
@@ -52,10 +55,14 @@ export class WebSocket {
         return this._userId;
     }
 
+    private nonGracefulExitHandler = () => {
+        console.log("Server crash detected");
+    }
 
-    public initialize(userId: string) {
+
+    public initialize(userId: string, setStatesCallback: (data: TestState) => void) {
         return new Promise((resolve, reject) => {
-            const socket = io(SOCKET_URL);
+            const socket = io(SOCKET_URL, { auth: { clientId: clientId } });
             this._userId = userId;
 
             const errorCallback = () => {
@@ -65,12 +72,17 @@ export class WebSocket {
 
             socket.once(SocketIncomingEvents.Error, errorCallback);
 
-            socket.once(SocketIncomingEvents.ConnectionAcknowledged, () => {
+            socket.on(SocketIncomingEvents.ConnectionAcknowledged, (data: TestState | null) => {
+                console.log(data)
                 socket.off(SocketIncomingEvents.Error, errorCallback);
                 this._socket = socket;
+                if (data != null) {
+                    setStatesCallback(data)
+                }
                 resolve(true);
-            })
+            });
 
+            socket.on('disconnect', this.nonGracefulExitHandler)
         })
     }
 

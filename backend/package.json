@@ -7,7 +7,7 @@
     "docker-build": "docker build -t expserver-tester-image ./src",
     "create-uploads-folder": "node -e \"const fs = require('fs'); const { execSync } = require('child_process'); const path = require('path'); const folder = path.join(process.env.INIT_CWD || process.cwd(), 'uploads'); try { fs.rmSync(folder, { recursive: true, force: true }); console.log('♻️ Deleted existing folder'); } catch {}; fs.mkdirSync(folder, { recursive: true }); console.log('✅ Created uploads folder');\"",
     "setup": "prisma migrate dev --name dev && npm run create-uploads-folder",
-    "reset": "prisma migrate reset --force&& npm run create-uploads-folder",
+    "reset": "prisma migrate reset --force && npm run create-uploads-folder",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "NODE_OPTIONS=\"--max-old-space-size=4096\" nodemon src/index.ts",
     "build": "rm -rf ./dist && tsc",
@@ -15,7 +15,8 @@
     "precompile": "rm -rf ./compile && mkdir compile && npm run build",
     "compile": "npm run precompile && esbuild dist/index.js --bundle --outfile=compile/build.cjs --format=cjs --platform=node --external:*.node && cd compile && npx pkg build.cjs && npm run postcompile",
     "postcompile": "cd compile && rm -rf build.cjs",
-    "generate-desc": "ts-node src/generate-description.ts"
+    "generate-desc": "ts-node src/generate-description.ts",
+    "setup-deploy": "prisma migrate deploy --schema=./prisma/schema.prisma && npm run create-uploads-folder"
   },
   "keywords": [],
   "author": "Th3BossC",

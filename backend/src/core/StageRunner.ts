@@ -170,12 +170,19 @@ export class StageRunner {
 
     private containerWarmUp() {
         return new Promise(async (resolve, reject) => {
-            await this.containerInstance.kill();
+            try {
+                if (!this.containerInstance.running)
+                    await this.containerInstance.start();
+            }
+            catch {
+                return reject(false)
+            }
+
             this.terminalInstance.kill();
             this.processStatsInstance.kill();
-            await this.containerInstance.start();
-            if (this.containerInstance.running == false)
-                return reject(false);
+            // await this.containerInstance.start();
+            // if (this.containerInstance.running == false)
+            //     return reject(false);
             this.terminalInstance.run();
             this.processStatsInstance.run();
             return resolve(true);
@@ -187,7 +194,8 @@ export class StageRunner {
         try {
             await this.containerWarmUp();
         }
-        catch {
+        catch (error) {
+            console.log(error)
             this._currentState[index].observedBehavior = "Server didn't start up as expected, ensure it has been compiled with the provided Dockerfile and is of an appropriate stage"
             this._currentState[index].status = TestStatus.Failed;
             this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);

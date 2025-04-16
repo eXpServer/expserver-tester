@@ -1,6 +1,5 @@
-const BACKEND_URL = 'http://localhost:6969';
 import axios from 'axios';
-
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export const getToken = async () => {
     try {
@@ -13,6 +12,7 @@ export const getToken = async () => {
 }
 
 export const getStageDescription = async (stageNo: number, token: string) => {
+    console.log(BACKEND_URL);
     if (stageNo < 1 || !token)
         return;
     try {

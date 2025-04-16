@@ -73,6 +73,21 @@ export class ContainerManager extends EventEmitter {
         if (this.initialized || this.running)
             return;
 
+        try {
+            await this.startContainer();
+            if (!this.initialized) {
+                return;
+            }
+        }
+        catch (error) {
+            this.timeoutRef = setTimeout(() => {
+                this.start();
+            }, 1000);
+            return;
+        }
+
+        this._pid = (await this._container.inspect()).State.Pid
+
         const eventStream = await this.docker.getEvents();
         eventStream.on('data', (chunk) => {
             const event = JSON.parse(chunk.toString());
@@ -90,22 +105,6 @@ export class ContainerManager extends EventEmitter {
 
             }
         })
-
-        try {
-            await this.startContainer();
-            if (!this.initialized) {
-                return;
-            }
-        }
-        catch (error) {
-            this.timeoutRef = setTimeout(() => {
-                this.start();
-            }, 1000);
-            return;
-        }
-
-        this._pid = (await this._container.inspect()).State.Pid
-
 
         this._running = true;
     }
@@ -228,6 +227,7 @@ export class ContainerManager extends EventEmitter {
                 const isRunning = data.State.Running;
                 const hasExited = data.State.Status == 'exited';
                 const exitCode = data.State.ExitCode;
+                console.log(isRunning, hasExited, exitCode)
                 if (hasExited) {
                     clearInterval(interval);
                     this.initialized = false;
