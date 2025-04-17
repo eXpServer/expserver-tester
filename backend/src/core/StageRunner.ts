@@ -4,10 +4,11 @@ import { TerminalStream } from "./TerminalStream";
 import { type TestDetails, TestFunction, TestStatus } from "../types";
 import { ResourceMonitor } from "./ResrouceMonitor";
 import { ContainerManager } from "./ContainerManager";
-import { File, PrismaClient } from "@prisma/client";
 import { Timer } from "./Timer";
-
-const prisma = new PrismaClient()
+import { FileModel } from '../models/file.model'
+import { TestResultsModel } from "../models/testResults.model";
+import { TestDetailsModel } from "../models/testDetails.model";
+import { sequelize } from '../models'
 
 enum StageRunnerEvents {
     TEST_STARTED = 'stage-tests-start',
@@ -18,7 +19,7 @@ enum StageRunnerEvents {
 
 export class StageRunner {
     private watchers: StageWatcher[];
-    private file: File;
+    private file: FileModel;
     private containerInstance: ContainerManager | null;
     private terminalInstance: TerminalStream | null;
     private processStatsInstance: ResourceMonitor | null;
@@ -59,7 +60,7 @@ export class StageRunner {
     }
 
 
-    constructor(userId: string, stageNo: number, file: File) {
+    constructor(userId: string, stageNo: number, file: FileModel) {
         this._stageNo = stageNo;
         this.file = file;
         this.watchers = [];
@@ -96,17 +97,12 @@ export class StageRunner {
 
 
     public async fetchPreviousData(): Promise<{ timeTaken: number, testDetails: Omit<TestDetails, 'description' | 'title'>[] }> {
-        const result = await prisma.testResults.findUnique({
+        const result = await TestResultsModel.findOne({
             where: {
-                userId_stageNo: {
-                    stageNo: this.stageNo,
-                    userId: this.userId,
-                }
+                stageNo: this.stageNo,
+                userId: this.userId,
             },
-
-            include: {
-                testDetails: true
-            }
+            include: [TestDetailsModel],
         });
 
         if (!result)
@@ -123,29 +119,35 @@ export class StageRunner {
     }
 
     public async storePreviousData(): Promise<void> {
-        await prisma.$transaction([
-            prisma.testResults.deleteMany({
+        await sequelize.transaction(async (t) => {
+            // Step 1: Delete existing test results
+            await TestResultsModel.destroy({
                 where: {
                     userId: this.userId,
-                    stageNo: this.stageNo
-                }
-            }),
-            prisma.testResults.create({
-                data: {
+                    stageNo: this.stageNo,
+                },
+                transaction: t,
+            });
+
+            // Step 2: Create new test result with related testDetails
+            const testResult = await TestResultsModel.create(
+                {
                     userId: this.userId,
                     stageNo: this.stageNo,
                     timeTaken: this.timerInstance.currentTime,
-                    testDetails: {
-                        create: this._currentState.map(test => ({
-                            testInput: test.testInput,
-                            expectedBehaviour: test.expectedBehavior,
-                            observedBehaviour: test.observedBehavior,
-                            status: test.status,
-                        }))
-                    }
+                    testDetails: this._currentState.map((test) => ({
+                        testInput: test.testInput,
+                        expectedBehaviour: test.expectedBehavior,
+                        observedBehaviour: test.observedBehavior,
+                        status: test.status,
+                    })),
+                },
+                {
+                    include: [TestDetailsModel],
+                    transaction: t,
                 }
-            })
-        ]);
+            );
+        });
     }
 
 
@@ -172,7 +174,8 @@ export class StageRunner {
         return new Promise(async (resolve, reject) => {
             this.terminalInstance.kill();
             this.processStatsInstance.kill();
-            await this.containerInstance.kill();
+            if (this.containerInstance.running)
+                await this.containerInstance.kill();
             await this.containerInstance.start();
             if (this.containerInstance.running == false)
                 return reject(false);

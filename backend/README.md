@@ -45,8 +45,8 @@ eXpServer Backend/
 ├── tsconfig.json
 ├── uploads/
 ├── Dockerfile.prod
-├── Dockerfile
-├── docker-compose.yaml
+├── Dockerfile.dev
+├── docker-compose.dev.yaml
 └── docker-compose.prod.yaml
 ```
 
@@ -80,7 +80,7 @@ npm run compile # requires node v18
 
 - (Run in development mode)
 ```bash
-docker compose -f docker-compose.yaml up --build # the --build can be omitted in subsequent runs
+docker compose -f docker-compose.dev.yaml up --build # the --build can be omitted in subsequent runs
 ```
 
 ## Note for contributors

@@ -38,15 +38,13 @@ while ! nc -z "$DB_HOST" 5432; do
 done
 echo "$DB_HOST is up - running migrations and collectstatic"
 
-npx prisma generate
 npm run generate-large-file
 npm run generate-desc
+npm run setup
 
 if [ "$DEBUG" = "true" ]; then
-    npm run setup-deploy
     npm run dev
 else
-    npm run setup-deploy
     npm run build
     npm run start
 fi

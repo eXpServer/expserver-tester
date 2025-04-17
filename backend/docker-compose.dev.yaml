@@ -16,7 +16,9 @@ services:
     depends_on:
       - redis
       - postgresdb-dev
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     ports:
       - "6969:6969"
       - "6970:6970"

@@ -5,10 +5,9 @@ import { StageWatcher } from "./StageWatcher";
 import { StageRunner } from "./StageRunner";
 import { Express } from "express";
 import { HOST_PWD, TESTER_PORT, WEBSOCKET_PORT } from "../constants";
-import { PrismaClient } from "@prisma/client";
 import { tests } from "../tests";
 import { createClient } from 'redis'
-const prisma = new PrismaClient();
+import { FileModel } from '../models/file.model'
 
 enum EmitEvents {
     CurrentState = 'current-state',
@@ -60,14 +59,12 @@ export class Core {
     private static async handleNoExistingRunner(watcher: StageWatcher): Promise<TestState> {
         const { stageNo, userId } = watcher;
 
-        const file = await prisma.file.findFirst({
+        const file = await FileModel.findOne({
             where: {
-                AND: {
-                    stageNo,
-                    userId,
-                }
-            }
-        })
+                userId,
+                stageNo,
+            },
+        });
 
         const testDetails = this.getTests(stageNo);
         if (!testDetails) {
@@ -218,14 +215,12 @@ export class Core {
         if (!socket.watcher)
             return;
         const { userId, stageNo } = socket.watcher;
-        const file = await prisma.file.findFirst({
+        const file = await FileModel.findOne({
             where: {
-                AND: {
-                    userId,
-                    stageNo,
-                }
-            }
-        })
+                userId,
+                stageNo,
+            },
+        });
 
         if (!file)
             return socket.emit(EmitEvents.NoBinary);

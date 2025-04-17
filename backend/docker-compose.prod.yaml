@@ -9,7 +9,7 @@ services:
     ports:
       - "5434:5432"
     networks:
-      - mynet
+      - mynet-prod
 
   backend:
     restart: always
@@ -23,7 +23,7 @@ services:
       - "6969:6969"
       - "6970:6970"
     networks:
-      - mynet
+      - mynet-prod
     volumes:
       - ./uploads:/app/uploads
       - ./public:/app/public
@@ -43,10 +43,10 @@ services:
     volumes:
       - redis-data:/data
     networks:
-       - mynet
+       - mynet-prod
 
 networks:
-  mynet:
+  mynet-prod:
     driver: bridge
 
 

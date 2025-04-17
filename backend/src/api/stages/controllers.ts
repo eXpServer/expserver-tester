@@ -2,10 +2,9 @@ import { Core } from '../../core/Core';
 import { Request, Response } from '../../types';
 import expressAsyncHandler from 'express-async-handler';
 import { deleteFile, getFilePath, verifyStageNo } from '../../utils/file';
-import { PrismaClient } from '@prisma/client';
 import { chmod } from 'fs';
 import { FILE_EXECUTABLE_PERMS } from '../../constants';
-const prisma = new PrismaClient();
+import { FileModel } from '../../models/file.model';
 
 const getStageDescription = expressAsyncHandler(async (req: Request, res: Response) => {
     const stageNo = req.params['num'];
@@ -41,38 +40,35 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     const fileName = req.file.originalname;
 
     try {
-        const existingFile = await prisma.file.findFirst({
+        const stageNoInt = parseInt(stageNo);
+
+        const existingFile = await FileModel.findOne({
             where: {
-                AND: {
-                    stageNo: parseInt(stageNo),
-                    userId: req.user,
-                }
-            }
-        })
+                stageNo: stageNoInt,
+                userId: req.user,
+            },
+        });
 
         if (existingFile) {
-            await deleteFile(existingFile.filePath);
+            await deleteFile(existingFile.filePath); // delete from filesystem
 
-            await prisma.file.delete({
+            await FileModel.destroy({
                 where: {
                     binaryId: existingFile.binaryId,
-                }
+                },
             });
         }
 
-        await prisma.file.create({
-            data: {
-                filePath: absolutePath,
-                binaryId,
-                fileName,
-                stageNo: parseInt(stageNo),
-                userId: req.user,
-            }
-        })
-    }
-    catch (error) {
+        await FileModel.create({
+            filePath: absolutePath,
+            binaryId,
+            fileName,
+            stageNo: stageNoInt,
+            userId: req.user,
+        });
+    } catch (error) {
         res.status(500);
-        throw new Error("error creating db entry");
+        throw new Error("Error creating DB entry");
     }
 
     chmod(absolutePath, FILE_EXECUTABLE_PERMS, (err) => {
@@ -95,32 +91,35 @@ const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
     }
 
     try {
-        const file = await prisma.file.findFirst({
+        const stageNoInt = parseInt(stageNo);
+
+        const file = await FileModel.findOne({
             where: {
-                AND: {
-                    stageNo: parseInt(stageNo),
-                    userId: req.user,
-                }
-            }
-        })
+                stageNo: stageNoInt,
+                userId: req.user,
+            },
+        });
 
         if (!file) {
             res.status(200).json({
                 message: "already deleted",
-            })
-        }
-        else {
+            });
+        } else {
             const filePath = file.filePath;
-            await deleteFile(filePath);
 
-            await prisma.file.delete({
+            await deleteFile(filePath); // delete from file system
+
+            await FileModel.destroy({
                 where: {
                     binaryId: file.binaryId,
-                }
-            })
+                },
+            });
+
+            res.status(200).json({
+                message: "file deleted",
+            });
         }
-    }
-    catch (error) {
+    } catch (error) {
         res.status(500);
         throw new Error("Something went wrong");
     }
