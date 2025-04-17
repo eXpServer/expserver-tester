@@ -92,6 +92,7 @@ export class ContainerManager extends EventEmitter {
         eventStream.on('data', (chunk) => {
             const event = JSON.parse(chunk.toString());
             if (event.Type == 'container' && event.Actor.Attributes.name == this._containerName && (event.Action == 'stop' || event.Action == 'die')) {
+                console.log("container shut down");
                 this._running = false;
                 if (!this._container)
                     return;
@@ -124,34 +125,40 @@ export class ContainerManager extends EventEmitter {
     }
 
     public async kill(): Promise<void> {
-        if (!this.initialized || (this._container === null))
-            return;
-        if (ContainerManager.removingContainers.has(this._containerName)) {
-            console.log(`Container: ${this._containerName} is already being removed`);
-            return;
-        }
-
-        ContainerManager.removingContainers.add(this._containerName);
-        try {
-            this.initialized = false;
-            this._running = false;
-            const inspect = await this._container.inspect();
-            if (inspect.State.Running) {
-                console.log(`Stopping container: ${this._containerName}`);
-                await this._container.kill();
+        return new Promise(async (resolve, reject) => {
+            if (!this.initialized || (this._container === null))
+                return;
+            if (ContainerManager.removingContainers.has(this._containerName)) {
+                console.log(`Container: ${this._containerName} is already being removed`);
+                return;
             }
-            console.log(`Removing container: ${this._containerName}`);
-            await this._container.remove({ force: true });
 
-            this._container = null;
-            this._stream = null;
-            this._pid = -1;
-        }
-        catch (error) {
-            if (error.statusCode != 409)
-                console.log(error);
-        }
-        ContainerManager.removingContainers.delete(this._containerName);
+            ContainerManager.removingContainers.add(this._containerName);
+            try {
+                this.initialized = false;
+                this._running = false;
+                const inspect = await this._container.inspect();
+                if (inspect.State.Running) {
+                    console.log(`Stopping container: ${this._containerName}`);
+                    await this._container.kill();
+                }
+                console.log(`Removing container: ${this._containerName}`);
+                await this._container.remove({ force: true });
+
+                this._container = null;
+                this._stream = null;
+                this._pid = -1;
+            }
+            catch (error) {
+                if (error.statusCode != 409)
+                    console.log(error);
+            }
+            ContainerManager.removingContainers.delete(this._containerName);
+
+            setTimeout(() => {
+                return resolve();
+            }, 1000); // wait 1 second for proper shut down of container
+        })
     }
 
     public async detachStream(): Promise<void> {

@@ -170,19 +170,12 @@ export class StageRunner {
 
     private containerWarmUp() {
         return new Promise(async (resolve, reject) => {
-            try {
-                if (!this.containerInstance.running)
-                    await this.containerInstance.start();
-            }
-            catch {
-                return reject(false)
-            }
-
             this.terminalInstance.kill();
             this.processStatsInstance.kill();
-            // await this.containerInstance.start();
-            // if (this.containerInstance.running == false)
-            //     return reject(false);
+            await this.containerInstance.kill();
+            await this.containerInstance.start();
+            if (this.containerInstance.running == false)
+                return reject(false);
             this.terminalInstance.run();
             this.processStatsInstance.run();
             return resolve(true);

@@ -22,7 +22,7 @@ RUN export $(cat .env | xargs)
 
 COPY package.json package.json
 COPY tsconfig.json tsconfig.json
-COPY prisma prisma
+COPY prisma/schema.prisma prisma/schema.prisma
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 RUN npm install

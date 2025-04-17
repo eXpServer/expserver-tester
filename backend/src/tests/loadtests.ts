@@ -199,8 +199,8 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`,
                 cleanup: () => {
-                    firstClient.end();
-                    secondClient.end();
+                    firstClient.destroy();
+                    secondClient.destroy();
                 }
             })
         })
@@ -213,8 +213,8 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                 passed: false,
                 observedBehavior: "Server refused connection",
                 cleanup: () => {
-                    firstClient.end();
-                    secondClient.end();
+                    firstClient.destroy();
+                    secondClient.destroy();
                 }
             })
         };
@@ -226,8 +226,8 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                 passed: false,
                 observedBehavior: "Server connection timeout",
                 cleanup: () => {
-                    firstClient.end();
-                    secondClient.end();
+                    firstClient.destroy();
+                    secondClient.destroy();
                 }
             })
         }
@@ -240,8 +240,8 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                 passed: false,
                 observedBehavior: "Connection terminated / server not running on desired port",
                 cleanup: () => {
-                    firstClient.end();
-                    secondClient.end();
+                    firstClient.destroy();
+                    secondClient.destroy();
                 }
             })
         }
@@ -253,8 +253,8 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                 passed: false,
                 observedBehavior: "Cannot establish connection to server",
                 cleanup: () => {
-                    firstClient.end();
-                    secondClient.end();
+                    firstClient.destroy();
+                    secondClient.destroy();
                 }
             })
         }
@@ -287,8 +287,8 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                             passed: false,
                             observedBehavior: "Client connection was disconnected",
                             cleanup: () => {
-                                firstClient.end();
-                                secondClient.end();
+                                firstClient.destroy();
+                                secondClient.destroy();
                             }
                         })
                     };
@@ -312,8 +312,8 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                         return resolve({
                             passed: true,
                             cleanup: () => {
-                                firstClient.end();
-                                secondClient.end();
+                                firstClient.destroy();
+                                secondClient.destroy();
                             }
                         })
                     })
@@ -332,12 +332,14 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                         file.close();
                         clearTimeout(firstClientWaitTimeout);
                         spawnInstance.kill().then(() => {
+                            firstClient.removeAllListeners();
+                            secondClient.removeAllListeners();
                             return resolve({
                                 passed: false,
                                 observedBehavior: "Server did not respond to the second client within 30s",
                                 cleanup: () => {
-                                    firstClient.end();
-                                    secondClient.end();
+                                    firstClient.destroy();
+                                    secondClient.destroy()
                                 }
                             });
                         })

@@ -63,18 +63,13 @@ cd frontend
 ```
 
 - install the dependencies
-```bash
-npm install
-npm run setup
-npm run generate-large-file
-```
-
+[Docker installation](https://docs.docker.com/engine/install/)
+[nvm installation](https://github.com/nvm-sh/nvm)
 
 ## Usage
 - build and execute the program
 ```bash
-npm run build
-npm run start
+docker compose -f docker-compose.prod.yaml up --build # the --build can be omitted in subsequent runs
 ```
 
 - (Alternative) compile and run executable
@@ -83,6 +78,10 @@ npm run compile # requires node v18
 ./compile/build-<linux / macos/ win.exe>
 ```
 
+- (Run in development mode)
+```bash
+docker compose -f docker-compose.yaml up --build # the --build can be omitted in subsequent runs
+```
 
 ## Note for contributors
 - When updating test cases, corresponding description for each stage can be generated using the command

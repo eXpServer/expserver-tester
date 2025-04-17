@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 DEBUG=""
 
@@ -25,19 +25,25 @@ if [ "$DEBUG" != "true" ] && [ "$DEBUG" != "false" ]; then
 fi
 
 set -e
-echo "Waiting for postgresdb to be available on port 5432"
-while ! nc -z postgresdb 5432; do
+
+if [ "$DEBUG" = "true" ]; then
+  DB_HOST="postgresdb-dev"
+else
+  DB_HOST="postgresdb"
+fi
+
+echo "Waiting for $DB_HOST to be available on port 5432"
+while ! nc -z "$DB_HOST" 5432; do
     sleep 1
 done
-echo "postgresdb is up - running migrations and collectstatic"
-
+echo "$DB_HOST is up - running migrations and collectstatic"
 
 npx prisma generate
-
 npm run generate-large-file
 npm run generate-desc
+
 if [ "$DEBUG" = "true" ]; then
-    npm run setup
+    npm run setup-deploy
     npm run dev
 else
     npm run setup-deploy
