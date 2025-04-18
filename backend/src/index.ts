@@ -10,6 +10,7 @@ import { Server } from 'socket.io';
 import { Core } from './core/Core';
 import path from 'path';
 import { sequelize } from './models';
+import Config from './config';
 
 const app = express();
 const httpServer = createServer();
@@ -22,7 +23,7 @@ const io = new Server(httpServer, {
 sequelize.authenticate()
     .then(() => {
         console.log("Databse connected!");
-        return sequelize.sync({ alter: process.env.DBEUG == 'true' || false });
+        return sequelize.sync({ alter: Config.DEBUG });
     })
     .catch((err) => {
         console.log("Unable to connect to db", err);

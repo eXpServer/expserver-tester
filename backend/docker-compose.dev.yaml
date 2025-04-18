@@ -9,7 +9,7 @@ services:
     ports:
       - "5434:5432"
     networks:
-      - mynet
+      - eXpServer-network-dev
 
   backend:
     restart: always
@@ -23,7 +23,7 @@ services:
       - "6969:6969"
       - "6970:6970"
     networks:
-      - mynet
+      - eXpServer-network-dev
     volumes:
       - ./uploads:/app/uploads
       - ./public:/app/public
@@ -44,11 +44,12 @@ services:
     volumes:
       - redis-dev-data:/data
     networks:
-       - mynet
+       - eXpServer-network-dev
 
 networks:
-  mynet:
+  eXpServer-network-dev:
     driver: bridge
+    name: eXpServer-network-dev
 
 
 volumes:

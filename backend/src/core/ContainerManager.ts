@@ -1,6 +1,7 @@
 import Docker, { Container } from 'dockerode';
 import { EventEmitter } from 'eventemitter3';
-import { HOST_PWD, IMAGE_NAME, PUBLIC_DIR, WORKDIR } from '../constants';
+import { IMAGE_NAME, PUBLIC_DIR, WORKDIR } from '../constants';
+import Config from '../config';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
@@ -40,7 +41,7 @@ export class ContainerManager extends EventEmitter {
         return this._container;
     }
 
-    constructor(containerName: string, binaryId: string, requiresXpsConfig: boolean, publicPath: string) {
+    constructor(containerName: string, binaryId: string, publicPath: string) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
@@ -53,15 +54,20 @@ export class ContainerManager extends EventEmitter {
         this.pythonServerRunning = false;
 
 
-        const customPublicDir = `${HOST_PWD}/public/${publicPath}`;
+        const customPublicDir = `${Config.HOST_PWD}/public/${publicPath}`;
+        const workDir = `${Config.HOST_PWD}/uploads`;
+        const entryCmd = [
+            'sh', '-c',
+            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json`,
+        ]
 
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? `${PUBLIC_DIR}/xps_config.json` : ''}`],
+            Cmd: entryCmd,
             HostConfig: {
-                Binds: [`${HOST_PWD}/uploads:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
-                NetworkMode: "backend_mynet",
+                Binds: [`${workDir}:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
+                NetworkMode: Config.NETWORK_INTERFACE,
             }
         }
     }

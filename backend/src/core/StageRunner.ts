@@ -67,7 +67,6 @@ export class StageRunner {
         this.containerInstance = new ContainerManager(
             `container-${file.binaryId}`,
             file.binaryId,
-            Core.requiresXpsConfig(stageNo),
             Core.getPublicPath(stageNo),
         );
         this.terminalInstance = new TerminalStream(
@@ -120,7 +119,6 @@ export class StageRunner {
 
     public async storePreviousData(): Promise<void> {
         await sequelize.transaction(async (t) => {
-            // Step 1: Delete existing test results
             await TestResultsModel.destroy({
                 where: {
                     userId: this.userId,
@@ -129,7 +127,6 @@ export class StageRunner {
                 transaction: t,
             });
 
-            // Step 2: Create new test result with related testDetails
             const testResult = await TestResultsModel.create(
                 {
                     userId: this.userId,
@@ -162,7 +159,7 @@ export class StageRunner {
     private emitToAllSockets(event: string, data: any) {
 
         this.watchers.forEach(watcher => {
-            watcher.emit(event, data); // do watcher.emit()
+            watcher.emit(event, data);
         })
     }
 

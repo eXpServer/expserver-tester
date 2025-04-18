@@ -4,7 +4,8 @@ import { Server as HttpServer } from 'http'
 import { StageWatcher } from "./StageWatcher";
 import { StageRunner } from "./StageRunner";
 import { Express } from "express";
-import { HOST_PWD, TESTER_PORT, WEBSOCKET_PORT } from "../constants";
+import { TESTER_PORT, WEBSOCKET_PORT } from "../constants";
+import Config from "../config";
 import { tests } from "../tests";
 import { createClient } from 'redis'
 import { FileModel } from '../models/file.model'
@@ -269,7 +270,7 @@ export class Core {
     public static initializeServer = async (): Promise<void> => {
         this.expressApp.listen(TESTER_PORT, () => console.log(`Server running on port ${TESTER_PORT}`));
         this.httpServer.listen(WEBSOCKET_PORT, () => console.log(`Websocket running on port ${WEBSOCKET_PORT}`));
-        console.log("current working directory: ", HOST_PWD);
+        console.log("current working directory: ", Config.HOST_PWD);
 
         const redis = createClient({ url: 'redis://redis:6379' });
         await redis.connect();
