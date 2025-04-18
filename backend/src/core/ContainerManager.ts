@@ -132,11 +132,13 @@ export class ContainerManager extends EventEmitter {
 
     public async kill(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            if (!this.initialized || (this._container === null))
-                return;
+            if (!this.initialized || (this._container === null)) {
+                return resolve();
+
+            }
             if (ContainerManager.removingContainers.has(this._containerName)) {
                 console.log(`Container: ${this._containerName} is already being removed`);
-                return;
+                return resolve();
             }
 
             ContainerManager.removingContainers.add(this._containerName);
@@ -227,6 +229,7 @@ export class ContainerManager extends EventEmitter {
             console.log(message);
         }
         catch (error) {
+            this._container = null;
             console.log(error)
         }
     }

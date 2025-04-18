@@ -49,7 +49,6 @@ export class Timer {
         this._currentTime = 0;
         this.emitToAllSockets(TimerEvents.TEST_UPDATE, this._currentTime);
         this.interval = setInterval(this.timerStreamCallback, 1000);
-        this.containerInstance.once('close', this.closeCallback);
     }
 
     public kill() {

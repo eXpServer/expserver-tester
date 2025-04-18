@@ -14,6 +14,7 @@ enum EmitEvents {
     CurrentState = 'current-state',
     NoBinary = 'no-binary',
     ConnectionAck = 'connection-ack',
+    Reconnect = 'reconnect'
 }
 
 enum ReceiveEvents {
@@ -226,13 +227,22 @@ export class Core {
         if (!file)
             return socket.emit(EmitEvents.NoBinary);
 
-        const runner =
-            this.findStageRunner(socket.watcher) ||
-            new StageRunner(
+        console.log(this.findStageRunner(socket.watcher))
+
+        const existingRunner = this.findStageRunner(socket.watcher)
+
+        let runner: StageRunner;
+        if (!existingRunner) {
+            runner = new StageRunner(
                 userId,
                 stageNo,
                 file,
             )
+            Core.runners.push(runner);
+        }
+        else {
+            runner = existingRunner;
+        }
 
         this.watchers.forEach(watcher => {
             if (watcher.userId == userId && watcher.stageNo == stageNo) {
@@ -240,6 +250,7 @@ export class Core {
                 runner.attachNewSubscriber(watcher);
             }
         })
+
 
         await runner.run();
     }
@@ -306,6 +317,7 @@ export class Core {
                 }
             }
             else {
+                console.log("emitted ack")
                 socket.emit(EmitEvents.ConnectionAck, { data: null });
             }
 

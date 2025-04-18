@@ -109,6 +109,10 @@ const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 
             await deleteFile(filePath); // delete from file system
 
+            const runner = Core.runners.find(runner => (runner.stageNo.toString() == stageNo && runner.userId == req.user))
+            if (runner)
+                Core.deleteRunner(runner)
+
             await FileModel.destroy({
                 where: {
                     binaryId: file.binaryId,

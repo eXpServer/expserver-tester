@@ -59,7 +59,6 @@ export class StageRunner {
         return this._currentState;
     }
 
-
     constructor(userId: string, stageNo: number, file: FileModel) {
         this._stageNo = stageNo;
         this.file = file;
@@ -229,21 +228,20 @@ export class StageRunner {
             await this.runTest(functions[i], i);
         }
 
-
-
         if (this.running)
             this.kill();
     }
 
     public async kill(forced?: boolean) {
+
         this._running = false;
         this.terminalInstance?.kill();
         this.processStatsInstance?.kill();
         this.timerInstance?.kill();
+
         await this.containerInstance.kill();
 
         this.containerInstance = null;
-        this.watchers.forEach(watcher => watcher.stageRunner = null);
 
         await this.storePreviousData();
 
@@ -267,5 +265,6 @@ export class StageRunner {
                 numFailed,
             })
         }
+        this.watchers.forEach(watcher => watcher.stageRunner = null);
     }
 }
