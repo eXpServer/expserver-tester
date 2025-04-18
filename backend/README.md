@@ -93,6 +93,23 @@ cd frontend
 [nvm installation](https://github.com/nvm-sh/nvm)
 
 ## Usage
+- set environment variables as per `.env.example`
+```bash
+POSTGRES_USER=<username>
+POSTGRES_PASSWORD=<password>
+POSTGRES_DB=<database>
+POSTGRES_HOST=postgresdb
+
+DATABASE_URL=postgresql://<username>:<password>@postgresdb:5432/<database>
+
+DEBUG=(true|false)
+```
+
+- build the container required to execute test cases
+```bash
+npm run docker-build
+```
+
 - build and execute the program
 ```bash
 docker compose -f docker-compose.prod.yaml up -d --build # the --build can be omitted in subsequent runs
