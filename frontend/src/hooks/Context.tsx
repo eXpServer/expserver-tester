@@ -68,7 +68,7 @@ export const SocketContextProvider = ({
         }
 
         setUserId(savedUserId);
-        await ws.initialize(savedUserId, updateData);
+        await ws.initialize(savedUserId, updateData, nonGracefulExitHandler, reconnectHandler);
 
         await setCallbacks(ws);
 
@@ -115,12 +115,24 @@ export const SocketContextProvider = ({
         setTerminalData([]);
     }
 
+    const nonGracefulExitHandler = () => {
+        setLoading(true);
+        console.log("server crash detected");
+    }
+
+    const reconnectHandler = () => {
+        setLoading(false);
+        console.log("Server connection restored");
+    }
+
     const updateData = (data: TestState) => {
         setBinaryId(data.binaryId);
         setStatus(data.running ? "running" : "pending");
         setResults(data.testDetails);
         setFileName(data.fileName);
         setTimer(data.timeTaken || -1);
+
+        console.log("updated data")
 
     }
 

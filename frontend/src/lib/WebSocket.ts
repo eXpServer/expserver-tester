@@ -10,6 +10,7 @@ events.defaultMaxListeners = 100;
 export enum SocketIncomingEvents {
     CurrentState = 'current-state',
     ConnectionAcknowledged = "connection-ack",
+    Reconnect = 'reconnect',
     Error = 'error',
 
     TestsStart = 'stage-tests-start',
@@ -42,7 +43,6 @@ export class WebSocket {
     private _stageNo: number;
     private _userId: string;
     private callbacks: Map<SocketIncomingEvents, ((...args: unknown[]) => void)[]> = new Map();
-
     get socket() {
         return this._socket;
     }
@@ -55,16 +55,11 @@ export class WebSocket {
         return this._userId;
     }
 
-    private nonGracefulExitHandler = () => {
-        console.log("Server crash detected");
-    }
 
-
-    public initialize(userId: string, setStatesCallback: (data: TestState) => void) {
+    public initialize(userId: string, setStatesCallback: (data: TestState) => void, nonGracefulExitHandler: () => void, reconnectHandler: () => void) {
         return new Promise((resolve, reject) => {
             const socket = io(SOCKET_URL, { auth: { clientId: clientId } });
             this._userId = userId;
-
             const errorCallback = () => {
                 this._socket = null;
                 reject("socket connection not established");
@@ -72,17 +67,18 @@ export class WebSocket {
 
             socket.once(SocketIncomingEvents.Error, errorCallback);
 
-            socket.on(SocketIncomingEvents.ConnectionAcknowledged, (data: TestState | null) => {
-                console.log(data)
+            socket.on(SocketIncomingEvents.ConnectionAcknowledged, ({ data }) => {
                 socket.off(SocketIncomingEvents.Error, errorCallback);
                 this._socket = socket;
-                if (data != null) {
-                    setStatesCallback(data)
+
+                if (data) {
+                    setStatesCallback(data);
+                    reconnectHandler();
                 }
                 resolve(true);
             });
 
-            socket.on('disconnect', this.nonGracefulExitHandler)
+            socket.on('disconnect', nonGracefulExitHandler)
         })
     }
 
