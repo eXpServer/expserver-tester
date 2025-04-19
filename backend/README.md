@@ -18,7 +18,9 @@ The architecture focuses on an `availability-over-durability` model, where even 
 - The publishers can send data to this common channel without blocking for the receivers to process them 
 
 ### Why was it chosen over other alternatives?
-The server provides a certain level of state management which assumes a certain browsser client as a single user. This permits the user to run multiple tabs, each running different stages simultaneously, but also maintain a primitive level of persistent result storage. Each `StageRunner` that runs the tests for a stage acts as a publisher, while each client that is currently viewing the details about that stage acts as a subscriber. This allows multiple tabs opening the same stage test window to get streamed data of the same tests being run, and allows the browser client to freely choose which StageRunner to listen to.
+The server provides a certain level of state management which assumes a certain browsser client as a single user. This permits the user to run multiple tabs, each running different stages simultaneously, but also maintain a primitive level of persistent result storage. Each `StageRunner` that runs the tests for a stage acts as a publisher, while each client that is currently viewing the details about that stage acts as a subscriber. 
+
+This allows multiple tabs opening the same stage test window to get streamed data of the same tests being run, and allows the browser client to freely choose which StageRunner to listen to.
 
 
 ## Availability over Durability model
@@ -27,8 +29,11 @@ The server provides a certain level of state management which assumes a certain 
 This design paradigm that has been chosen as a basis for the server, focuses not on how to ensure the server remains up as long as it can, but on what to do in case of an unexpected crash.
 
 ### Why was such a model chosen for this project?
-In a server that involves running multiple containers and dealing with heavy loads, it is reasonable to assume that due to a variety of reasons including `network disruptions`, `resource overload`, etc that the server can crash. In such a volatile environment, focusing on how to create a server architecture that doesn't crash is not viable in the long run.
-Instead our architecture ensures that even if the server does crash, it will attempt to re-establish the broken connection and regain the state. Although, this might lead to any on-going requests to be lost.
+In a server that involves running multiple containers and dealing with heavy loads, it is reasonable to assume that due to a variety of reasons including `network disruptions`, `resource overload`, etc that the server can crash. 
+
+In such a volatile environment, focusing on how to create a server architecture that doesn't crash is not viable in the long run.
+
+Instead, our architecture ensures that even if the server does crash, it will attempt to re-establish the broken connection and regain the state. Although, this might lead to any on-going requests to be lost.
 
 
 ## Directory structure
@@ -89,8 +94,8 @@ cd frontend
 ```
 
 - install the dependencies
-[Docker installation](https://docs.docker.com/engine/install/)
-[nvm installation](https://github.com/nvm-sh/nvm)
+    - [Docker installation](https://docs.docker.com/engine/install/)
+    - [nvm installation](https://github.com/nvm-sh/nvm)
 
 ## Usage
 - set environment variables as per `.env.example`
@@ -127,10 +132,8 @@ docker compose -f docker-compose.dev.yaml up -d --build # the --build can be omi
 ```
 
 ## Note for contributors
-- The test description of each stage is auto-generated at build time when running the producion build
-- To re-generate description, if required, in a dev environement run one of the following
+- The test description of each stage is auto-generated at build time when running the production build
+- To re-generate description, if required, in a dev environement run the following
 ```bash
-
-# run 
 docker compose -f docker-compose.dev.yaml exec backend npm run generate-desc
 ```
