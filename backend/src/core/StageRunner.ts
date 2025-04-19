@@ -176,6 +176,7 @@ export class StageRunner {
                 await this.containerInstance.start();
             }
             else if (!this.containerInstance.running) {
+                await this.containerInstance.kill();
                 await this.containerInstance.start();
             }
             if (this.containerInstance.running == false)

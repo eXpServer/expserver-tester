@@ -50,6 +50,7 @@ export const stage11Tests: Omit<Test, 'status'>[] = [
         description: "Checks the behaviour of the proxy server in the event that the upstream server is unavailable",
         testInput: "Client connects to the proxy and sends a request to be relayed to the upstream server",
         expectedBehavior: "Proxy server shouldn't crash, instead handle the error gracefully",
+        requireRestart: true,
         testFunction: async (...args) => {
             const response = await proxyServerCrashHandling(8001, ...args);
             return response;

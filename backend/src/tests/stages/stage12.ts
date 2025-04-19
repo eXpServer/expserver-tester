@@ -45,17 +45,6 @@ export const stage12Tests: Omit<Test, 'status'>[] = [
 
     },
     {
-        title: "Error handling",
-        description: "Checks the behaviour of the proxy server in the event that the upstream server is unavailable",
-        testInput: "Client connects to the proxy and sends a request to be relayed to the upstream server",
-        expectedBehavior: "Proxy server shouldn't crash, instead handle the error gracefully",
-        testFunction: async (...args) => {
-            const response = await proxyServerCrashHandling(8001, ...args);
-            return response;
-
-        },
-    },
-    {
         title: "File server response",
         description: "This test ensures the file server responds with the 'sample.txt' file stored within the public directory",
         testInput: "Connects to the file server",
@@ -64,5 +53,17 @@ export const stage12Tests: Omit<Test, 'status'>[] = [
             const response = await prematureFileServerTest(8002, ...args);
             return response;
         }
+    },
+    {
+        title: "Error handling",
+        description: "Checks the behaviour of the proxy server in the event that the upstream server is unavailable",
+        testInput: "Client connects to the proxy and sends a request to be relayed to the upstream server",
+        expectedBehavior: "Proxy server shouldn't crash, instead handle the error gracefully",
+        requireRestart: true,
+        testFunction: async (...args) => {
+            const response = await proxyServerCrashHandling(8001, ...args);
+            return response;
+
+        },
     },
 ]

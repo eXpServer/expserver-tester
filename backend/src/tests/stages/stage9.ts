@@ -5,22 +5,23 @@ import { stringReversal } from "../string";
 
 export const stage9Tests: Omit<Test, 'status'>[] = [
     {
-        title: "CPU usage",
-        description: "This test verifies that the process doesn't consume CPU time unnecessarily by creating an idle client connection and tracks CPU usage over the course of 20 seconds",
-        testInput: "Creates an idle client connection and tracks CPU usage over the course of 20 seconds",
-        expectedBehavior: "CPU usage should be less than 10%",
-        testFunction: async (...args) => {
-            const response = await checkCpuUsage(8001, ...args);
-            return response;
-        },
-    },
-    {
         title: "Non-blocking server",
         description: "creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection",
         testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds",
         expectedBehavior: "the second connection is able to send and receive data from the server",
         testFunction: async (...args) => {
             const response = await nonBlockingSocket(8001, ...args);
+            return response;
+        },
+    },
+    {
+        title: "CPU usage",
+        description: "This test verifies that the process doesn't consume CPU time unnecessarily by creating an idle client connection and tracks CPU usage over the course of 20 seconds",
+        testInput: "Creates an idle client connection and tracks CPU usage over the course of 20 seconds",
+        expectedBehavior: "CPU usage should be less than 10%",
+        requireRestart: true,
+        testFunction: async (...args) => {
+            const response = await checkCpuUsage(8001, ...args);
             return response;
         },
     },

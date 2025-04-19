@@ -228,10 +228,10 @@ export class ContainerManager extends EventEmitter {
             }
         }
 
-        await this.attachStream();
-        this.pythonServerRunning = true;
-        await this._container.start();
         try {
+            await this.attachStream();
+            this.pythonServerRunning = true;
+            await this._container.start();
             const message = await this.waitForContainerToRun();
             console.log(message);
         }

@@ -19,7 +19,7 @@ export const stage7Tests: Omit<Test, 'status'>[] = [
 
             if (responses.some(response => response.passed == false)) {
                 return ({
-                    passed: true,
+                    passed: false,
                     testInput: responses[0].testInput,
                     expectedBehavior: responses[0].expectedBehavior,
                     observedBehavior: "Server didn't work as expected on all ports",
@@ -50,6 +50,7 @@ export const stage7Tests: Omit<Test, 'status'>[] = [
         description: "In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected",
         testInput: "client forcefully disconnects",
         expectedBehavior: "Previous and new clients are able to send and receive output as expected",
+        requireRestart: true,
         testFunction: async (...args) => {
             const response = await finalErrorHandling(8001, true, ...args);
             return response;

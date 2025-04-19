@@ -18,6 +18,7 @@ export const stage1Tests: Omit<Test, 'status'>[] = [
         description: "Checks how the server behaves when the client unexpectedly disconnects. In the current version of the server, we are not implementing proper handling of such a situation and thus the server should terminate with error code 1",
         testInput: "Force disconnection of the client",
         expectedBehavior: "Process exited with code 1",
+        requireRestart: true,
         testFunction: async (...args: any[]) => {
             const response = await prematureErrorHandling(8080, ...args);
             return response;

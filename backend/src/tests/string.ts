@@ -20,7 +20,6 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
         const client = new Socket();
 
         client.on('connectionAttemptFailed', () => {
-            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
@@ -28,7 +27,6 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
         })
 
         client.on('connectionAttemptTimeout', () => {
-            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
@@ -36,7 +34,6 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
         })
 
         client.on('close', () => {
-            client.removeAllListeners();
             spawnInstance?.kill();
             return resolve({
                 passed: false,
@@ -44,10 +41,8 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
             })
         })
 
-        client.on('error', () => {
-            client.destroy();
+        client.on('error', (e) => {
             spawnInstance?.kill();
-            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
@@ -101,7 +96,6 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
         }
 
         client.connect(port, spawnInstance.containerName, () => writeToServer(0));
-
     })
 }
 
