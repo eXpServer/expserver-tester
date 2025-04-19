@@ -1,16 +1,15 @@
 import { Socket } from "net";
 import { ContainerManager } from "../core/ContainerManager";
 import { TestFunction } from "../types";
-import { LOCALHOST } from "../constants";
 import { generateRandomStrings, reverseString } from "../utils/string";
 
-export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const prematureErrorHandling: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
         const client = new Socket();
 
 
         const closeCallback = (code: number | null) => {
+            client.removeAllListeners();
             resolve({
                 passed: (code == 1),
                 observedBehavior: `Process exited with code ${code || 0}`,
@@ -19,8 +18,8 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
 
         spawnInstance.on('close', closeCallback);
 
-        client.on('error', () => {
-            client.destroy();
+        client.on('error', (error) => {
+            console.log(error);
             resolve({
                 passed: false,
                 observedBehavior: "Client disconnected with an error",
@@ -29,7 +28,7 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
         });
 
 
-        client.connect(port, LOCALHOST, () => {
+        client.connect(port, spawnInstance.containerName, () => {
             client.destroy();
 
             client.on('close', () => {
@@ -46,8 +45,7 @@ export const prematureErrorHandling: TestFunction = (hostPort: number, spawnInst
     })
 }
 
-export const finalErrorHandling: TestFunction = (hostPort: number, reverse: boolean, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const finalErrorHandling: TestFunction = (port: number, reverse: boolean, spawnInstance: ContainerManager) => {
 
     return new Promise((resolve, _) => {
         const existingClient = new Socket();
@@ -126,7 +124,7 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
         })
 
         const createNewClient = () => {
-            newClient.connect(port, LOCALHOST, () => {
+            newClient.connect(port, spawnInstance.containerName, () => {
                 const input = generateRandomStrings(10, 1)[0];
                 newClient.once('data', (data) => {
                     const output = data.toString();
@@ -196,8 +194,8 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
             existingClient.write(input);
         })
 
-        clientToBeDisconnected.connect(port, LOCALHOST, () => {
-            existingClient.connect(port, LOCALHOST, () => {
+        clientToBeDisconnected.connect(port, spawnInstance.containerName, () => {
+            existingClient.connect(port, spawnInstance.containerName, () => {
                 clientToBeDisconnected.destroy();
             })
         })
@@ -205,8 +203,7 @@ export const finalErrorHandling: TestFunction = (hostPort: number, reverse: bool
     })
 }
 
-export const proxyServerCrashHandling: TestFunction = async (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const proxyServerCrashHandling: TestFunction = async (port: number, spawnInstance: ContainerManager) => {
     await spawnInstance.stopPythonServer();
     return new Promise((resolve, _) => {
 
@@ -217,7 +214,7 @@ export const proxyServerCrashHandling: TestFunction = async (hostPort: number, s
             })
         })
 
-        fetch(`http://localhost:${port}`).catch(err => {
+        fetch(`http://${spawnInstance.containerName}:${port}`).catch(err => {
             if (err.cause?.code == 'UND_ERR_SOCKET') {
                 return resolve({
                     passed: true,

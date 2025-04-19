@@ -1,13 +1,14 @@
 import { StageWatcher } from "./StageWatcher";
 import { Core } from "./Core";
 import { TerminalStream } from "./TerminalStream";
-import { type TestDetails, TestStatus } from "../types";
+import { type TestDetails, TestFunction, TestStatus } from "../types";
 import { ResourceMonitor } from "./ResrouceMonitor";
 import { ContainerManager } from "./ContainerManager";
-import { File, PrismaClient } from "@prisma/client";
 import { Timer } from "./Timer";
-
-const prisma = new PrismaClient()
+import { FileModel } from '../models/file.model'
+import { TestResultsModel } from "../models/testResults.model";
+import { TestDetailsModel } from "../models/testDetails.model";
+import { sequelize } from '../models'
 
 enum StageRunnerEvents {
     TEST_STARTED = 'stage-tests-start',
@@ -18,7 +19,7 @@ enum StageRunnerEvents {
 
 export class StageRunner {
     private watchers: StageWatcher[];
-    private file: File;
+    private file: FileModel;
     private containerInstance: ContainerManager | null;
     private terminalInstance: TerminalStream | null;
     private processStatsInstance: ResourceMonitor | null;
@@ -58,15 +59,13 @@ export class StageRunner {
         return this._currentState;
     }
 
-
-    constructor(userId: string, stageNo: number, file: File) {
+    constructor(userId: string, stageNo: number, file: FileModel) {
         this._stageNo = stageNo;
         this.file = file;
         this.watchers = [];
         this.containerInstance = new ContainerManager(
             `container-${file.binaryId}`,
             file.binaryId,
-            Core.requiresXpsConfig(stageNo),
             Core.getPublicPath(stageNo),
         );
         this.terminalInstance = new TerminalStream(
@@ -96,17 +95,12 @@ export class StageRunner {
 
 
     public async fetchPreviousData(): Promise<{ timeTaken: number, testDetails: Omit<TestDetails, 'description' | 'title'>[] }> {
-        const result = await prisma.testResults.findUnique({
+        const result = await TestResultsModel.findOne({
             where: {
-                userId_stageNo: {
-                    stageNo: this.stageNo,
-                    userId: this.userId,
-                }
+                stageNo: this.stageNo,
+                userId: this.userId,
             },
-
-            include: {
-                testDetails: true
-            }
+            include: [TestDetailsModel],
         });
 
         if (!result)
@@ -123,29 +117,33 @@ export class StageRunner {
     }
 
     public async storePreviousData(): Promise<void> {
-        await prisma.$transaction([
-            prisma.testResults.deleteMany({
+        await sequelize.transaction(async (t) => {
+            await TestResultsModel.destroy({
                 where: {
                     userId: this.userId,
-                    stageNo: this.stageNo
-                }
-            }),
-            prisma.testResults.create({
-                data: {
+                    stageNo: this.stageNo,
+                },
+                transaction: t,
+            });
+
+            const testResult = await TestResultsModel.create(
+                {
                     userId: this.userId,
                     stageNo: this.stageNo,
                     timeTaken: this.timerInstance.currentTime,
-                    testDetails: {
-                        create: this._currentState.map(test => ({
-                            testInput: test.testInput,
-                            expectedBehaviour: test.expectedBehavior,
-                            observedBehaviour: test.observedBehavior,
-                            status: test.status,
-                        }))
-                    }
+                    testDetails: this._currentState.map((test) => ({
+                        testInput: test.testInput,
+                        expectedBehaviour: test.expectedBehavior,
+                        observedBehaviour: test.observedBehavior,
+                        status: test.status,
+                    })),
+                },
+                {
+                    include: [TestDetailsModel],
+                    transaction: t,
                 }
-            })
-        ]);
+            );
+        });
     }
 
 
@@ -160,7 +158,7 @@ export class StageRunner {
     private emitToAllSockets(event: string, data: any) {
 
         this.watchers.forEach(watcher => {
-            watcher.emit(event, data); // do watcher.emit()
+            watcher.emit(event, data);
         })
     }
 
@@ -168,19 +166,52 @@ export class StageRunner {
         this.emitToAllSockets(event, data);
     }
 
-    private async containerWarmUp() {
-        console.log("Warming up the container")
-
-        if (!this.containerInstance.running)
-            await this.containerInstance.start();
-
-        if (this.terminalInstance.running)
+    private containerWarmUp() {
+        return new Promise(async (resolve, reject) => {
             this.terminalInstance.kill();
-        if (this.processStatsInstance.running)
             this.processStatsInstance.kill();
+            if (this.containerInstance.running)
+                await this.containerInstance.kill();
+            await this.containerInstance.start();
+            if (this.containerInstance.running == false)
+                return reject(false);
+            this.terminalInstance.run();
+            this.processStatsInstance.run();
+            return resolve(true);
+        })
+    }
 
-        this.terminalInstance.run();
-        this.processStatsInstance.run();
+
+    private runTest = async (func: TestFunction, index: number) => {
+        try {
+            await this.containerWarmUp();
+        }
+        catch (error) {
+            console.log(error)
+            this._currentState[index].observedBehavior = "Server didn't start up as expected, ensure it has been compiled with the provided Dockerfile and is of an appropriate stage"
+            this._currentState[index].status = TestStatus.Failed;
+            this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
+            return;
+        }
+
+        const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await func(this.containerInstance);
+
+        if (testInput)
+            this._currentState[index].testInput = testInput;
+        if (expectedBehavior)
+            this._currentState[index].expectedBehavior = expectedBehavior;
+        if (observedBehavior)
+            this._currentState[index].observedBehavior = observedBehavior;
+        this._currentState[index].status = (passed
+            ? TestStatus.Passed
+            : TestStatus.Failed
+        );
+
+
+        if (cleanup)
+            cleanup();
+
+        this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
     }
 
     public async run() {
@@ -194,42 +225,23 @@ export class StageRunner {
 
         const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
         for (let i = 0; i < functions.length; i++) {
-            console.log("[STARTED] " + i)
-            const fn = functions[i];
-            await this.containerWarmUp();
-            const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await fn(this.containerInstance);
-
-            if (testInput)
-                this._currentState[i].testInput = testInput;
-            if (expectedBehavior)
-                this._currentState[i].expectedBehavior = expectedBehavior;
-            if (observedBehavior)
-                this._currentState[i].observedBehavior = observedBehavior;
-            this._currentState[i].status = (passed
-                ? TestStatus.Passed
-                : TestStatus.Failed
-            );
-
-
-            if (cleanup)
-                cleanup();
-
-            console.log("[ENDED] " + i)
-            this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this._currentState);
+            await this.runTest(functions[i], i);
         }
+
         if (this.running)
             this.kill();
     }
 
     public async kill(forced?: boolean) {
+
         this._running = false;
         this.terminalInstance?.kill();
         this.processStatsInstance?.kill();
         this.timerInstance?.kill();
+
         await this.containerInstance.kill();
 
         this.containerInstance = null;
-        this.watchers.forEach(watcher => watcher.stageRunner = null);
 
         await this.storePreviousData();
 
@@ -253,5 +265,6 @@ export class StageRunner {
                 numFailed,
             })
         }
+        this.watchers.forEach(watcher => watcher.stageRunner = null);
     }
 }

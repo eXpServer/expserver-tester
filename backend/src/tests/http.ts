@@ -4,9 +4,7 @@ import { HttpRequestTest, TestFunction } from "../types";
 import { LOCALHOST } from "../constants";
 import { parseHttpResponse, verifyResponseOutput } from "../utils/http";
 
-export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
-
+export const httpRequestParser: TestFunction = (port: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
         const client = new Socket();
 
@@ -61,7 +59,7 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
 
         client.on('data', verifyResponseCallback);
 
-        client.connect(port, LOCALHOST, () => client.write(requestInfo.request))
+        client.connect(port, spawnInstance.containerName, () => client.write(requestInfo.request(spawnInstance.containerName)))
     })
 }
 
@@ -78,14 +76,12 @@ const matchBody = (proxyBody: string, serverBody: string) => {
     return (proxyBody === serverBody);
 }
 
-export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, proxyHostPort, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort)
-    const proxyPort = spawnInstance.getMapppedPort(proxyHostPort);
+export const httpProxyTest: TestFunction = (fileName: string, port: number, proxyPort, spawnInstance: ContainerManager) => {
 
     return new Promise(async resolve => {
         let responseFromProxy: Response;
         try {
-            responseFromProxy = await fetch(`http://localhost:${proxyPort}/${fileName}`);
+            responseFromProxy = await fetch(`http://${spawnInstance.containerName}:${proxyPort}/${fileName}`);
         }
         catch (error) {
             console.log(`Error: ${error.cause.code}`)
@@ -93,7 +89,7 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
         let responseFromServer: Response;
 
         try {
-            responseFromServer = await fetch(`http://localhost:${port}/${fileName}`);
+            responseFromServer = await fetch(`http://${spawnInstance.containerName}:${port}/${fileName}`);
         }
         catch (error) {
             console.log(`Error: ${error.cause.code}`)
@@ -118,13 +114,12 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
     })
 }
 
-export const httpFileServerTest: TestFunction = (fileName: string, mimeType: string, hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const httpFileServerTest: TestFunction = (fileName: string, mimeType: string, port: number, spawnInstance: ContainerManager) => {
 
     return new Promise(async resolve => {
         let response: Response;
         try {
-            response = await fetch(`http://localhost:${port}/${fileName}`);
+            response = await fetch(`http://${spawnInstance.containerName}:${port}/${fileName}`);
         }
         catch (error) {
             return resolve({
@@ -154,13 +149,12 @@ export const httpFileServerTest: TestFunction = (fileName: string, mimeType: str
     })
 }
 
-export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string, hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string, port: number, spawnInstance: ContainerManager) => {
 
     return new Promise(async resolve => {
         let response: Response;
         try {
-            response = await fetch(`http://localhost:${port}/${path}`, { redirect: 'manual' });
+            response = await fetch(`http://${spawnInstance.containerName}:${port}/${path}`, { redirect: 'manual' });
         }
         catch (error) {
             return resolve({

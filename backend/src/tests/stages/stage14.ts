@@ -7,8 +7,8 @@ const requests: HttpRequestTest[] = [
         title: "Valid request - jpg",
         description: "This test aims to ensure that the requested file is served and verifies that the headers match what is expected",
         info: "Sends a request to the server requesting for a .jpg file",
-        request: `GET /cat.jpg HTTP/1.1\r
-Host: localhost:8001\r
+        request: (containerName: string) => `GET /cat.jpg HTTP/1.1\r
+Host: ${containerName}:8001\r
 User-Agent: TestClient/1.0\r
 Accept: image/jpeg\r
 Connection: close\r
@@ -26,8 +26,8 @@ Connection: close\r
         title: "Valid request - pdf",
         description: "This test aims to ensure that the requested file is served and verifies that the headers match what is expected",
         info: "Sends a request to the server requesting for a .pdf file",
-        request: `GET /sample.pdf HTTP/1.1\r
-Host: localhost:8001\r
+        request: (containerName: string) => `GET /sample.pdf HTTP/1.1\r
+Host: ${containerName}:8001\r
 User-Agent: TestClient/1.0\r
 Accept: application/pdf\r
 Connection: close\r
@@ -45,8 +45,8 @@ Connection: close\r
         title: "Valid request - plain",
         description: "This test aims to ensure that the requested file is served and verifies that the headers match what is expected",
         info: "Sends a request to the server requesting for a .txt file",
-        request: `GET /sample.txt HTTP/1.1\r
-Host: localhost:8001\r
+        request: (containerName: string) => `GET /sample.txt HTTP/1.1\r
+Host: ${containerName}:8001\r
 User-Agent: TestClient/1.0\r
 Accept: text/plain\r
 Connection: close\r
@@ -64,8 +64,8 @@ Connection: close\r
         title: "File not found",
         description: "This test aims to ensure the error handling in case the user requests for a file that isn't found within the public directory",
         info: "Sends a request to the server request for a file that doesn't exist",
-        request: `GET /test.html HTTP/1.1\r
-Host: localhost:8001\r
+        request: (containerName: string) => `GET /test.html HTTP/1.1\r
+Host: ${containerName}:8001\r
 User-Agent: TestClient/1.0\r
 Accept: text/html\r
 Connection: close\r
@@ -82,8 +82,8 @@ Connection: close\r
         title: "Missing HTTP Version",
         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
         info: "Sends a request to the server without specifying HTTP version",
-        request: `GET /index.html\r
-Host: localhost:8001\r
+        request: (containerName: string) => `GET /index.html\r
+Host: ${containerName}:8001\r
 \r
 `,
         expectedResponse: {
@@ -97,8 +97,8 @@ Host: localhost:8001\r
         title: "Invalid HTTP method",
         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
         info: "Sends a request to the server with an invalid HTTP method",
-        request: `GOT /index.html HTTP/1.1\r
-Host: localhost:8001\r
+        request: (containerName: string) => `GOT /index.html HTTP/1.1\r
+Host: ${containerName}:8001\r
 \r
 `,
         expectedResponse: {
@@ -112,7 +112,7 @@ Host: localhost:8001\r
         title: "Missing host header",
         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
         info: "Sends a request to the server without specifying the host (mandatory header field)",
-        request: `GET /index.html HTTP/1.1\r
+        request: (containerName: string) => `GET /index.html HTTP/1.1\r
 \r
 `,
         expectedResponse: {
@@ -126,8 +126,8 @@ Host: localhost:8001\r
         title: "Invalid HTTP Version",
         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
         info: "Sends a request to the server with a non-existent HTTP Version",
-        request: `GET /index.html HTTX/2.0\r
-Host: localhost:8001\r
+        request: (containerName: string) => `GET /index.html HTTX/2.0\r
+Host: ${containerName}:8001\r
 \r
 `,
         expectedResponse: {
@@ -141,8 +141,8 @@ Host: localhost:8001\r
         title: "Improperly formatted request (headers)",
         description: "This test aims to ensure proper error handling of the server in case of an invalid HTTP request",
         info: "Sends a request to the server without colon separation between the key-value pairs in the headers",
-        request: `GET /index.html HTTP/1.1\r
-Host localhost:8001\r
+        request: (containerName: string) => `GET /index.html HTTP/1.1\r
+Host ${containerName}:8001\r
 \r
 `,
         expectedResponse: {

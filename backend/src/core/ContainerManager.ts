@@ -1,10 +1,10 @@
 import Docker, { Container } from 'dockerode';
 import { EventEmitter } from 'eventemitter3';
 import { IMAGE_NAME, PUBLIC_DIR, WORKDIR } from '../constants';
+import Config from '../config';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
-    private mappedPorts: Map<number, number>;
     private initialized: boolean;
     private _running: boolean;
     private _container: Container | null;
@@ -41,16 +41,10 @@ export class ContainerManager extends EventEmitter {
         return this._container;
     }
 
-    public getMapppedPort(hostPort: number): number | null {
-        const port = this.mappedPorts.get(hostPort);
-        return port || null;
-    }
-
-    constructor(containerName: string, binaryId: string, requiresXpsConfig: boolean, publicPath: string) {
+    constructor(containerName: string, binaryId: string, publicPath: string) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
-        this.mappedPorts = new Map();
         this.initialized = false;
         this._container = null;
         this.docker = new Docker();
@@ -60,17 +54,20 @@ export class ContainerManager extends EventEmitter {
         this.pythonServerRunning = false;
 
 
-        const customPublicDir = `${process.cwd()}/public/${publicPath}`;
+        const customPublicDir = `${Config.HOST_PWD}/public/${publicPath}`;
+        const workDir = `${Config.HOST_PWD}/uploads`;
+        const entryCmd = [
+            'sh', '-c',
+            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json`,
+        ]
 
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
-            Cmd: ['sh', '-c', `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${requiresXpsConfig ? `${PUBLIC_DIR}/xps_config.json` : ''}`]
-            ,
-            ExposedPorts: this.getExposedPortsConfig(),
+            Cmd: entryCmd,
             HostConfig: {
-                PublishAllPorts: true,
-                Binds: [`${process.cwd()}/uploads/:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
+                Binds: [`${workDir}:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
+                NetworkMode: Config.NETWORK_INTERFACE,
             }
         }
     }
@@ -81,8 +78,12 @@ export class ContainerManager extends EventEmitter {
 
         if (this.initialized || this.running)
             return;
+
         try {
             await this.startContainer();
+            if (!this.initialized) {
+                return;
+            }
         }
         catch (error) {
             this.timeoutRef = setTimeout(() => {
@@ -91,21 +92,13 @@ export class ContainerManager extends EventEmitter {
             return;
         }
 
-        for (const port of this.ports) {
-            const portMapping = await this.parsePortMap(port);
-            this.mappedPorts.set(port, portMapping);
-        }
         this._pid = (await this._container.inspect()).State.Pid
-
-
-        this.initialized = true;
-        this._running = true;
-
 
         const eventStream = await this.docker.getEvents();
         eventStream.on('data', (chunk) => {
             const event = JSON.parse(chunk.toString());
             if (event.Type == 'container' && event.Actor.Attributes.name == this._containerName && (event.Action == 'stop' || event.Action == 'die')) {
+                console.log("container shut down");
                 this._running = false;
                 if (!this._container)
                     return;
@@ -119,6 +112,8 @@ export class ContainerManager extends EventEmitter {
 
             }
         })
+
+        this._running = true;
     }
 
 
@@ -126,11 +121,6 @@ export class ContainerManager extends EventEmitter {
         console.log('restarting container');
         try {
             await this._container.restart();
-
-            for (const port of this.ports) {
-                const portMapping = await this.parsePortMap(port);
-                this.mappedPorts.set(port, portMapping);
-            }
             this._pid = (await this._container.inspect()).State.Pid
 
         }
@@ -141,35 +131,42 @@ export class ContainerManager extends EventEmitter {
     }
 
     public async kill(): Promise<void> {
-        if (!this.initialized || (this._container === null))
-            return;
-        if (ContainerManager.removingContainers.has(this._containerName)) {
-            console.log(`Container: ${this._containerName} is already being removed`);
-            return;
-        }
+        return new Promise(async (resolve, reject) => {
+            if (!this.initialized || (this._container === null)) {
+                return resolve();
 
-        ContainerManager.removingContainers.add(this._containerName);
-        try {
-            this.initialized = false;
-            this._running = false;
-            const inspect = await this._container.inspect();
-            if (inspect.State.Running) {
-                console.log(`Stopping container: ${this._containerName}`);
-                await this._container.kill();
             }
-            console.log(`Removing container: ${this._containerName}`);
-            await this._container.remove({ force: true });
+            if (ContainerManager.removingContainers.has(this._containerName)) {
+                console.log(`Container: ${this._containerName} is already being removed`);
+                return resolve();
+            }
 
-            this._container = null;
-            this._stream = null;
-            this._pid = -1;
-            this.mappedPorts = new Map();
-        }
-        catch (error) {
-            if (error.statusCode != 409)
-                console.log(error);
-        }
-        ContainerManager.removingContainers.delete(this._containerName);
+            ContainerManager.removingContainers.add(this._containerName);
+            try {
+                this.initialized = false;
+                this._running = false;
+                const inspect = await this._container.inspect();
+                if (inspect.State.Running) {
+                    console.log(`Stopping container: ${this._containerName}`);
+                    await this._container.kill();
+                }
+                console.log(`Removing container: ${this._containerName}`);
+                await this._container.remove({ force: true });
+
+                this._container = null;
+                this._stream = null;
+                this._pid = -1;
+            }
+            catch (error) {
+                if (error.statusCode != 409)
+                    console.log(error);
+            }
+            ContainerManager.removingContainers.delete(this._containerName);
+
+            setTimeout(() => {
+                return resolve();
+            }, 1000); // wait 1 second for proper shut down of container
+        })
     }
 
     public async detachStream(): Promise<void> {
@@ -225,33 +222,37 @@ export class ContainerManager extends EventEmitter {
         }
 
         await this.attachStream();
-        this.pythonServerRunning = false;
+        this.pythonServerRunning = true;
         await this._container.start();
-        await this.waitForContainerToRun();
-        console.log(`Started container: ${this._containerName} `);
-    }
-
-    private getExposedPortsConfig(): Record<string, {}> {
-        const exposedPorts: Record<string, {}> = {};
-
-        for (const port of this.ports) {
-            exposedPorts[`${port}/tcp`] = {};
+        try {
+            const message = await this.waitForContainerToRun();
+            console.log(message);
         }
-
-        return exposedPorts;
+        catch (error) {
+            this._container = null;
+            console.log(error)
+        }
     }
 
-    private waitForContainerToRun(): Promise<void> {
-        return new Promise((resolve) => {
+    private waitForContainerToRun(): Promise<string> {
+        return new Promise((resolve, reject) => {
             if (this.initialized)
-                return resolve();
+                return resolve("already initialized");
             const interval = setInterval(async () => {
                 const data = await this._container.inspect();
                 const isRunning = data.State.Running;
+                const hasExited = data.State.Status == 'exited';
+                const exitCode = data.State.ExitCode;
+                console.log(isRunning, hasExited, exitCode)
+                if (hasExited) {
+                    clearInterval(interval);
+                    this.initialized = false;
+                    return reject(`Container ${this._containerName} exited with code ${exitCode}`);
+                }
                 if (isRunning) {
                     clearInterval(interval);
                     this.initialized = true;
-                    return resolve();
+                    return resolve(`Started container: ${this._containerName} `);
                 }
             }, 1000);
         })
@@ -322,18 +323,5 @@ export class ContainerManager extends EventEmitter {
                 resolve({ message: "shutdown" })
             }, 1000);
         })
-    }
-
-    private async parsePortMap(portNo: number): Promise<number | null> {
-        if (!this.initialized || !this._container)
-            return null;
-
-        const data = await this._container.inspect();
-
-        const portMapping = data.NetworkSettings.Ports[`${portNo}/tcp`];
-
-        if (portMapping && portMapping.length > 0)
-            return parseInt(portMapping[0].HostPort, 10);
-        return null;
     }
 }

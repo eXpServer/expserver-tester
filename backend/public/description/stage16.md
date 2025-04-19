@@ -33,15 +33,15 @@ expectedBehavior: "Server responds with a 200 status code and body containing da
 This test checks the server's redirect functionality
 
 ```js
-testInput: "Client makes a request to the route http://localhost:8001/redirect"
-expectedBehavior: "Client should receive a response of status 302 and redirect to http://localhost:8002/"
+testInput: "Client makes a request to the route http://spawnInstance.containerName:8001/redirect"
+expectedBehavior: "Client should receive a response of status 302 and redirect to http://spawnInstance.containerName:8002/"
 ```
 
 ### Test 5: HTTP Proxy
 This test checks the server's upstream functionality
 
 ```js
-testInput: "Client makes a request to http://localhost:8002/cat.jpg"
-expectedBehavior: "The response that the client receives should match what is received from http://localhost:3000/cat.jpg"
+testInput: "Client makes a request to http://spawnInstance.containerName:8002/cat.jpg"
+expectedBehavior: "The response that the client receives should match what is received from http://spawnInstance.containerName:3000/cat.jpg"
 ```
 
