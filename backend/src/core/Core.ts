@@ -227,7 +227,6 @@ export class Core {
         if (!file)
             return socket.emit(EmitEvents.NoBinary);
 
-        console.log(this.findStageRunner(socket.watcher))
 
         const existingRunner = this.findStageRunner(socket.watcher)
 

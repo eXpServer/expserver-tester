@@ -61,6 +61,8 @@ export class ContainerManager extends EventEmitter {
             `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json`,
         ]
 
+        console.log(entryCmd)
+
         this.containerConfig = {
             Image: IMAGE_NAME,
             name: this._containerName,
@@ -98,7 +100,6 @@ export class ContainerManager extends EventEmitter {
         eventStream.on('data', (chunk) => {
             const event = JSON.parse(chunk.toString());
             if (event.Type == 'container' && event.Actor.Attributes.name == this._containerName && (event.Action == 'stop' || event.Action == 'die')) {
-                console.log("container shut down");
                 this._running = false;
                 if (!this._container)
                     return;
@@ -213,12 +214,18 @@ export class ContainerManager extends EventEmitter {
         try {
             this._container = await this.docker.createContainer(this.containerConfig);
         }
-        catch {
+        catch (error) {
+            console.log("outer try-catch", error)
             const existingContainer = this.docker.getContainer(this._containerName);
-            if (existingContainer)
-                await existingContainer.remove({ force: true });
-
-            this._container = await this.docker.createContainer(this.containerConfig);
+            if (existingContainer) {
+                try {
+                    await existingContainer.remove({ force: true });
+                    this._container = await this.docker.createContainer(this.containerConfig);
+                }
+                catch (error) {
+                    console.log("inner try-catch", error);
+                }
+            }
         }
 
         await this.attachStream();

@@ -18,6 +18,7 @@ export interface TestDetails {
 }
 
 export interface Test {
+    requireRestart?: boolean,
     title: string,
     description: string,
     testInput?: string,

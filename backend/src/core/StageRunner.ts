@@ -166,13 +166,18 @@ export class StageRunner {
         this.emitToAllSockets(event, data);
     }
 
-    private containerWarmUp() {
+    private containerWarmUp(restart: boolean) {
         return new Promise(async (resolve, reject) => {
             this.terminalInstance.kill();
             this.processStatsInstance.kill();
-            if (this.containerInstance.running)
-                await this.containerInstance.kill();
-            await this.containerInstance.start();
+            if (restart) {
+                if (this.containerInstance.running)
+                    await this.containerInstance.kill();
+                await this.containerInstance.start();
+            }
+            else if (!this.containerInstance.running) {
+                await this.containerInstance.start();
+            }
             if (this.containerInstance.running == false)
                 return reject(false);
             this.terminalInstance.run();
@@ -182,9 +187,10 @@ export class StageRunner {
     }
 
 
-    private runTest = async (func: TestFunction, index: number) => {
+    private runTest = async (data: {func: TestFunction, requiresRestart: boolean}, index: number) => {
+        const { func, requiresRestart } = data;
         try {
-            await this.containerWarmUp();
+            await this.containerWarmUp(requiresRestart);
         }
         catch (error) {
             console.log(error)
@@ -223,7 +229,10 @@ export class StageRunner {
         this.timerInstance?.run();
         this.emitToAllSockets(StageRunnerEvents.TEST_STARTED, this.currentState);
 
-        const functions = Core.getTests(this._stageNo).map(test => test.testFunction);
+        const functions = Core.getTests(this._stageNo).map(test => ({
+            func: test.testFunction,
+            requiresRestart: test.requireRestart || false,
+        }));
         for (let i = 0; i < functions.length; i++) {
             await this.runTest(functions[i], i);
         }
