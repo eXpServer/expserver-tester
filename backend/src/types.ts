@@ -3,6 +3,29 @@ import type { Socket as Soc } from "socket.io";
 import type { StageWatcher } from "./core/StageWatcher";
 
 
+export enum FileType {
+    DIRECTORY = 'directory',
+    FILE = 'file',
+}
+
+export type FileEntry = {
+    type: FileType.FILE;
+    mimeType: string;
+    path?: string;
+};
+
+export type DirectoryEntry = {
+    type: FileType.DIRECTORY;
+    items: {
+        [path: string]: FileSystemEntry;
+    };
+};
+
+export type FileSystemEntry = FileEntry | DirectoryEntry;
+export type DirectoryBrowser = {
+    [path: string]: DirectoryEntry,
+}
+
 export interface ResourceStats {
     cpu: number,
     mem: number,
@@ -18,6 +41,7 @@ export interface TestDetails {
 }
 
 export interface Test {
+    requireRestart?: boolean,
     title: string,
     description: string,
     testInput?: string,
@@ -72,7 +96,7 @@ export interface HttpRequestTest {
     title: string,
     description: string,
     info: string,
-    request: string,
+    request: (containerName: string) => string,
     expectedResponse: HttpResponse,
 }
 

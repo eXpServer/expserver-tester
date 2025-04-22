@@ -20,6 +20,10 @@ export const WORKDIR = '/usr/src/app';
 
 export const PUBLIC_DIR = '/usr/src/public';
 
+export const DEV_NETOWRK = 'eXpServer-network-dev';
+
+export const PROD_NETWORK = 'eXpServer-network-prod';
+
 /**
  * error types
  * prepend http_

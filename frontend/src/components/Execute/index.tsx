@@ -55,6 +55,7 @@ const Execute: FC = () => {
             return;
         }
         const response = await uploadBinary(stageNo, userId, file);
+        console.log(response);
         updateBinaryId(response);
         resetResults();
     }, [file, stageNo, userId, updateBinaryId, resetResults]);

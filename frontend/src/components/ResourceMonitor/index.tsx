@@ -26,15 +26,29 @@ const ResourceMonitor = () => {
 
     const timerDetails = useMemo(() => {
         const mins = timer == -1
-            ? "--"
-            : Math.floor(timer / 60).toString()
-        const secs = timer == -1
-            ? "--"
-            : (timer % 60).toString();
+            ? -1
+            : Math.floor(timer / 60)
 
+        const secs = timer == -1
+            ? -1
+            : (timer % 60)
+
+        const minsString = mins == -1
+            ? "--"
+            : mins < 10
+                ? `0${mins}`
+                : mins
+            ;
+
+        const secsString = secs == -1
+            ? "--"
+            : secs < 10
+                ? `0${secs}`
+                : secs
+            ;
         return {
-            mins,
-            secs,
+            mins: minsString,
+            secs: secsString,
         }
     }, [timer]);
 

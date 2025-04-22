@@ -24,6 +24,7 @@ This system is built exclusively to act as a testing utility for [eXpServer](htt
     - Blackbox testing
     - Stage-wise validation
     - Concurrent test execution support
+    - Heavy focus on availability
 
 
 

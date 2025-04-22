@@ -1,9 +1,16 @@
 import { FinalSummary, TestDetails, TestState } from "@/types";
 import { io, Socket } from "socket.io-client";
+import events from 'events'
+import { v4 as uuidv4 } from 'uuid';
+const clientId = uuidv4();
+
+
+events.defaultMaxListeners = 100;
 
 export enum SocketIncomingEvents {
     CurrentState = 'current-state',
     ConnectionAcknowledged = "connection-ack",
+    Reconnect = 'reconnect',
     Error = 'error',
 
     TestsStart = 'stage-tests-start',
@@ -36,7 +43,6 @@ export class WebSocket {
     private _stageNo: number;
     private _userId: string;
     private callbacks: Map<SocketIncomingEvents, ((...args: unknown[]) => void)[]> = new Map();
-
     get socket() {
         return this._socket;
     }
@@ -50,25 +56,29 @@ export class WebSocket {
     }
 
 
-    public initialize(userId: string) {
+    public initialize(userId: string, setStatesCallback: (data: TestState) => void, nonGracefulExitHandler: () => void, reconnectHandler: () => void) {
         return new Promise((resolve, reject) => {
-            const socket = io(SOCKET_URL);
+            const socket = io(SOCKET_URL, { auth: { clientId: clientId } });
             this._userId = userId;
-
             const errorCallback = () => {
                 this._socket = null;
                 reject("socket connection not established");
             }
 
-
             socket.once(SocketIncomingEvents.Error, errorCallback);
 
-            socket.once(SocketIncomingEvents.ConnectionAcknowledged, () => {
+            socket.on(SocketIncomingEvents.ConnectionAcknowledged, ({ data }) => {
                 socket.off(SocketIncomingEvents.Error, errorCallback);
                 this._socket = socket;
-                resolve(true);
-            })
 
+                if (data) {
+                    setStatesCallback(data);
+                    reconnectHandler();
+                }
+                resolve(true);
+            });
+
+            socket.on('disconnect', nonGracefulExitHandler)
         })
     }
 

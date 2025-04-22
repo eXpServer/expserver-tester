@@ -10,12 +10,8 @@ export const stage8Tests: Omit<Test, 'status'>[] = [
         testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds",
         expectedBehavior: "the second connection is able to send and receive data from the server",
         testFunction: async (...args) => {
-            // const response = await nonBlockingSocket(8001, ...args);
-            // return response;
-            return {
-                passed: false,
-                observedBehavior: "dummy"
-            }
+            const response = await nonBlockingSocket(8001, ...args);
+            return response;
         },
     },
     {
@@ -64,6 +60,7 @@ export const stage8Tests: Omit<Test, 'status'>[] = [
         description: "In the current implementation of the server, there should be no inturruption in service when a singular client disconnects. This test ensures that previously connected clients, as well as new clients are able to connect, send to and receive from the server even after a client has diconnected",
         testInput: "client forcefully disconnects",
         expectedBehavior: "Previous and new clients are able to send and receive output as expected",
+        requireRestart: true,
         testFunction: async (...args) => {
             const response = await finalErrorHandling(8001, true, ...args);
             return response;

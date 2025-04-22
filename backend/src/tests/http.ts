@@ -1,12 +1,10 @@
 import { Socket } from "net";
 import { ContainerManager } from "../core/ContainerManager";
-import { HttpRequestTest, TestFunction } from "../types";
-import { LOCALHOST } from "../constants";
+import { FileSystemEntry, FileType, HttpRequestTest, TestFunction } from "../types";
 import { parseHttpResponse, verifyResponseOutput } from "../utils/http";
+import * as cheerio from "cheerio";
 
-export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
-
+export const httpRequestParser: TestFunction = (port: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
         const client = new Socket();
 
@@ -61,7 +59,7 @@ export const httpRequestParser: TestFunction = (hostPort: number, requestInfo: H
 
         client.on('data', verifyResponseCallback);
 
-        client.connect(port, LOCALHOST, () => client.write(requestInfo.request))
+        client.connect(port, spawnInstance.containerName, () => client.write(requestInfo.request(spawnInstance.containerName)))
     })
 }
 
@@ -78,14 +76,12 @@ const matchBody = (proxyBody: string, serverBody: string) => {
     return (proxyBody === serverBody);
 }
 
-export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, proxyHostPort, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort)
-    const proxyPort = spawnInstance.getMapppedPort(proxyHostPort);
+export const httpProxyTest: TestFunction = (fileName: string, port: number, proxyPort, spawnInstance: ContainerManager) => {
 
     return new Promise(async resolve => {
         let responseFromProxy: Response;
         try {
-            responseFromProxy = await fetch(`http://localhost:${proxyPort}/${fileName}`);
+            responseFromProxy = await fetch(`http://${spawnInstance.containerName}:${proxyPort}/${fileName}`);
         }
         catch (error) {
             console.log(`Error: ${error.cause.code}`)
@@ -93,7 +89,7 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
         let responseFromServer: Response;
 
         try {
-            responseFromServer = await fetch(`http://localhost:${port}/${fileName}`);
+            responseFromServer = await fetch(`http://${spawnInstance.containerName}:${port}/${fileName}`);
         }
         catch (error) {
             console.log(`Error: ${error.cause.code}`)
@@ -118,13 +114,12 @@ export const httpProxyTest: TestFunction = (fileName: string, hostPort: number, 
     })
 }
 
-export const httpFileServerTest: TestFunction = (fileName: string, mimeType: string, hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const httpFileServerTest: TestFunction = (fileName: string, mimeType: string, port: number, spawnInstance: ContainerManager) => {
 
     return new Promise(async resolve => {
         let response: Response;
         try {
-            response = await fetch(`http://localhost:${port}/${fileName}`);
+            response = await fetch(`http://${spawnInstance.containerName}:${port}/${fileName}`);
         }
         catch (error) {
             return resolve({
@@ -154,13 +149,12 @@ export const httpFileServerTest: TestFunction = (fileName: string, mimeType: str
     })
 }
 
-export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string, hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string, port: number, spawnInstance: ContainerManager) => {
 
     return new Promise(async resolve => {
         let response: Response;
         try {
-            response = await fetch(`http://localhost:${port}/${path}`, { redirect: 'manual' });
+            response = await fetch(`http://${spawnInstance.containerName}:${port}/${path}`, { redirect: 'manual' });
         }
         catch (error) {
             return resolve({
@@ -186,5 +180,134 @@ export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string
         return resolve({
             passed: true,
         })
+    })
+}
+
+export const httpDirectoryBrowsingTest: TestFunction = (path: string, rootFolderEntry: FileSystemEntry, port: number, spawnInstance: ContainerManager) => {
+    return new Promise(async resolve => {
+        try {
+
+            const response = await fetch(`http://${spawnInstance.containerName}:${port}${path}`);
+            const headers = response.headers;
+            const mimeType = headers.get('Content-Type');
+            if (mimeType !== 'text/html') {
+                return resolve({
+                    passed: false,
+                    expectedBehavior: "Expected an html file",
+                    observedBehavior: `Received file of mime-type: ${mimeType}`
+                })
+            }
+
+            const body = await response.text();
+            const $ = cheerio.load(body);
+
+            const links = $('table tr td a');
+            const foundPaths = new Set();
+
+            links.each((_, el) => {
+                console.log(el);
+                const href = $(el).attr('href');
+                if (href)
+                    foundPaths.add(href);
+            });
+            if (rootFolderEntry.type !== FileType.DIRECTORY) {
+                return resolve({
+                    passed: false,
+                    observedBehavior: "Something went wrong",
+                })
+            }
+            const expectedItems = Object.keys(rootFolderEntry.items);
+            console.log(foundPaths, expectedItems)
+
+            for (const item of expectedItems) {
+                if (!foundPaths.has(item)) {
+                    return resolve({
+                        passed: false,
+                        observedBehavior: "Didn't find all expected directory/file links",
+                    })
+                }
+            }
+
+            return resolve({
+                passed: true,
+            })
+        }
+        catch (error) {
+            console.log(error);
+            return resolve({
+                passed: false,
+                observedBehavior: "Couldn't establish a connection to the server",
+            })
+        }
+    })
+}
+
+export const directoryWalk: TestFunction = (path: string, directoryStructure: FileSystemEntry, port: number, spawnInstance: ContainerManager) => {
+    return new Promise(async resolve => {
+        try {
+
+            const response = await fetch(`http://${spawnInstance.containerName}:${port}${path}`);
+            const headers = response.headers;
+            const mimeType = headers.get('Content-Type');
+            if (directoryStructure.type === FileType.DIRECTORY) {
+                if (mimeType !== 'text/html') {
+                    return resolve({
+                        passed: false,
+                        expectedBehavior: `Expected path ${path} to serve an html file`,
+                        observedBehavior: `Received file of mime-type: ${mimeType}`,
+                    })
+                }
+
+                const body = await response.text();
+                const $ = cheerio.load(body);
+
+                const links = $('table tr td a');
+                const foundPaths = new Set();
+
+                links.each((_, el) => {
+                    const href = $(el).attr('href');
+                    if (href)
+                        foundPaths.add(href);
+                });
+                const expectedItems = Object.keys(directoryStructure.items);
+
+                for (const item of expectedItems) {
+                    if (!foundPaths.has(item)) {
+                        return resolve({
+                            passed: false,
+                            observedBehavior: "Didn't find all expected directory/file links",
+                        })
+                    }
+                    const itemWalkResponse = await directoryWalk(item, directoryStructure.items[item], port, spawnInstance);
+                    if (itemWalkResponse.passed == false) {
+                        return resolve(itemWalkResponse);
+                    }
+                }
+
+                return resolve({
+                    passed: true,
+                })
+            }
+            else {
+                if (mimeType !== directoryStructure.mimeType) {
+                    return resolve({
+                        passed: false,
+                        expectedBehavior: `Expected file of mime-type: ${directoryStructure.mimeType}`,
+                        observedBehavior: `Received file of mime-type: ${mimeType}`,
+                    })
+                }
+
+                return resolve({
+                    passed: true,
+                })
+            }
+        }
+        catch (error) {
+            console.log(error);
+            return resolve({
+                passed: false,
+                observedBehavior: "Couldn't establish a connection to the server",
+            })
+        }
     })
 }

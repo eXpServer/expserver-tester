@@ -9,8 +9,7 @@ import { getCpuUsage } from "../utils/process";
 import { cwd } from "process";
 
 
-export const multipleClients: TestFunction = (hostPort: number, reverse: boolean, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const multipleClients: TestFunction = (port: number, reverse: boolean, spawnInstance: ContainerManager) => {
     const numClients = 10;
 
 
@@ -106,7 +105,7 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
         }
 
         clients.forEach((client, index) => {
-            client.connect(port, LOCALHOST, () => {
+            client.connect(port, spawnInstance.containerName, () => {
                 clientRecvChecker(client, index);
             })
         })
@@ -114,10 +113,8 @@ export const multipleClients: TestFunction = (hostPort: number, reverse: boolean
     })
 }
 
-export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const proxyMultipleConnections: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     const serverPort = 3000;
-    const serverMappedPort = spawnInstance.getMapppedPort(serverPort);
     const numClients = 3;
     return new Promise((resolve, _) => {
         spawnInstance.on('error', (error) => {
@@ -130,7 +127,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
 
         let numPassed = 0;
         const verifyResponse = async (proxyServerResponse: string, route: number) => {
-            const uri = `http://localhost:${serverMappedPort}/${route}`;
+            const uri = `http://${spawnInstance.containerName}:${serverPort}/${route}`;
             const serverResponse = await fetch(uri);
             const statusLine = `HTTP/1.1 ${serverResponse.status} ${serverResponse.statusText}`;
 
@@ -158,7 +155,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
         }
 
         for (let i = 0; i < numClients; i++) {
-            fetch(`http://localhost:${port}/${i}`)
+            fetch(`http://${spawnInstance.containerName}:${port}/${i}`)
                 .then(res => {
 
                     const statusLine = `HTTP/1.1 ${res.status} ${res.statusText}`;
@@ -189,8 +186,7 @@ export const proxyMultipleConnections: TestFunction = (hostPort: number, spawnIn
  * waits for 5 seconds, then creates a second connection
  * @param port number
  */
-export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const nonBlockingSocket: TestFunction = async (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
         const firstClient = new Socket();
         const secondClient = new Socket();
@@ -201,7 +197,11 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
             secondClient.removeAllListeners();
             return resolve({
                 passed: false,
-                observedBehavior: `Server crashed with error ${error}`
+                observedBehavior: `Server crashed with error ${error}`,
+                cleanup: () => {
+                    firstClient.destroy();
+                    secondClient.destroy();
+                }
             })
         })
 
@@ -212,6 +212,10 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
             return resolve({
                 passed: false,
                 observedBehavior: "Server refused connection",
+                cleanup: () => {
+                    firstClient.destroy();
+                    secondClient.destroy();
+                }
             })
         };
 
@@ -232,22 +236,26 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         const connectionCloseHandler = () => {
             firstClient.removeAllListeners();
             secondClient.removeAllListeners();
-            firstClient.end();
-            secondClient.end();
             return resolve({
                 passed: false,
                 observedBehavior: "Connection terminated / server not running on desired port",
+                cleanup: () => {
+                    firstClient.destroy();
+                    secondClient.destroy();
+                }
             })
         }
 
         const connectionErrorHandler = () => {
             firstClient.removeAllListeners();
             secondClient.removeAllListeners();
-            firstClient.end();
-            secondClient.end();
             return resolve({
                 passed: false,
                 observedBehavior: "Cannot establish connection to server",
+                cleanup: () => {
+                    firstClient.destroy();
+                    secondClient.destroy();
+                }
             })
         }
 
@@ -262,15 +270,14 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
         secondClient.on('error', connectionErrorHandler);
         // secondClient.on('close', connectionCloseHandler);
 
-        firstClient.connect(port, LOCALHOST, () => {
+        firstClient.connect(port, spawnInstance.containerName, () => {
             const file = createReadStream(path.join(process.cwd(), 'public', 'large-files', '4gb.txt'));
             file.pipe(firstClient);
 
             const firstClientWaitTimeout = setTimeout(() => {
-                secondClient.connect(port, LOCALHOST, () => {
+                secondClient.connect(port, spawnInstance.containerName, () => {
                     const errorCallback = () => {
-                        firstClient.end();
-                        secondClient.end();
+                        ;
                         clearTimeout(firstClientWaitTimeout);
                         clearTimeout(secondClientWaitTimeout);
                         firstClient.removeAllListeners();
@@ -298,14 +305,16 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
                     secondClient.on('data', () => {
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.end();
-                        secondClient.end();
                         clearTimeout(firstClientWaitTimeout)
                         firstClient.removeAllListeners();
                         secondClient.removeAllListeners();
 
                         return resolve({
                             passed: true,
+                            cleanup: () => {
+                                firstClient.destroy();
+                                secondClient.destroy();
+                            }
                         })
                     })
 
@@ -320,14 +329,18 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
 
 
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.end();
-                        secondClient.end();
                         file.close();
                         clearTimeout(firstClientWaitTimeout);
                         spawnInstance.kill().then(() => {
+                            firstClient.removeAllListeners();
+                            secondClient.removeAllListeners();
                             return resolve({
                                 passed: false,
-                                observedBehavior: "Server did not respond to the second client within 30s"
+                                observedBehavior: "Server did not respond to the second client within 30s",
+                                cleanup: () => {
+                                    firstClient.destroy();
+                                    secondClient.destroy()
+                                }
                             });
                         })
 
@@ -340,8 +353,7 @@ export const nonBlockingSocket: TestFunction = async (hostPort: number, spawnIns
     })
 }
 
-export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const checkCpuUsage: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
         const NUM_ITERATIONS = 30;
         const client = new Socket();
@@ -389,7 +401,7 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
             })
         })
 
-        client.connect(port, LOCALHOST, () => {
+        client.connect(port, spawnInstance.containerName, () => {
             const results = Array<number>(NUM_ITERATIONS);
             let index = NUM_ITERATIONS - 1;
 
@@ -406,10 +418,15 @@ export const checkCpuUsage: TestFunction = (hostPort: number, spawnInstance: Con
                         passed: average <= 10,
                     });
                 }
-
-                const { cpuUsage } = await spawnInstance.getResourceStats();
-                results[NUM_ITERATIONS - index - 1] = cpuUsage;
-                index--;
+                try {
+                    const { cpuUsage } = await spawnInstance.getResourceStats();
+                    results[NUM_ITERATIONS - index - 1] = cpuUsage;
+                    index--;
+                }
+                catch {
+                    results[NUM_ITERATIONS - index - 1] = Infinity;
+                    index--;
+                }
             }, 1000);
         })
     });
@@ -512,8 +529,7 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
     })
 }
 
-export const prematureFileServerTest: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const prematureFileServerTest: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve) => {
         spawnInstance.once('error', (error) => {
             return resolve({
@@ -582,7 +598,7 @@ export const prematureFileServerTest: TestFunction = (hostPort: number, spawnIns
         }
 
         client.on('data', verifyResultCallback);
-        client.connect(port, LOCALHOST);
+        client.connect(port, spawnInstance.containerName);
     });
 }
 

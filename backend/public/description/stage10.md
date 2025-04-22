@@ -12,7 +12,15 @@ Due to current hardware advances, the actual difference in memory usage can not 
 - Server should be able to accept an incoming TCP connection from any of the port, while ensuring graceful shutdown in case of errors
 
 ## Tests
-### Test 1: CPU usage
+### Test 1: Non-blocking server
+creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection
+
+```js
+testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds"
+expectedBehavior: "the second connection is able to send and receive data from the server"
+```
+
+### Test 2: CPU usage
 This test verifies that the process doesn't consume CPU time unnecessarily by creating an idle client connection and tracks CPU usage over the course of 20 seconds
 
 ```js
@@ -20,20 +28,12 @@ testInput: "Creates an idle client connection and tracks CPU usage over the cour
 expectedBehavior: "CPU usage should be less than 10%"
 ```
 
-### Test 2: Memory usage
+### Test 3: Memory usage
 This test verifies that the process doesn't consume memory time unnecessarily by transfering a large file through a connection and tracking memory usage over time
 
 ```js
 testInput: "Transfers a 4gb file over the network and tracks memory usage over time"
 expectedBehavior: "Memory usage should be less than 10%"
-```
-
-### Test 3: Non-blocking server
-creates a tcp connection to the tcp server running on the given port sends a 4gb file to the server, but does not receive anything to check if the server is non-blocking waits for 5 seconds, then creates a second connection
-
-```js
-testInput: "a client is connected to the server and sends a large file, but does not receive any data from the server. After 30 seconds, a second client is connected to the server, and verifies if the server responds"
-expectedBehavior: "the second connection is able to send and receive data from the server"
 ```
 
 ### Test 4: Single client - input output

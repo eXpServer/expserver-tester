@@ -4,8 +4,7 @@ import { TestFunction } from "../types";
 import { generateRandomStrings, reverseString } from "../utils/string";
 import { ContainerManager } from "../core/ContainerManager";
 
-export const stringReversal: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const stringReversal: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {
@@ -21,7 +20,6 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         const client = new Socket();
 
         client.on('connectionAttemptFailed', () => {
-            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server refused connection",
@@ -29,7 +27,6 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         })
 
         client.on('connectionAttemptTimeout', () => {
-            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
@@ -37,7 +34,6 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
         })
 
         client.on('close', () => {
-            client.removeAllListeners();
             spawnInstance?.kill();
             return resolve({
                 passed: false,
@@ -45,10 +41,8 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
             })
         })
 
-        client.on('error', () => {
-            client.destroy();
+        client.on('error', (e) => {
             spawnInstance?.kill();
-            client.removeAllListeners();
             return resolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
@@ -101,13 +95,11 @@ export const stringReversal: TestFunction = (hostPort: number, spawnInstance: Co
             client.write(input);
         }
 
-        client.connect(port, LOCALHOST, () => writeToServer(0));
-
+        client.connect(port, spawnInstance.containerName, () => writeToServer(0));
     })
 }
 
-export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: ContainerManager) => {
-    const port = spawnInstance.getMapppedPort(hostPort);
+export const stringWriteBack: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
 
         spawnInstance.on('error', (error) => {
@@ -203,7 +195,7 @@ export const stringWriteBack: TestFunction = (hostPort: number, spawnInstance: C
             client.write(input);
         }
 
-        client.connect(port, LOCALHOST, () => writeToServer(0));
+        client.connect(port, spawnInstance.containerName, () => writeToServer(0));
 
     })
 }

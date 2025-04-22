@@ -1,6 +1,6 @@
 import { getStageDescription, getToken } from "@/lib/rest";
 import { WebSocket } from "@/lib/WebSocket";
-import { FinalSummary, TestDetails, TestStatus } from "@/types";
+import { FinalSummary, TestDetails, TestState, TestStatus } from "@/types";
 import { createContext, ReactNode, useEffect, useRef, useState } from "react";
 
 interface SocketContextInterface {
@@ -68,7 +68,7 @@ export const SocketContextProvider = ({
         }
 
         setUserId(savedUserId);
-        await ws.initialize(savedUserId);
+        await ws.initialize(savedUserId, updateData, nonGracefulExitHandler, reconnectHandler);
 
         await setCallbacks(ws);
 
@@ -113,6 +113,27 @@ export const SocketContextProvider = ({
         setSummary(null);
         setTimer(-1);
         setTerminalData([]);
+    }
+
+    const nonGracefulExitHandler = () => {
+        setLoading(true);
+        console.log("server crash detected");
+    }
+
+    const reconnectHandler = () => {
+        setLoading(false);
+        console.log("Server connection restored");
+    }
+
+    const updateData = (data: TestState) => {
+        setBinaryId(data.binaryId);
+        setStatus(data.running ? "running" : "pending");
+        setResults(data.testDetails);
+        setFileName(data.fileName);
+        setTimer(data.timeTaken || -1);
+
+        console.log("updated data")
+
     }
 
     const updateStage = async (newStageNo: number) => {
