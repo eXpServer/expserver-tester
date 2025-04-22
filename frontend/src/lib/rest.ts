@@ -12,7 +12,6 @@ export const getToken = async () => {
 }
 
 export const getStageDescription = async (stageNo: number, token: string) => {
-    console.log(BACKEND_URL);
     if (stageNo < 1 || !token)
         return;
     try {

@@ -13,7 +13,6 @@ const StageDetails = () => {
 
     const handleTerminalState = (state) => {
         setTerminalState(state);
-        console.log("clicked")
     }
     return (
         <div className={styles['desc-terminal-container']}>

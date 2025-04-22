@@ -1,7 +1,7 @@
 "use client"
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './sidebar.module.css'
-import { useSocketContext } from '@/hooks/useSocketContext';
+// import { useSocketContext } from '@/hooks/useSocketContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import NavOptionIcon from './NavOptionIcon';
@@ -21,7 +21,7 @@ export interface NavOption {
 const Sidebar: FC = () => {
     const router = useRouter();
     const [currPhase, setCurrPhase] = useState<PhaseId>('INTRO');
-    const { stageNo } = useSocketContext();
+    // const { stageNo } = useSocketContext();
     const pathname = usePathname();
 
     const navOptions: NavOption[] = useMemo(() => [
@@ -31,12 +31,12 @@ const Sidebar: FC = () => {
             dropDownPresent: false,
             stages: []
         },
-        {
-            phase: 'Custom',
-            phaseId: 'CUSTOM',
-            dropDownPresent: false,
-            stages: []
-        },
+        // {
+        //     phase: 'Custom',
+        //     phaseId: 'CUSTOM',
+        //     dropDownPresent: false,
+        //     stages: []
+        // },
         {
             phase: 'Phase 0',
             phaseId: 0,
@@ -69,15 +69,28 @@ const Sidebar: FC = () => {
         }
     ], []);
 
+    const currentStageFromPath = useMemo(() => {
+        if (pathname.startsWith('/stages')) {
+            const parts = pathname.split('/');
+            const stageStr = parts[2];
+            const parsedStage = parseInt(stageStr);
+          return isNaN(parsedStage) ? null : parsedStage;
+        }
+        return null;
+      }, [pathname]);
+
     const handlePhaseChange = useCallback((item: NavOption) => {
         setCurrPhase(item.phaseId);
+        if(item.phaseId === 'INTRO'){
+            router.push('/');
+        }
     }, []);
 
     const handleStageChange = useCallback((stage: number) => {
-        if (stage !== stageNo) {
+        if (stage !== currentStageFromPath) {
             router.push(`/stages/${stage}`);
         }
-    }, [stageNo, router]);
+    }, [router]);
 
     const isRoadmapPhase = useCallback((phaseId: PhaseId): boolean => {
         return !(['INTRO', 'CUSTOM'].some((item) => item == phaseId))
@@ -103,17 +116,20 @@ const Sidebar: FC = () => {
         else if (pathname.startsWith('/stages')) {
             const currentStage = parseInt(pathname.split('/')[2]);
             const currentPhase = navOptions.filter((item) => item.stages.includes(currentStage))[0];
-            const currentPhaseId = currentPhase.phaseId || navOptions[0].phaseId
+            const currentPhaseId = (typeof currentPhase.phaseId != 'number')
+                ? navOptions[0].phaseId
+                : currentPhase.phaseId
             setCurrPhase(currentPhaseId);
         }
     }, [pathname, navOptions]);
+    
 
     return (
         <div className={styles.sidebar}>
             {
                 navOptions.map((item, id) => (
                     <div key={id} className={styles['option-main-container']}>
-                        <div
+                        <button
                             className={containerClassName(item)}
                             onClick={() => handlePhaseChange(item)}
                         >
@@ -134,7 +150,7 @@ const Sidebar: FC = () => {
 
                                 </div>
                             }
-                        </div>
+                        </button>
                         <AnimatePresence>
                             {
                                 currPhase == item.phaseId &&
@@ -146,7 +162,13 @@ const Sidebar: FC = () => {
                                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                                 >
                                     {item.stages?.map((stage) => (
-                                        <div key={stage} className={`${styles['stage']} ${stageNo === stage ? styles['active-stage'] : styles['inactive-stage']}`} onClick={() => handleStageChange(stage)}> Stage {stage}</div>
+                                        <button 
+                                        key={stage} 
+                                        className={`${styles['stage']} ${currentStageFromPath === stage ? styles['active-stage'] : styles['inactive-stage']}`} 
+                                        onClick={() => handleStageChange(stage)}
+                                    > 
+                                        Stage {stage}
+                                    </button>
                                     ))}
                                 </motion.div>
                             }

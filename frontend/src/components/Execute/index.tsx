@@ -55,7 +55,6 @@ const Execute: FC = () => {
             return;
         }
         const response = await uploadBinary(stageNo, userId, file);
-        console.log(response);
         updateBinaryId(response);
         resetResults();
     }, [file, stageNo, userId, updateBinaryId, resetResults]);
@@ -140,6 +139,12 @@ const Execute: FC = () => {
                 isFileUploaded &&
                 <ResourceMonitor />
             }
+            {/* {
+                isFileUploaded ? <ResourceMonitor/> : 
+                <div className={styles['idle-container']}>
+                    <div className={styles['test-container-idle']}> Upload a binary file to test</div>
+                </div>
+            } */}
             <TestContainer />
         </div>
     )

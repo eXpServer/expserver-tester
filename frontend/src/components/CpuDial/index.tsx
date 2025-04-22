@@ -1,28 +1,42 @@
 import { useEffect, useState } from "react";
 import styles from "./cpuDial.module.css"
+import { useStyleRegistry } from "styled-jsx";
 
-const CpuDial = () => {
-    // just to test\
+
+interface CpuDialProps{
+    value: number;
+}
+
+const CpuDial: React.FC<CpuDialProps> = ({value}) => {
     const [convertedNumber, setConvertedNumber] = useState<number>(0);
-    const [num, setNum] = useState<number>(0);
+    
+    // For mock simulation
+    
+    // const [num, setNum] = useState<number>(0);
+
+    // useEffect(()=>{
+    //     let counter = 0;
+    //     const interval = setInterval(() => {
+    //         if(counter >= 30){
+    //             clearInterval(interval);
+    //             return;
+    //         }
+    //         const randomNumber = Math.floor(Math.random()*101);
+    //         setNum(randomNumber)
+    //         const convertedVal = Math.round((randomNumber/100)*270);
+    //         setConvertedNumber(convertedVal);
+    //         counter++;
+    //     }, 1000);
+
+    //     return () => clearInterval(interval)
+
+    // },[])
 
     useEffect(()=>{
-        let counter = 0;
-        const interval = setInterval(() => {
-            if(counter >= 30){
-                clearInterval(interval);
-                return;
-            }
-            const randomNumber = Math.floor(Math.random()*101);
-            setNum(randomNumber)
-            const convertedVal = Math.round((randomNumber/100)*270);
-            setConvertedNumber(convertedVal);
-            counter++;
-        }, 1000);
+        const convertedVal = Math.round((value/100)*270);
+        setConvertedNumber(convertedVal);
+    },[value]);
 
-        return () => clearInterval(interval)
-
-    },[])
     return (
         <div className={styles['cpu-dial']}>
             <div className={styles['cpu-dial-container']}>
@@ -50,7 +64,7 @@ const CpuDial = () => {
 
                         </div>
                         <div className={styles['dial-display']}>
-                            <div className={styles['dial-display-value']}>{num}%</div>
+                            <div className={styles['dial-display-value']}>{value}%</div>
                             <div className={styles['dial-display-label']}>All core combined usage</div>
                         </div>
                     </div>

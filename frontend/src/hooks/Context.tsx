@@ -113,6 +113,7 @@ export const SocketContextProvider = ({
         setSummary(null);
         setTimer(-1);
         setTerminalData([]);
+        setResourceMetrics({cpu:0, mem:0});
     }
 
     const nonGracefulExitHandler = () => {
@@ -131,9 +132,6 @@ export const SocketContextProvider = ({
         setResults(data.testDetails);
         setFileName(data.fileName);
         setTimer(data.timeTaken || -1);
-
-        console.log("updated data")
-
     }
 
     const updateStage = async (newStageNo: number) => {
@@ -149,7 +147,6 @@ export const SocketContextProvider = ({
         setResults(testDetails);
         setFileName(fileName);
         setTimer(timeTaken || -1);
-
         setLoading(false);
     }
 

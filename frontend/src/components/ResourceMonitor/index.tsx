@@ -76,16 +76,19 @@ const ResourceMonitor = () => {
                 {/* <div className={styles['resource-monitor-elements']}>
                     <Speedometer value={resourceMetrics?.mem || 0} label="Memory Usage" />
                 </div> */}
-                <div className={styles['resource-cpu-dial']}>
+                <div className={styles['resource-plot-container']}>
                     <div className={styles['resource-monitor-head']}> CPU Usage</div>
                     <div className={styles['resource-cpu-dial-container']}>
-                        <CpuDial/>
+                        <CpuDial value={resourceMetrics?.cpu || 0}/>
                     </div>
                 </div>
-                <div className={styles['resource-cpu-dial']}>
+                <div className={styles['resource-plot-container']}>
 
                     {/* <CpuDial/> */}
-                    <RamGraph/>
+                    <div className={styles['resource-monitor-head']}> RAM Usage</div>
+                        <div className={styles['resource-ram-usage-container']}>
+                            <RamGraph value={resourceMetrics?.mem || 0}/>
+                        </div>
                 </div>
             </div>
         </div>

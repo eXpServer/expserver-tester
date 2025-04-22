@@ -124,3 +124,32 @@
     width: 100%;
     gap: 4px;
 }
+
+
+
+
+
+.idle-container {
+    flex-grow: 1;
+    width: 100%;
+    border: 3px dashed var(--border);
+    border-radius: 8px;
+    /* border-width: 3px; */
+    background-color: var(--test-container-background);
+    margin-top: 6px;
+    overflow-y: scroll;
+    /* max-height: 100%; */
+}
+
+.test-container-idle {
+    height: 100%;
+    padding-inline: 48px;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--text-color);
+    opacity: 0.45;
+
+}
