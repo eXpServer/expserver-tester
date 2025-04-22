@@ -41,6 +41,7 @@ echo "$DB_HOST is up - running migrations and collectstatic"
 npm run generate-large-file
 npm run generate-desc
 npm run setup
+npm run docker:build
 
 if [ "$DEBUG" = "true" ]; then
     npm run dev

@@ -26,6 +26,7 @@ services:
       - eXpServer-network-prod
     volumes:
       - ./uploads:/app/uploads
+      - migrations-data:/app/migrations
       - ./public:/app/public
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -54,3 +55,4 @@ networks:
 volumes:
   redis-data:
   postgres-data:
+  migrations-data:

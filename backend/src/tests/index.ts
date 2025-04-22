@@ -93,5 +93,13 @@ export const tests: StageTest = {
         requiresDummyServer: true,
         tests: stageTests.stage16,
         requiresXpsConfig: true,
+    },
+    stage17: {
+        stageName: "Directory Browsing",
+        requiresDummyServer: false,
+        customPublicPath: 'stage17',
+        descriptionFilePath: "/description/stage17.md",
+        tests: stageTests.stage17,
+        requiresXpsConfig: true,
     }
 }

@@ -1,8 +1,8 @@
 import { Socket } from "net";
 import { ContainerManager } from "../core/ContainerManager";
-import { HttpRequestTest, TestFunction } from "../types";
-import { LOCALHOST } from "../constants";
+import { FileSystemEntry, FileType, HttpRequestTest, TestFunction } from "../types";
 import { parseHttpResponse, verifyResponseOutput } from "../utils/http";
+import * as cheerio from "cheerio";
 
 export const httpRequestParser: TestFunction = (port: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
@@ -180,5 +180,134 @@ export const httpRedirectTest: TestFunction = (path: string, redirectUrl: string
         return resolve({
             passed: true,
         })
+    })
+}
+
+export const httpDirectoryBrowsingTest: TestFunction = (path: string, rootFolderEntry: FileSystemEntry, port: number, spawnInstance: ContainerManager) => {
+    return new Promise(async resolve => {
+        try {
+
+            const response = await fetch(`http://${spawnInstance.containerName}:${port}${path}`);
+            const headers = response.headers;
+            const mimeType = headers.get('Content-Type');
+            if (mimeType !== 'text/html') {
+                return resolve({
+                    passed: false,
+                    expectedBehavior: "Expected an html file",
+                    observedBehavior: `Received file of mime-type: ${mimeType}`
+                })
+            }
+
+            const body = await response.text();
+            const $ = cheerio.load(body);
+
+            const links = $('table tr td a');
+            const foundPaths = new Set();
+
+            links.each((_, el) => {
+                console.log(el);
+                const href = $(el).attr('href');
+                if (href)
+                    foundPaths.add(href);
+            });
+            if (rootFolderEntry.type !== FileType.DIRECTORY) {
+                return resolve({
+                    passed: false,
+                    observedBehavior: "Something went wrong",
+                })
+            }
+            const expectedItems = Object.keys(rootFolderEntry.items);
+            console.log(foundPaths, expectedItems)
+
+            for (const item of expectedItems) {
+                if (!foundPaths.has(item)) {
+                    return resolve({
+                        passed: false,
+                        observedBehavior: "Didn't find all expected directory/file links",
+                    })
+                }
+            }
+
+            return resolve({
+                passed: true,
+            })
+        }
+        catch (error) {
+            console.log(error);
+            return resolve({
+                passed: false,
+                observedBehavior: "Couldn't establish a connection to the server",
+            })
+        }
+    })
+}
+
+export const directoryWalk: TestFunction = (path: string, directoryStructure: FileSystemEntry, port: number, spawnInstance: ContainerManager) => {
+    return new Promise(async resolve => {
+        try {
+
+            const response = await fetch(`http://${spawnInstance.containerName}:${port}${path}`);
+            const headers = response.headers;
+            const mimeType = headers.get('Content-Type');
+            if (directoryStructure.type === FileType.DIRECTORY) {
+                if (mimeType !== 'text/html') {
+                    return resolve({
+                        passed: false,
+                        expectedBehavior: `Expected path ${path} to serve an html file`,
+                        observedBehavior: `Received file of mime-type: ${mimeType}`,
+                    })
+                }
+
+                const body = await response.text();
+                const $ = cheerio.load(body);
+
+                const links = $('table tr td a');
+                const foundPaths = new Set();
+
+                links.each((_, el) => {
+                    const href = $(el).attr('href');
+                    if (href)
+                        foundPaths.add(href);
+                });
+                const expectedItems = Object.keys(directoryStructure.items);
+
+                for (const item of expectedItems) {
+                    if (!foundPaths.has(item)) {
+                        return resolve({
+                            passed: false,
+                            observedBehavior: "Didn't find all expected directory/file links",
+                        })
+                    }
+                    const itemWalkResponse = await directoryWalk(item, directoryStructure.items[item], port, spawnInstance);
+                    if (itemWalkResponse.passed == false) {
+                        return resolve(itemWalkResponse);
+                    }
+                }
+
+                return resolve({
+                    passed: true,
+                })
+            }
+            else {
+                if (mimeType !== directoryStructure.mimeType) {
+                    return resolve({
+                        passed: false,
+                        expectedBehavior: `Expected file of mime-type: ${directoryStructure.mimeType}`,
+                        observedBehavior: `Received file of mime-type: ${mimeType}`,
+                    })
+                }
+
+                return resolve({
+                    passed: true,
+                })
+            }
+        }
+        catch (error) {
+            console.log(error);
+            return resolve({
+                passed: false,
+                observedBehavior: "Couldn't establish a connection to the server",
+            })
+        }
     })
 }

@@ -28,6 +28,7 @@ services:
       - ./uploads:/app/uploads
       - ./public:/app/public
       - ./src:/app/src
+      - migrations-dev-data:/app/migrations
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - HOST_PWD=${PWD}
@@ -55,3 +56,4 @@ networks:
 volumes:
   redis-dev-data:
   postgres-dev-data:
+  migrations-dev-data:
