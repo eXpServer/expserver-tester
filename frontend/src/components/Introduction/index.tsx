@@ -1,6 +1,8 @@
+import styles from "./introduction.module.css"
+
 const Introduction = () => {
     return (
-        <div>
+        <div className={styles['introduction']}>
             Introduction
         </div>
     )

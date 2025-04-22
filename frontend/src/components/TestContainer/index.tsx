@@ -33,7 +33,23 @@ const TestContainer: FC = () => {
                             results.map((result, index) => {
                                 return <TestCard key={index} testStatus={result.status} testNo={index + 1} result={result} />
                             })
+                            
                         }
+                        {/* {
+                            // <TestCard key={1} testStatus={'failed'} testNo={1} testResult = {result} />
+                            results.map((result, index) => {
+                                return <TestCard key={index} testStatus={result.status} testNo={index + 1} result={result} />
+                            })
+                            
+                        }
+                        {
+                            // <TestCard key={1} testStatus={'failed'} testNo={1} testResult = {result} />
+                            results.map((result, index) => {
+                                return <TestCard key={index} testStatus={result.status} testNo={index + 1} result={result} />
+                            })
+                            
+                        } */}
+                        
                     </div>
                     <Summary />
 

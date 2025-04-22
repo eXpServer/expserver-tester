@@ -35,7 +35,7 @@ export enum SocketOutgoingEvents {
     Stop = 'stop',
 }
 
-const SOCKET_URL = 'http://localhost:6970';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
 
 
 export class WebSocket {

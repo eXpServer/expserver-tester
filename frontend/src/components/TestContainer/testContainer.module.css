@@ -6,6 +6,8 @@
     /* border-width: 3px; */
     background-color: var(--test-container-background);
     margin-top: 6px;
+    overflow-y: scroll;
+    /* max-height: 100%; */
 }
 
 .test-container-idle {
@@ -24,14 +26,9 @@
 .test-container-active {
     height: 100%;
     position: relative;
-    padding: 8px;
+    padding: 8px 8px 0 8px;
     display: flex;
     flex-direction: column;
-
-
-    /* align-items:center; */
-
-    /* gap: 8px; */
 }
 
 .testcase-container {
@@ -40,8 +37,8 @@
     flex-direction: column;
     gap: 8px;
     /* border: 1px solid black; */
-    overflow-y: scroll;
-    height: auto;
+    /* overflow-y: scroll; */
+    max-height: auto;
 }
 
 .testcase-container::-webkit-scrollbar {
