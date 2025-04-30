@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { PuffLoader } from "react-spinners";
 
 /**
  * Loading component
@@ -6,7 +8,7 @@ import { motion } from "framer-motion";
 const Loading = () => {
     return (
         <motion.div
-            className="fixed top-0 z-[100] left-0 h-screen w-screen bg-red-200 text-black"
+            className="fixed top-0 z-[100] left-0 h-screen w-screen bg-white text-black flex items-center justify-center gap-4"
             initial={{
                 opacity: 0,
             }}
@@ -17,7 +19,12 @@ const Loading = () => {
                 opacity: 0,
             }}
         >
-            Loading...
+            <Image src="/logo.svg" alt="loading-logo" width={200} height={200} />
+            <PuffLoader
+                loading={true}
+                size={40}
+                color="#2B4ED5"
+            />
         </motion.div>
     )
 }
