@@ -74,23 +74,23 @@ const Sidebar: FC = () => {
             const parts = pathname.split('/');
             const stageStr = parts[2];
             const parsedStage = parseInt(stageStr);
-          return isNaN(parsedStage) ? null : parsedStage;
+            return isNaN(parsedStage) ? null : parsedStage;
         }
         return null;
-      }, [pathname]);
+    }, [pathname]);
 
     const handlePhaseChange = useCallback((item: NavOption) => {
         setCurrPhase(item.phaseId);
-        if(item.phaseId === 'INTRO'){
+        if (item.phaseId === 'INTRO') {
             router.push('/');
         }
-    }, []);
+    }, [router]);
 
     const handleStageChange = useCallback((stage: number) => {
         if (stage !== currentStageFromPath) {
             router.push(`/stages/${stage}`);
         }
-    }, [router]);
+    }, [currentStageFromPath, router]);
 
     const isRoadmapPhase = useCallback((phaseId: PhaseId): boolean => {
         return !(['INTRO', 'CUSTOM'].some((item) => item == phaseId))
@@ -122,7 +122,7 @@ const Sidebar: FC = () => {
             setCurrPhase(currentPhaseId);
         }
     }, [pathname, navOptions]);
-    
+
 
     return (
         <div className={styles.sidebar}>
@@ -162,13 +162,13 @@ const Sidebar: FC = () => {
                                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                                 >
                                     {item.stages?.map((stage) => (
-                                        <button 
-                                        key={stage} 
-                                        className={`${styles['stage']} ${currentStageFromPath === stage ? styles['active-stage'] : styles['inactive-stage']}`} 
-                                        onClick={() => handleStageChange(stage)}
-                                    > 
-                                        Stage {stage}
-                                    </button>
+                                        <button
+                                            key={stage}
+                                            className={`${styles['stage']} ${currentStageFromPath === stage ? styles['active-stage'] : styles['inactive-stage']}`}
+                                            onClick={() => handleStageChange(stage)}
+                                        >
+                                            Stage {stage}
+                                        </button>
                                     ))}
                                 </motion.div>
                             }
