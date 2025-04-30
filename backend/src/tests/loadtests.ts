@@ -1,12 +1,10 @@
 import { Socket } from "net";
 import { ContainerManager } from "../core/ContainerManager";
-import { Test, TestFunction } from "../types";
+import { TestFunction } from "../types";
 import { reverseString } from "../utils/string";
-import { LOCALHOST } from "../constants";
 import path from "path";
 import { createReadStream, readFileSync } from 'fs'
-import { getCpuUsage } from "../utils/process";
-import { cwd } from "process";
+import { bestFitLine } from "../utils/line";
 
 
 export const multipleClients: TestFunction = (port: number, reverse: boolean, spawnInstance: ContainerManager) => {
@@ -366,6 +364,16 @@ export const checkCpuUsage: TestFunction = (port: number, spawnInstance: Contain
             })
         })
 
+        const calcBestFitSlope = (results: number[]) => {
+            const line = bestFitLine(results);
+            if (line == null)
+                return 0;
+
+            const { slope } = line;
+            console.log(slope);
+            return slope;
+        }
+
         const calcAvergeUsage = (results: number[]) => {
             let total = 0;
             for (let i = 0; i < results.length; i++) {
@@ -409,14 +417,23 @@ export const checkCpuUsage: TestFunction = (port: number, spawnInstance: Contain
             const interval = setInterval(async () => {
                 if (index < 0) {
                     const average = calcAvergeUsage(results);
+                    const slope = calcBestFitSlope(results);
                     const observedBehavior = `CPU usage was ${average}%`;
                     client.destroy();
                     clearInterval(interval);
                     client.removeAllListeners();
-                    return resolve({
-                        observedBehavior,
-                        passed: average <= 10,
-                    });
+                    if (slope > 0.5) {
+                        return resolve({
+                            passed: false,
+                            observedBehavior: `Observed a trend of CPU usage increasing at a higher pace than expected. The average memory usage was ${average}%`,
+                        });
+                    }
+                    else {
+                        return resolve({
+                            passed: true,
+                            observedBehavior: `The average CPU usage was ${average}%`,
+                        })
+                    }
                 }
                 try {
                     const { cpuUsage } = await spawnInstance.getResourceStats();
@@ -443,6 +460,15 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
                 observedBehavior: `Server crashed with error ${error}`
             })
         });
+
+        const calcBestFitSlope = (results: number[]) => {
+            const line = bestFitLine(results);
+            if (line == null)
+                return 0;
+
+            const { slope } = line;
+            return slope;
+        }
 
         const calcAverageUsage = (results: number[]) => {
             if (results.length == 0)
@@ -501,20 +527,21 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
                     observedBehavior: `netcat localhost 8001 failed with exit code ${exitCode}`
                 })
             }
+            const slope = calcBestFitSlope(results);
             const average = calcAverageUsage(results);
             clearInterval(interval);
-            if (average > 10) {
+            if (slope > 0.5) {
                 await spawnInstance.attachStream();
                 return resolve({
                     passed: false,
-                    observedBehavior: `Observed an average memory usage of ${average}%`
+                    observedBehavior: `Observed a trend of memory usage increasing at a higher pace than expected. The average memory usage was ${average}%`
                 })
             }
             else {
                 await spawnInstance.attachStream();
                 return resolve({
                     passed: true,
-                    observedBehavior: `Observed an average memory usage of ${average}%`
+                    observedBehavior: `The average memory usage was ${average}%`
                 })
             }
         }
