@@ -1,8 +1,88 @@
 # Stage 16: HTTP Config Module
 
 ## Overview
+A good server should be configurable. Till the previous phase, most of the features were hard-coded just for demonstration. The HTTP Module helped streamline the request interpretation and handling, and to structure the messages sent to the client. The config module helps create dynamic functionality to each listener by making use of a `.json` config file. The config file being used in this stage for testing purposes is given below:
+```json
+{
+	"server_name": "eXpServer",
+	"workers": 4,
+	"servers": [
+		{
+			"listeners": [
+				{
+					"host": "0.0.0.0",
+					"port": 8001
+				}
+			],
+			"routes": [
+				{
+					"req_path": "/",
+					"type": "file_serve",
+					"dir_path": "../public",
+					"index": [
+						"index.html"
+					],
+					"gzip_enable": true,
+					"gzip_level": 8
+				},
+				{
+					"req_path": "/redirect",
+					"type": "redirect",
+					"http_status_code": 302,
+					"redirect_url": "http://localhost:8002/"
+				}
+			]
+		},
+		{
+			"listeners": [
+				{
+					"host": "0.0.0.0",
+					"port": 8002
+				}
+			],
+			"routes": [
+				{
+					"req_path": "/",
+					"type": "reverse_proxy",
+					"upstreams": [
+						"localhost:3000"
+					]
+				}
+			]
+		},
+		{
+			"listeners": [
+				{
+					"host": "0.0.0.0",
+					"port": 8003
+				}
+			],
+			"routes": [
+				{
+					"req_path": "/",
+					"type": "redirect",
+					"http_status_code": 302,
+					"redirect_url": "https://expserver.github.io"
+				}
+			]
+		},
+		{
+			"listeners": [
+				{
+					"host": "0.0.0.0",
+					"port": 8004
+				}
+			]
+		}
+	]
+}
+```
 
 ## Constraints to be followed
+- All ports `8001`, `8002`, `8003`, `8004` listen to http requests
+- The server should expect the all files to be shared from the `public/` directory
+- The `public/` directory should be expected to be present within the same relative path to the executable as given within the documentation
+- Adhere to the `xps_config.json` where applicable
 
 ## Tests
 ### Test 1: File server (1)

@@ -3,9 +3,6 @@
 ## Overview
 With the introduction of Epoll Edge Triggering, we had fixed a major performance issue, i.e., CPU Usage. Using the Pipe Module, we implement another form of performance improvement, this time in the memory side
 
-**Note**
-Due to current hardware advances, the actual difference in memory usage can not be tested to a verifable amount.
-
 ## Constraints to be followed 
 - The server should run on ports `8001`, `8002`, `8003`, `8004`
 - String reversal should be replaced with string write-back moving forwards 
