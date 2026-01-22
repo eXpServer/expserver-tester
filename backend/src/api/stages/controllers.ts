@@ -7,7 +7,7 @@ import { FILE_EXECUTABLE_PERMS } from '../../constants';
 import { FileModel } from '../../models/file.model';
 
 const getStageDescription = expressAsyncHandler(async (req: Request, res: Response) => {
-    const stageNo = req.params['num'];
+    const stageNo : string = req.params['num'] as string;
 
     const stageDescPath = Core.getDescription(stageNo);
     if (!stageDescPath) {
@@ -28,7 +28,7 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
         throw new Error("File not found");
     }
 
-    const stageNo = req.params['num'];
+    const stageNo : string = req.params['num'] as string;
     if (!verifyStageNo(stageNo)) {
         res.status(400);
         throw new Error("Stage not found");
@@ -84,7 +84,7 @@ const uploadBinaryHandler = expressAsyncHandler(async (req: Request, res: Respon
 })
 
 const deleteBinaryHandler = expressAsyncHandler(async (req: Request, res: Response) => {
-    const stageNo = req.params['num'];
+    const stageNo : string = req.params['num'] as string;
     if (!verifyStageNo(stageNo)) {
         res.status(400);
         throw new Error("Stage not found");

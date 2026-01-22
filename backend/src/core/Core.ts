@@ -282,7 +282,8 @@ export class Core {
         this.httpServer.listen(WEBSOCKET_PORT, () => console.log(`Websocket running on port ${WEBSOCKET_PORT}`));
         console.log("current working directory: ", Config.HOST_PWD);
 
-        const redis = createClient({ url: 'redis://redis:6379' });
+        const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+        const redis = createClient({ url: redisUrl });
         await redis.connect();
 
         this.socketIo.use((socket, next) => {
