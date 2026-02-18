@@ -188,8 +188,9 @@ export class StageRunner {
     }
 
 
-    private runTest = async (data: {func: TestFunction, requiresRestart: boolean}, index: number) => {
+    private runTest = async (data: { func: TestFunction, requiresRestart: boolean }, index: number) => {
         const { func, requiresRestart } = data;
+        console.log(`\n>>> Running test ${index + 1}: ${this._currentState[index].title}`);
         try {
             await this.containerWarmUp(requiresRestart);
         }

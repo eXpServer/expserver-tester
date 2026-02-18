@@ -147,6 +147,7 @@ export class ContainerManager extends EventEmitter {
                 this.initialized = false;
                 this._running = false;
                 const inspect = await this._container.inspect();
+
                 if (inspect.State.Running) {
                     console.log(`Stopping container: ${this._containerName}`);
                     await this._container.kill();
@@ -182,7 +183,7 @@ export class ContainerManager extends EventEmitter {
         }
     }
 
-    public async attachStream(): Promise<void> {
+    public asyncattachStream(): Promise<void> {
         if (!this._container)
             return;
 
@@ -216,15 +217,21 @@ export class ContainerManager extends EventEmitter {
         }
         catch (error) {
             console.log("outer try-catch", error)
-            const existingContainer = this.docker.getContainer(this._containerName);
-            if (existingContainer) {
+            if (error.statusCode === 409) {
+                // Container name conflict — use a new unique name
+                const suffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+                this._containerName = `${this._containerName}-${suffix}`;
+                this.containerConfig = { ...this.containerConfig, name: this._containerName };
+                console.log(`Retrying with new container name: ${this._containerName}`);
                 try {
-                    await existingContainer.remove({ force: true });
                     this._container = await this.docker.createContainer(this.containerConfig);
                 }
-                catch (error) {
-                    console.log("inner try-catch", error);
+                catch (retryError) {
+                    console.log("retry try-catch", retryError);
+                    throw retryError;
                 }
+            } else {
+                throw error;
             }
         }
 
