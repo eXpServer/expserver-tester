@@ -35,6 +35,12 @@ services:
       - .env.prod
     container_name: expserver-backend
     entrypoint: "/entrypoint.sh --debug=false"
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+        reservations:
+          memory: 4G
   redis:
     image: redis:latest
     restart: always
