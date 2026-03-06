@@ -236,8 +236,16 @@ export class ContainerManager extends EventEmitter {
             console.log(message);
         }
         catch (error) {
-            this._container = null;
             console.log(error)
+            // Clean up the failed container to prevent 409 conflicts on next run
+            try {
+                if (this._container) {
+                    await this._container.remove({ force: true });
+                }
+            } catch (removeErr) {
+                console.log(`Failed to remove dead container ${this._containerName}:`, removeErr.message);
+            }
+            this._container = null;
         }
     }
 
@@ -254,6 +262,22 @@ export class ContainerManager extends EventEmitter {
                 if (hasExited) {
                     clearInterval(interval);
                     this.initialized = false;
+
+                    // Print last 20 lines of the container logs for debugging
+                    try {
+                        const logStream = await this._container.logs({
+                            stdout: true,
+                            stderr: true,
+                            tail: 20,
+                        });
+                        const logs = logStream.toString();
+                        console.log(`\n--- Last 20 lines of container ${this._containerName} (exit code ${exitCode}) ---`);
+                        console.log(logs);
+                        console.log(`--- End of logs for ${this._containerName} ---\n`);
+                    } catch (logErr) {
+                        console.log(`Failed to fetch logs for ${this._containerName}:`, logErr);
+                    }
+
                     return reject(`Container ${this._containerName} exited with code ${exitCode}`);
                 }
                 if (isRunning) {
