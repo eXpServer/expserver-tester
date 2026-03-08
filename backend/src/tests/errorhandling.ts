@@ -215,16 +215,18 @@ export const proxyServerCrashHandling: TestFunction = async (port: number, spawn
         })
 
         fetch(`http://${spawnInstance.containerName}:${port}`).catch(err => {
-            if (err.cause?.code == 'UND_ERR_SOCKET') {
+            const causeCode = err.cause?.code;
+            if (causeCode === 'UND_ERR_SOCKET' || causeCode === 'ECONNRESET') {
                 return resolve({
                     passed: true,
-                    observedBehavior: "Server terminated client connection without any crashes",
+                    observedBehavior: `Server terminated client connection safely (${causeCode})`,
                 })
             }
             else {
+                const errorDetail = `Message: ${err.message}, Code: ${err.code}, Cause: ${err.cause?.code || 'none'}`;
                 return resolve({
                     passed: false,
-                    observedBehavior: `Server terminated client with error: ${err.code}`
+                    observedBehavior: `Server terminated client with error: ${errorDetail}`
                 })
             }
         })

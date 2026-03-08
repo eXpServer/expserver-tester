@@ -2,6 +2,8 @@ import Docker, { Container } from 'dockerode';
 import { EventEmitter } from 'eventemitter3';
 import { IMAGE_NAME, PUBLIC_DIR, WORKDIR } from '../constants';
 import Config from '../config';
+import * as fs from 'fs';
+import * as path from 'path';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
@@ -16,6 +18,7 @@ export class ContainerManager extends EventEmitter {
     private timeoutRef: NodeJS.Timeout | null;
     private pythonServerRunning: boolean;
     public static removingContainers = new Set<string>();
+    private _logOffset: number = 0;
 
     get containerName(): string {
         return this._containerName;
@@ -56,9 +59,10 @@ export class ContainerManager extends EventEmitter {
 
         const customPublicDir = `${Config.HOST_PWD}/public/${publicPath}`;
         const workDir = `${Config.HOST_PWD}/uploads`;
+        const logFile = `${WORKDIR}/${this._binaryId}.log`;
         const entryCmd = [
             'sh', '-c',
-            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && exec ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json`,
+            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && export XPS_DEBUG=1 && export ASAN_OPTIONS=detect_leaks=0 && ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json > ${logFile} 2>&1`,
         ]
 
         console.log(entryCmd)
@@ -70,6 +74,7 @@ export class ContainerManager extends EventEmitter {
             HostConfig: {
                 Binds: [`${workDir}:${WORKDIR}`, `${customPublicDir}:${PUBLIC_DIR}`],
                 NetworkMode: Config.NETWORK_INTERFACE,
+                Privileged: true
             }
         }
     }
@@ -103,8 +108,12 @@ export class ContainerManager extends EventEmitter {
                 this._running = false;
                 if (!this._container)
                     return;
-                this._container.inspect().then((data) => {
+                this._container.inspect().then(async (data) => {
                     const exitCode = data.State.ExitCode;
+
+                    // Always print logs when container exits
+                    this.printLogsFromFile(exitCode);
+
                     this.emit('close', exitCode);
                     if (this.initialized)
                         this.emit('error', exitCode);
@@ -210,22 +219,68 @@ export class ContainerManager extends EventEmitter {
 
 
 
+    public printNewLogs(label: string): void {
+        try {
+            const logPath = path.join('/app/uploads', `${this._binaryId}.log`);
+            if (fs.existsSync(logPath)) {
+                const stats = fs.statSync(logPath);
+                const fileSize = stats.size;
+
+                if (fileSize > this._logOffset) {
+                    const fd = fs.openSync(logPath, 'r');
+                    const bufferSize = fileSize - this._logOffset;
+                    const buffer = Buffer.alloc(bufferSize);
+
+                    fs.readSync(fd, buffer, 0, bufferSize, this._logOffset);
+                    fs.closeSync(fd);
+
+                    const content = buffer.toString('utf-8');
+                    const lines = content.split('\n');
+                    const output = lines.length > 50 ? lines.slice(-50).join('\n') : content;
+
+                    console.log(`\n--- [${label}] Container ${this._containerName} logs ---`);
+                    console.log(output);
+                    console.log(`--- End of [${label}] logs ---\n`);
+
+                    this._logOffset = fileSize;
+                }
+            }
+        } catch (err) {
+            console.log(`Failed to read incremental logs for ${this._containerName} (${label}):`, err.message);
+        }
+    }
+
+    private printLogsFromFile(exitCode: number): void {
+        try {
+            const logPath = path.join('/app/uploads', `${this._binaryId}.log`);
+            this.printNewLogs(`Exit ${exitCode}`);
+            if (fs.existsSync(logPath)) {
+                fs.unlinkSync(logPath);
+            }
+        } catch (err) {
+            console.log(`Failed to clean up log file for ${this._containerName}:`, err.message);
+        }
+    }
+
     private async startContainer(): Promise<void> {
+        this._logOffset = 0;
+        // Always try to remove any leftover container with the same name first
+        try {
+            const existing = this.docker.getContainer(this._containerName);
+            await existing.kill().catch(() => { });
+            await existing.remove({ force: true });
+            console.log(`Removed leftover container: ${this._containerName}`);
+        } catch (_) {
+            // No existing container, that's fine
+        }
+
         try {
             this._container = await this.docker.createContainer(this.containerConfig);
         }
         catch (error) {
-            console.log("outer try-catch", error)
-            const existingContainer = this.docker.getContainer(this._containerName);
-            if (existingContainer) {
-                try {
-                    await existingContainer.remove({ force: true });
-                    this._container = await this.docker.createContainer(this.containerConfig);
-                }
-                catch (error) {
-                    console.log("inner try-catch", error);
-                }
-            }
+            console.log("Failed to create container:", error.message);
+            this._container = null;
+            return;
         }
 
         try {
@@ -237,14 +292,7 @@ export class ContainerManager extends EventEmitter {
         }
         catch (error) {
             console.log(error)
-            // Clean up the failed container to prevent 409 conflicts on next run
-            try {
-                if (this._container) {
-                    await this._container.remove({ force: true });
-                }
-            } catch (removeErr) {
-                console.log(`Failed to remove dead container ${this._containerName}:`, removeErr.message);
-            }
+            // Container already removed by waitForContainerToRun, just reset reference
             this._container = null;
         }
     }
@@ -263,19 +311,15 @@ export class ContainerManager extends EventEmitter {
                     clearInterval(interval);
                     this.initialized = false;
 
-                    // Print last 20 lines of the container logs for debugging
+                    // Read logs from file
+                    this.printLogsFromFile(exitCode);
+
+                    // Remove the exited container to prevent 409 conflicts
                     try {
-                        const logStream = await this._container.logs({
-                            stdout: true,
-                            stderr: true,
-                            tail: 20,
-                        });
-                        const logs = logStream.toString();
-                        console.log(`\n--- Last 20 lines of container ${this._containerName} (exit code ${exitCode}) ---`);
-                        console.log(logs);
-                        console.log(`--- End of logs for ${this._containerName} ---\n`);
-                    } catch (logErr) {
-                        console.log(`Failed to fetch logs for ${this._containerName}:`, logErr);
+                        await this._container.remove({ force: true });
+                        console.log(`Removed exited container: ${this._containerName}`);
+                    } catch (removeErr) {
+                        console.log(`Failed to remove exited container ${this._containerName}:`, removeErr.message);
                     }
 
                     return reject(`Container ${this._containerName} exited with code ${exitCode}`);
@@ -300,45 +344,45 @@ export class ContainerManager extends EventEmitter {
                 AttachStderr: true,
             });
 
-        const stream = await exec.start({
-            hijack: true,
-            stdin: false,
-        });
+            const stream = await exec.start({
+                hijack: true,
+                stdin: false,
+            });
 
-        let output = '';
-        stream.on('data', chunk => {
-            output += chunk.toString();
-        })
+            let output = '';
+            stream.on('data', chunk => {
+                output += chunk.toString();
+            })
 
-        return new Promise((resolve, reject) => {
-            stream.on('end', () => {
-                try {
-                    const lines = output.split('\n');
-                    const data = lines[1].match(/^[^\d]*(\d+\.\d+)\s+(\d+\.\d+)/m);
-                    if (data) {
-                        const [_, cpu, mem] = data;
-                        const cpuUsage = parseFloat(cpu);
-                        const memUsage = parseFloat(mem);
-                        return resolve({
-                            cpuUsage,
-                            memUsage,
-                        });
+            return new Promise((resolve, reject) => {
+                stream.on('end', () => {
+                    try {
+                        const lines = output.split('\n');
+                        const data = lines[1].match(/^[^\d]*(\d+\.\d+)\s+(\d+\.\d+)/m);
+                        if (data) {
+                            const [_, cpu, mem] = data;
+                            const cpuUsage = parseFloat(cpu);
+                            const memUsage = parseFloat(mem);
+                            return resolve({
+                                cpuUsage,
+                                memUsage,
+                            });
+                        }
+                        else {
+                            return reject({
+                                cpuUsage: 0,
+                                memUsage: 0,
+                            });
+                        }
                     }
-                    else {
+                    catch (e) {
                         return reject({
                             cpuUsage: 0,
                             memUsage: 0,
                         });
                     }
-                }
-                catch (e) {
-                    return reject({
-                        cpuUsage: 0,
-                        memUsage: 0,
-                    });
-                }
+                })
             })
-        })
         } catch (error) {
             return { cpuUsage: -1, memUsage: -1 };
         }

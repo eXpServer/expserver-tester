@@ -14,6 +14,9 @@ RUN apt-get install -y libc6-dev \
     netcat-openbsd \
     procps
 
+# Install ASan runtime for student binaries compiled with -fsanitize=address
+RUN apt-get install -y libasan8 || apt-get install -y libasan6 || true
+
 WORKDIR /usr/src/app
 
 EXPOSE 3000

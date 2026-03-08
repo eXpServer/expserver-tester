@@ -183,6 +183,7 @@ export class StageRunner {
                 return reject(false);
             this.terminalInstance.run();
             this.processStatsInstance.run();
+            this.containerInstance.printNewLogs("Warmup");
             return resolve(true);
         })
     }
@@ -219,6 +220,7 @@ export class StageRunner {
         if (cleanup)
             cleanup();
 
+        this.containerInstance.printNewLogs(`Test ${index + 1}`);
         this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
     }
 
