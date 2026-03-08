@@ -229,30 +229,13 @@ export class StageRunner {
         this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
     }
 
-    private clearStageLogs() {
-        try {
-            const logsDir = path.join(__dirname, '../../public/logs');
-            if (fs.existsSync(logsDir)) {
-                const files = fs.readdirSync(logsDir);
-                const stagePattern = `stage_${this._stageNo}-`;
-                files.forEach(file => {
-                    if (file.startsWith(stagePattern)) {
-                        fs.unlinkSync(path.join(logsDir, file));
-                    }
-                });
-                console.log(`Cleared existing logs for stage ${this._stageNo}`);
-            }
-        } catch (err) {
-            console.log(`Failed to clear stage logs:`, err.message);
-        }
-    }
-
     public async run() {
         if (this._running) {
             console.log(`StageRunner for stage ${this._stageNo} is already running.`);
             return;
         }
-        this.clearStageLogs();
+        const runId = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+        this.containerInstance.setRunId(runId);
         this._running = true;
         this._currentState = this._currentState.map(value => ({
             ...value,

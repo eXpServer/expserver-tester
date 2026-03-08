@@ -21,6 +21,7 @@ export class ContainerManager extends EventEmitter {
     public static removingContainers = new Set<string>();
     private _logOffset: number = 0;
     private _currentLabel: string = 'warmup';
+    private _runId: string = '';
     private _isBeingKilled: boolean = false;
 
     get containerName(): string {
@@ -235,6 +236,10 @@ export class ContainerManager extends EventEmitter {
 
 
 
+    public setRunId(runId: string): void {
+        this._runId = runId;
+    }
+
     public setLogLabel(label: string): void {
         this._currentLabel = label;
     }
@@ -257,19 +262,29 @@ export class ContainerManager extends EventEmitter {
 
                     const content = buffer.toString('utf-8');
 
-                    // Save to file
+                    // Save to file (last 100 lines only)
                     const logsDir = path.join(__dirname, '../../public/logs');
                     if (!fs.existsSync(logsDir)) {
                         fs.mkdirSync(logsDir, { recursive: true });
                     }
-                    const destinationFile = path.join(logsDir, `stage_${this._stageNo}-${useLabel}.log`);
-                    fs.appendFileSync(destinationFile, content);
+                    const filename = this._runId
+                        ? `stage_${this._stageNo}_${this._runId}-${useLabel}.log`
+                        : `stage_${this._stageNo}-${useLabel}.log`;
+                    const destinationFile = path.join(logsDir, filename);
 
-                    // Console log (last 20 lines only)
-                    const lines = content.split('\n');
-                    const output = lines.length > 20 ? lines.slice(-20).join('\n') : content;
+                    let totalContent = content;
+                    if (fs.existsSync(destinationFile)) {
+                        const existing = fs.readFileSync(destinationFile, 'utf-8');
+                        totalContent = existing + content;
+                    }
+
+                    const allLines = totalContent.split('\n');
+                    const truncated = allLines.slice(-100).join('\n');
+                    fs.writeFileSync(destinationFile, truncated);
+
+                    // Console log (last 100 lines for consistency)
                     console.log(`\n--- [${useLabel}] Container ${this._containerName} logs (saved to stage_${this._stageNo}-${useLabel}.log) ---`);
-                    console.log(output);
+                    console.log(truncated);
                     console.log(`--- End of [${useLabel}] logs ---\n`);
 
                     this._logOffset = fileSize;
