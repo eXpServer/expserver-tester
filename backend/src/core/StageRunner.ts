@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { StageWatcher } from "./StageWatcher";
 import { Core } from "./Core";
 import { TerminalStream } from "./TerminalStream";
@@ -67,6 +69,7 @@ export class StageRunner {
             `container-${file.binaryId}`,
             file.binaryId,
             Core.getPublicPath(stageNo),
+            this._stageNo
         );
         this.terminalInstance = new TerminalStream(
             this.containerInstance,
@@ -166,11 +169,11 @@ export class StageRunner {
         this.emitToAllSockets(event, data);
     }
 
-    private containerWarmUp(restart: boolean) {
+    private async containerWarmUp(requiresRestart: boolean = false): Promise<boolean> {
         return new Promise(async (resolve, reject) => {
             this.terminalInstance.kill();
             this.processStatsInstance.kill();
-            if (restart) {
+            if (requiresRestart) {
                 if (this.containerInstance.running)
                     await this.containerInstance.kill();
                 await this.containerInstance.start();
@@ -183,7 +186,7 @@ export class StageRunner {
                 return reject(false);
             this.terminalInstance.run();
             this.processStatsInstance.run();
-            this.containerInstance.printNewLogs("Warmup");
+            this.containerInstance.printNewLogs("warmup");
             return resolve(true);
         })
     }
@@ -191,9 +194,11 @@ export class StageRunner {
 
     private runTest = async (data: { func: TestFunction, requiresRestart: boolean }, index: number) => {
         const { func, requiresRestart } = data;
-        console.log(`\n>>> Running test ${index + 1}: ${this._currentState[index].title}`);
+        const testNo = index + 1;
+        console.log(`\n>>> Running test ${testNo}: ${this._currentState[index].title}`);
         try {
             await this.containerWarmUp(requiresRestart);
+            this.containerInstance.setLogLabel(testNo.toString());
         }
         catch (error) {
             console.log(error)
@@ -220,11 +225,34 @@ export class StageRunner {
         if (cleanup)
             cleanup();
 
-        this.containerInstance.printNewLogs(`Test ${index + 1}`);
+        this.containerInstance.printNewLogs();
         this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
     }
 
+    private clearStageLogs() {
+        try {
+            const logsDir = path.join(__dirname, '../../public/logs');
+            if (fs.existsSync(logsDir)) {
+                const files = fs.readdirSync(logsDir);
+                const stagePattern = `stage_${this._stageNo}-`;
+                files.forEach(file => {
+                    if (file.startsWith(stagePattern)) {
+                        fs.unlinkSync(path.join(logsDir, file));
+                    }
+                });
+                console.log(`Cleared existing logs for stage ${this._stageNo}`);
+            }
+        } catch (err) {
+            console.log(`Failed to clear stage logs:`, err.message);
+        }
+    }
+
     public async run() {
+        if (this._running) {
+            console.log(`StageRunner for stage ${this._stageNo} is already running.`);
+            return;
+        }
+        this.clearStageLogs();
         this._running = true;
         this._currentState = this._currentState.map(value => ({
             ...value,

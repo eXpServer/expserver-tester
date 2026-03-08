@@ -7,6 +7,7 @@ import * as path from 'path';
 export class ContainerManager extends EventEmitter {
     private _containerName: string;
     private _binaryId: string;
+    private _stageNo: number;
     private initialized: boolean;
     private _running: boolean;
     private _container: Container | null;
@@ -19,6 +20,8 @@ export class ContainerManager extends EventEmitter {
     private pythonServerRunning: boolean;
     public static removingContainers = new Set<string>();
     private _logOffset: number = 0;
+    private _currentLabel: string = 'warmup';
+    private _isBeingKilled: boolean = false;
 
     get containerName(): string {
         return this._containerName;
@@ -44,10 +47,11 @@ export class ContainerManager extends EventEmitter {
         return this._container;
     }
 
-    constructor(containerName: string, binaryId: string, publicPath: string) {
+    constructor(containerName: string, binaryId: string, publicPath: string, stageNo: number) {
         super();
         this._containerName = containerName;
         this._binaryId = binaryId;
+        this._stageNo = stageNo;
         this.initialized = false;
         this._container = null;
         this.docker = new Docker();
@@ -62,7 +66,7 @@ export class ContainerManager extends EventEmitter {
         const logFile = `${WORKDIR}/${this._binaryId}.log`;
         const entryCmd = [
             'sh', '-c',
-            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && export XPS_DEBUG=1 && export ASAN_OPTIONS=detect_leaks=0 && ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json > ${logFile} 2>&1`,
+            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && export ASAN_OPTIONS=detect_leaks=0 && ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json > ${logFile} 2>&1`,
         ]
 
         console.log(entryCmd)
@@ -151,6 +155,7 @@ export class ContainerManager extends EventEmitter {
                 return resolve();
             }
 
+            this._isBeingKilled = true;
             ContainerManager.removingContainers.add(this._containerName);
             try {
                 this.initialized = false;
@@ -160,6 +165,10 @@ export class ContainerManager extends EventEmitter {
                     console.log(`Stopping container: ${this._containerName}`);
                     await this._container.kill();
                 }
+
+                // Capture final logs before removal
+                this.printLogsFromFile(137);
+
                 console.log(`Removing container: ${this._containerName}`);
                 await this._container.remove({ force: true });
 
@@ -171,12 +180,19 @@ export class ContainerManager extends EventEmitter {
                 if (error.statusCode != 409)
                     console.log(error);
             }
-            ContainerManager.removingContainers.delete(this._containerName);
 
+            this._isBeingKilled = false;
             setTimeout(() => {
+                ContainerManager.removingContainers.delete(this._containerName);
                 return resolve();
             }, 1000); // wait 1 second for proper shut down of container
         })
+    }
+
+    private async waitForRemoval(): Promise<void> {
+        while (ContainerManager.removingContainers.has(this._containerName)) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
     }
 
     public async detachStream(): Promise<void> {
@@ -219,7 +235,12 @@ export class ContainerManager extends EventEmitter {
 
 
 
-    public printNewLogs(label: string): void {
+    public setLogLabel(label: string): void {
+        this._currentLabel = label;
+    }
+
+    public printNewLogs(label?: string): void {
+        const useLabel = label || this._currentLabel;
         try {
             const logPath = path.join('/app/uploads', `${this._binaryId}.log`);
             if (fs.existsSync(logPath)) {
@@ -235,25 +256,35 @@ export class ContainerManager extends EventEmitter {
                     fs.closeSync(fd);
 
                     const content = buffer.toString('utf-8');
-                    const lines = content.split('\n');
-                    const output = lines.length > 50 ? lines.slice(-50).join('\n') : content;
 
-                    console.log(`\n--- [${label}] Container ${this._containerName} logs ---`);
+                    // Save to file
+                    const logsDir = path.join(__dirname, '../../public/logs');
+                    if (!fs.existsSync(logsDir)) {
+                        fs.mkdirSync(logsDir, { recursive: true });
+                    }
+                    const destinationFile = path.join(logsDir, `stage_${this._stageNo}-${useLabel}.log`);
+                    fs.appendFileSync(destinationFile, content);
+
+                    // Console log (last 20 lines only)
+                    const lines = content.split('\n');
+                    const output = lines.length > 20 ? lines.slice(-20).join('\n') : content;
+                    console.log(`\n--- [${useLabel}] Container ${this._containerName} logs (saved to stage_${this._stageNo}-${useLabel}.log) ---`);
                     console.log(output);
-                    console.log(`--- End of [${label}] logs ---\n`);
+                    console.log(`--- End of [${useLabel}] logs ---\n`);
 
                     this._logOffset = fileSize;
                 }
             }
         } catch (err) {
-            console.log(`Failed to read incremental logs for ${this._containerName} (${label}):`, err.message);
+            console.log(`Failed to process incremental logs for ${this._containerName} (${useLabel}):`, err.message);
         }
     }
 
     private printLogsFromFile(exitCode: number): void {
         try {
             const logPath = path.join('/app/uploads', `${this._binaryId}.log`);
-            this.printNewLogs(`Exit ${exitCode}`);
+            const exitLabel = (exitCode === 0 || exitCode === 137) ? this._currentLabel : `Exit-${exitCode}`;
+            this.printNewLogs(exitLabel);
             if (fs.existsSync(logPath)) {
                 fs.unlinkSync(logPath);
             }
@@ -264,6 +295,9 @@ export class ContainerManager extends EventEmitter {
 
     private async startContainer(): Promise<void> {
         this._logOffset = 0;
+        this._isBeingKilled = false;
+        await this.waitForRemoval();
+
         // Always try to remove any leftover container with the same name first
         try {
             const existing = this.docker.getContainer(this._containerName);
@@ -299,35 +333,54 @@ export class ContainerManager extends EventEmitter {
 
     private waitForContainerToRun(): Promise<string> {
         return new Promise((resolve, reject) => {
-            if (this.initialized)
-                return resolve("already initialized");
             const interval = setInterval(async () => {
-                const data = await this._container.inspect();
+                if (!this._container) {
+                    clearInterval(interval);
+                    return;
+                }
+                const data = await this._container.inspect().catch(() => null);
+                if (!data) return;
+
                 const isRunning = data.State.Running;
                 const hasExited = data.State.Status == 'exited';
                 const exitCode = data.State.ExitCode;
-                console.log(isRunning, hasExited, exitCode)
+
                 if (hasExited) {
                     clearInterval(interval);
-                    this.initialized = false;
+                    const crashed = !this._isBeingKilled && exitCode !== 0 && exitCode !== 137;
+                    if (crashed) {
+                        console.log(`!!! Container ${this._containerName} CRASHED with code ${exitCode} !!!`);
+                    }
 
                     // Read logs from file
                     this.printLogsFromFile(exitCode);
 
                     // Remove the exited container to prevent 409 conflicts
-                    try {
-                        await this._container.remove({ force: true });
-                        console.log(`Removed exited container: ${this._containerName}`);
-                    } catch (removeErr) {
-                        console.log(`Failed to remove exited container ${this._containerName}:`, removeErr.message);
+                    if (!ContainerManager.removingContainers.has(this._containerName)) {
+                        ContainerManager.removingContainers.add(this._containerName);
+                        try {
+                            await this._container.remove({ force: true });
+                            console.log(`Removed exited container: ${this._containerName}`);
+                        } catch (removeErr) {
+                            console.log(`Failed to remove exited container ${this._containerName}:`, removeErr.message);
+                        } finally {
+                            ContainerManager.removingContainers.delete(this._containerName);
+                        }
                     }
 
-                    return reject(`Container ${this._containerName} exited with code ${exitCode}`);
+                    if (!this.initialized) {
+                        return reject(`Container ${this._containerName} exited with code ${exitCode}`);
+                    }
+
+                    this.initialized = false;
+                    this._running = false;
+                    this.emit('close', exitCode);
+                    return;
                 }
-                if (isRunning) {
-                    clearInterval(interval);
+
+                if (isRunning && !this.initialized) {
                     this.initialized = true;
-                    return resolve(`Started container: ${this._containerName} `);
+                    resolve(`Started container: ${this._containerName} `);
                 }
             }, 1000);
         })
