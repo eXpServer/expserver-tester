@@ -6,10 +6,15 @@ import { ContainerManager } from "../core/ContainerManager";
 
 export const stringReversal: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
 
         spawnInstance.on('error', (error) => {
-            spawnInstance?.kill();
-            resolve({
+            safeResolve({
                 passed: false,
                 observedBehavior: `server crashed with error ${error}`
             })
@@ -19,31 +24,40 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
 
         const client = new Socket();
 
+        const safeCleanup = () => {
+            client.removeAllListeners();
+            // Always keep a no-op error handler to prevent unhandled error crashes
+            client.on('error', () => {});
+            client.destroy();
+        };
+
         client.on('connectionAttemptFailed', () => {
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server refused connection",
             })
         })
 
         client.on('connectionAttemptTimeout', () => {
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
             })
         })
 
         client.on('close', () => {
-            spawnInstance?.kill();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
             })
         })
 
         client.on('error', (e) => {
-            spawnInstance?.kill();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
             })
@@ -59,28 +73,22 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
                 const output = data.toString();
 
                 if (output !== expected) {
-                    client.removeAllListeners();
-                    return resolve({
+                    safeCleanup();
+                    return safeResolve({
                         passed: false,
                         testInput: input,
                         expectedBehavior: expected,
                         observedBehavior: output,
-                        cleanup: () => {
-                            client.destroy();
-                        },
                     })
                 }
                 else {
                     if (index == testStrings.length - 1) {
-                        client.removeAllListeners();
-                        return resolve({
+                        safeCleanup();
+                        return safeResolve({
                             passed: true,
                             testInput: input,
                             expectedBehavior: expected,
                             observedBehavior: output,
-                            cleanup: () => {
-                                client.destroy();
-                            },
                         })
                     }
                     else {
@@ -101,10 +109,15 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
 
 export const stringWriteBack: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
 
         spawnInstance.on('error', (error) => {
-            spawnInstance?.kill();
-            resolve({
+            safeResolve({
                 passed: false,
                 observedBehavior: `server crashed with error ${error}`
             })
@@ -114,35 +127,40 @@ export const stringWriteBack: TestFunction = (port: number, spawnInstance: Conta
 
         const client = new Socket();
 
-        client.on('connectionAttemptFailed', () => {
+        const safeCleanup = () => {
             client.removeAllListeners();
-            return resolve({
+            // Always keep a no-op error handler to prevent unhandled error crashes
+            client.on('error', () => {});
+            client.destroy();
+        };
+
+        client.on('connectionAttemptFailed', () => {
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server refused connection",
             })
         })
 
         client.on('connectionAttemptTimeout', () => {
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
             })
         })
 
         client.on('error', () => {
-            client.destroy();
-            spawnInstance?.kill();
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
             })
         })
 
         client.on('close', () => {
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Connection terminated / server not running on desired port",
             })
@@ -159,28 +177,22 @@ export const stringWriteBack: TestFunction = (port: number, spawnInstance: Conta
                 const output = data.toString();
 
                 if (output !== expected) {
-                    client.removeAllListeners();
-                    return resolve({
+                    safeCleanup();
+                    return safeResolve({
                         passed: false,
                         testInput: input,
                         expectedBehavior: expected,
                         observedBehavior: output,
-                        cleanup: () => {
-                            client.destroy();
-                        },
                     })
                 }
                 else {
                     if (index == testStrings.length - 1) {
-                        client.removeAllListeners();
-                        return resolve({
+                        safeCleanup();
+                        return safeResolve({
                             passed: true,
                             testInput: input,
                             expectedBehavior: expected,
                             observedBehavior: output,
-                            cleanup: () => {
-                                client.destroy();
-                            },
                         })
                     }
                     else {

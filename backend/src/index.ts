@@ -12,6 +12,17 @@ import path from 'path';
 import { sequelize } from './models';
 import Config from './config';
 
+// Global safety net: prevent the main process from crashing due to
+// unhandled errors from sub-container test sockets or other async issues.
+process.on('uncaughtException', (err) => {
+    console.error('[UNCAUGHT EXCEPTION] The main process caught an unhandled error (not crashing):', err.message);
+    console.error(err.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED REJECTION] The main process caught an unhandled promise rejection (not crashing):', reason);
+});
+
 const app = express();
 const httpServer = createServer();
 const io = new Server(httpServer, {

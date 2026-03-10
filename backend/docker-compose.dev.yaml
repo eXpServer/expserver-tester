@@ -36,6 +36,8 @@ services:
       - .env
     container_name: expserver-backend
     entrypoint: "/entrypoint.sh --debug=true"
+    security_opt:
+      - label:disable
   redis:
     image: redis:latest
     restart: always
