@@ -229,3 +229,103 @@ export const proxyServerCrashHandling: TestFunction = async (port: number, spawn
         })
     });
 }
+
+export const fileAccessRestrictionTest: TestFunction = async (port: number, spawnInstance: ContainerManager) => {
+    // Create a file outside public/ inside the container so realpath() can resolve it
+    const container = spawnInstance.container;
+    const exec = await container.exec({
+        AttachStderr: false,
+        AttachStdout: false,
+        Tty: false,
+        AttachStdin: false,
+        Cmd: ['sh', '-c', 'mkdir -p /usr/src/temp && echo "Some sample data" > /usr/src/temp/file.txt && chmod o+r /usr/src/temp/file.txt']
+    });
+    await exec.start({ hijack: false, stdin: false });
+
+    // Small delay to ensure the file is created
+    await new Promise(r => setTimeout(r, 500));
+
+    return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
+        const client = new Socket();
+
+        const safeCleanup = () => {
+            client.removeAllListeners();
+            client.on('error', () => {});
+            client.destroy();
+        };
+
+        // FAIL: Server crashed
+        spawnInstance.once('error', (error) => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Server crashed with error: ${error}`,
+            });
+        });
+
+        // FAIL: Server process terminated
+        spawnInstance.once('close', (code) => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Server terminated with exit code ${code || 0}`,
+            });
+        });
+
+        // FAIL: Cannot connect
+        client.on('connectionAttemptFailed', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: "Server refused connection",
+            });
+        });
+
+        // FAIL: Connection timed out
+        client.on('connectionAttemptTimeout', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: "Server connection timed out",
+            });
+        });
+
+        // FAIL: Connection error
+        client.on('error', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: "Cannot establish a connection with server",
+            });
+        });
+
+        // FAIL: If server sends data, the restriction didn't work
+        client.on('data', (data) => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Server served data when it should have rejected the request.`,
+            });
+        });
+
+        // PASS: Server closed connection without sending data — graceful rejection
+        client.on('close', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: true,
+                observedBehavior: "Server closed the connection without serving the restricted file",
+            });
+        });
+
+        // Just connect — no data is sent. The server is preconfigured to try
+        // serving a file outside public/, so the restriction should kick in.
+        client.connect(port, spawnInstance.containerName);
+    });
+};
