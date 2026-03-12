@@ -24,7 +24,7 @@ export const multipleClients: TestFunction = (port: number, reverse: boolean, sp
         const safeCleanupAll = () => {
             clients.forEach(client => {
                 client.removeAllListeners();
-                client.on('error', () => {});
+                client.on('error', () => { });
                 client.destroy();
             });
         };
@@ -205,10 +205,10 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
 
         const safeCleanupAll = () => {
             firstClient.removeAllListeners();
-            firstClient.on('error', () => {});
+            firstClient.on('error', () => { });
             firstClient.destroy();
             secondClient.removeAllListeners();
-            secondClient.on('error', () => {});
+            secondClient.on('error', () => { });
             secondClient.destroy();
         };
 
@@ -325,7 +325,7 @@ export const checkCpuUsage: TestFunction = (port: number, spawnInstance: Contain
 
         const safeCleanup = () => {
             client.removeAllListeners();
-            client.on('error', () => {});
+            client.on('error', () => { });
             client.destroy();
         };
 
@@ -552,7 +552,7 @@ export const prematureFileServerTest: TestFunction = (port: number, spawnInstanc
 
         const safeCleanup = () => {
             client.removeAllListeners();
-            client.on('error', () => {});
+            client.on('error', () => { });
             client.destroy();
         };
 

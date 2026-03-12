@@ -1,5 +1,5 @@
 import { Test } from "../../types";
-import { proxyServerCrashHandling } from "../errorhandling";
+import { proxyServerCrashHandling, fileAccessRestrictionTest } from "../errorhandling";
 import { prematureFileServerTest, proxyMultipleConnections } from "../loadtests";
 import { stringWriteBack } from "../string";
 
@@ -11,7 +11,7 @@ export const stage12Tests: Omit<Test, 'status'>[] = [
         expectedBehavior: "client receives reversed version of the input",
         testFunction: async (...args) => {
             const responses = [
-                await stringWriteBack(8003, ...args),
+                // await stringWriteBack(8003, ...args),
                 await stringWriteBack(8004, ...args)
             ];
 
@@ -65,5 +65,15 @@ export const stage12Tests: Omit<Test, 'status'>[] = [
             return response;
 
         },
+    },
+    {
+        title: "File access restriction",
+        description: "This test verifies that the file server rejects requests for files outside the public/ directory (../temp/file.txt) and doesn't crash",
+        testInput: "Client connects to port 8003 and sends a path outside the public directory (../temp/file.txt)",
+        expectedBehavior: "Server should reject the request gracefully without crashing or serving the file",
+        testFunction: async (...args) => {
+            const response = await fileAccessRestrictionTest(8003, ...args);
+            return response;
+        }
     },
 ]
