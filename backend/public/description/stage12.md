@@ -47,7 +47,7 @@ expectedBehavior: "Proxy server shouldn't crash, instead handle the error gracef
 ```
 
 ### Test 5: File access restriction
-This test verifies that the file server rejects requests for files outside the public/ directory and doesn't crash
+This test verifies that the file server rejects requests for files outside the public/ directory (../temp/file.txt) and doesn't crash
 
 ```js
 testInput: "Client connects to port 8003 and sends a path outside the public directory (../temp/file.txt)"

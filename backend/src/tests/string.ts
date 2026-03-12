@@ -27,7 +27,7 @@ export const stringReversal: TestFunction = (port: number, spawnInstance: Contai
         const safeCleanup = () => {
             client.removeAllListeners();
             // Always keep a no-op error handler to prevent unhandled error crashes
-            client.on('error', () => {});
+            client.on('error', () => { });
             client.destroy();
         };
 
@@ -130,7 +130,7 @@ export const stringWriteBack: TestFunction = (port: number, spawnInstance: Conta
         const safeCleanup = () => {
             client.removeAllListeners();
             // Always keep a no-op error handler to prevent unhandled error crashes
-            client.on('error', () => {});
+            client.on('error', () => { });
             client.destroy();
         };
 

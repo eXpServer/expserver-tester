@@ -16,7 +16,7 @@ export const prematureErrorHandling: TestFunction = (port: number, spawnInstance
 
         const safeCleanup = () => {
             client.removeAllListeners();
-            client.on('error', () => {});
+            client.on('error', () => { });
             client.destroy();
         };
 
@@ -75,7 +75,7 @@ export const finalErrorHandling: TestFunction = (port: number, reverse: boolean,
         const safeCleanupAll = () => {
             [existingClient, clientToBeDisconnected, newClient].forEach(client => {
                 client.removeAllListeners();
-                client.on('error', () => {});
+                client.on('error', () => { });
                 client.destroy();
             });
         };
@@ -257,7 +257,7 @@ export const fileAccessRestrictionTest: TestFunction = async (port: number, spaw
 
         const safeCleanup = () => {
             client.removeAllListeners();
-            client.on('error', () => {});
+            client.on('error', () => { });
             client.destroy();
         };
 
