@@ -40,7 +40,7 @@ export const stage9Tests: Omit<Test, 'status'>[] = [
 
             if (responses.some(response => response.passed == false)) {
                 return ({
-                    passed: true,
+                    passed: false,
                     testInput: responses[0].testInput,
                     expectedBehavior: responses[0].expectedBehavior,
                     observedBehavior: "Server didn't work as expected on all ports",

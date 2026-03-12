@@ -277,7 +277,7 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
 
 
 
-                    const input = "hello world";
+                    const input = "hello world\n";
                     secondClient.write(input);
 
                     secondClient.on('data', () => {
