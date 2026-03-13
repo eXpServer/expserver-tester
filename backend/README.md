@@ -116,7 +116,7 @@ HOST_PWD=<your-expserver-tester-directory>/backend
 
 - build the container required to execute test cases
 ```bash
-npm run docker-build
+npm run docker:build
 ```
 
 - build and execute the program
