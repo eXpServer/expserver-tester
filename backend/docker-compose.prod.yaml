@@ -25,9 +25,9 @@ services:
     networks:
       - eXpServer-network-prod
     volumes:
-      - ./uploads:/app/uploads
+      - ./uploads:/app/uploads:z
       - migrations-data:/app/migrations
-      - ./public:/app/public
+      - ./public:/app/public:z
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - HOST_PWD=${PWD}
@@ -35,6 +35,14 @@ services:
       - .env.prod
     container_name: expserver-backend
     entrypoint: "/entrypoint.sh --debug=false"
+    security_opt:
+      - label:disable
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+        reservations:
+          memory: 4G
   redis:
     image: redis:latest
     restart: always

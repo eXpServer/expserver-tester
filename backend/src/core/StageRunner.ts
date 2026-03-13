@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { StageWatcher } from "./StageWatcher";
 import { Core } from "./Core";
 import { TerminalStream } from "./TerminalStream";
@@ -67,6 +69,7 @@ export class StageRunner {
             `container-${file.binaryId}`,
             file.binaryId,
             Core.getPublicPath(stageNo),
+            this._stageNo
         );
         this.terminalInstance = new TerminalStream(
             this.containerInstance,
@@ -166,11 +169,11 @@ export class StageRunner {
         this.emitToAllSockets(event, data);
     }
 
-    private containerWarmUp(restart: boolean) {
+    private async containerWarmUp(requiresRestart: boolean = false): Promise<boolean> {
         return new Promise(async (resolve, reject) => {
             this.terminalInstance.kill();
             this.processStatsInstance.kill();
-            if (restart) {
+            if (requiresRestart) {
                 if (this.containerInstance.running)
                     await this.containerInstance.kill();
                 await this.containerInstance.start();
@@ -183,15 +186,19 @@ export class StageRunner {
                 return reject(false);
             this.terminalInstance.run();
             this.processStatsInstance.run();
+            this.containerInstance.printNewLogs("warmup");
             return resolve(true);
         })
     }
 
 
-    private runTest = async (data: {func: TestFunction, requiresRestart: boolean}, index: number) => {
+    private runTest = async (data: { func: TestFunction, requiresRestart: boolean }, index: number) => {
         const { func, requiresRestart } = data;
+        const testNo = index + 1;
+        console.log(`\n>>> Running test ${testNo}: ${this._currentState[index].title}`);
         try {
             await this.containerWarmUp(requiresRestart);
+            this.containerInstance.setLogLabel(testNo.toString());
         }
         catch (error) {
             console.log(error)
@@ -201,27 +208,40 @@ export class StageRunner {
             return;
         }
 
-        const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await func(this.containerInstance);
+        try {
+            const { passed, testInput, expectedBehavior, observedBehavior, cleanup } = await func(this.containerInstance);
 
-        if (testInput)
-            this._currentState[index].testInput = testInput;
-        if (expectedBehavior)
-            this._currentState[index].expectedBehavior = expectedBehavior;
-        if (observedBehavior)
-            this._currentState[index].observedBehavior = observedBehavior;
-        this._currentState[index].status = (passed
-            ? TestStatus.Passed
-            : TestStatus.Failed
-        );
+            if (testInput)
+                this._currentState[index].testInput = testInput;
+            if (expectedBehavior)
+                this._currentState[index].expectedBehavior = expectedBehavior;
+            if (observedBehavior)
+                this._currentState[index].observedBehavior = observedBehavior;
+            this._currentState[index].status = (passed
+                ? TestStatus.Passed
+                : TestStatus.Failed
+            );
 
+            if (cleanup)
+                cleanup();
+        }
+        catch (error) {
+            console.error(`[runTest] Test ${testNo} threw an unexpected error:`, error);
+            this._currentState[index].observedBehavior = "Test encountered an unexpected error";
+            this._currentState[index].status = TestStatus.Failed;
+        }
 
-        if (cleanup)
-            cleanup();
-
+        this.containerInstance?.printNewLogs();
         this.emitToAllSockets(StageRunnerEvents.TEST_UPDATE, this.currentState);
     }
 
     public async run() {
+        if (this._running) {
+            console.log(`StageRunner for stage ${this._stageNo} is already running.`);
+            return;
+        }
+        const runId = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+        this.containerInstance.setRunId(runId);
         this._running = true;
         this._currentState = this._currentState.map(value => ({
             ...value,

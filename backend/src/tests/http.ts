@@ -6,29 +6,40 @@ import * as cheerio from "cheerio";
 
 export const httpRequestParser: TestFunction = (port: number, requestInfo: HttpRequestTest, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         const client = new Socket();
 
-        client.on('connectionAttemptFailed', () => {
+        const safeCleanup = () => {
             client.removeAllListeners();
-            return resolve({
+            client.on('error', () => {});
+            client.destroy();
+        };
+
+        client.on('connectionAttemptFailed', () => {
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server refused connection",
             })
         })
 
         client.on('connectionAttemptTimeout', () => {
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
             })
         })
 
         client.on('error', () => {
-            client.destroy();
-            spawnInstance?.kill();
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "cannot establish a connection with server",
             })
@@ -41,18 +52,16 @@ export const httpRequestParser: TestFunction = (port: number, requestInfo: HttpR
 
             const parsedResponse = parseHttpResponse(responseText);
             if (!verifyResponseOutput(parsedResponse, requestInfo.expectedResponse)) {
-                client.removeAllListeners();
-                return resolve({
+                safeCleanup();
+                return safeResolve({
                     passed: false,
                     observedBehavior: responseText,
-                    cleanup: () => client.destroy()
                 })
             }
             else {
-                client.removeAllListeners();
-                return resolve({
+                safeCleanup();
+                return safeResolve({
                     passed: true,
-                    cleanup: () => client.destroy()
                 })
             }
         }
@@ -62,6 +71,7 @@ export const httpRequestParser: TestFunction = (port: number, requestInfo: HttpR
         client.connect(port, spawnInstance.containerName, () => client.write(requestInfo.request(spawnInstance.containerName)))
     })
 }
+
 
 const matchHeaders = (proxyHeaders: Headers, serverHeaders: Headers): boolean => {
     let result: boolean = true;
@@ -79,12 +89,23 @@ const matchBody = (proxyBody: string, serverBody: string) => {
 export const httpProxyTest: TestFunction = (fileName: string, port: number, proxyPort, spawnInstance: ContainerManager) => {
 
     return new Promise(async resolve => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         let responseFromProxy: Response;
         try {
             responseFromProxy = await fetch(`http://${spawnInstance.containerName}:${proxyPort}/${fileName}`);
         }
         catch (error) {
-            console.log(`Error: ${error.cause.code}`)
+            console.log(`Error: ${error.cause?.code}`)
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Could not connect to proxy server on port ${proxyPort}: ${error.cause?.code || error.message}`,
+            });
         }
         let responseFromServer: Response;
 
@@ -92,7 +113,11 @@ export const httpProxyTest: TestFunction = (fileName: string, port: number, prox
             responseFromServer = await fetch(`http://${spawnInstance.containerName}:${port}/${fileName}`);
         }
         catch (error) {
-            console.log(`Error: ${error.cause.code}`)
+            console.log(`Error: ${error.cause?.code}`)
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Could not connect to server on port ${port}: ${error.cause?.code || error.message}`,
+            });
         }
 
         if (
@@ -100,19 +125,20 @@ export const httpProxyTest: TestFunction = (fileName: string, port: number, prox
             (!matchHeaders(responseFromProxy.headers, responseFromServer.headers)) ||
             (!matchBody(await responseFromProxy.text(), await responseFromServer.text()))
         ) {
-            return resolve({
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Response received from server didn't match that received from proxy",
             });
         }
         else {
-            return resolve({
+            return safeResolve({
                 passed: true,
             })
         }
 
     })
 }
+
 
 export const httpFileServerTest: TestFunction = (fileName: string, mimeType: string, port: number, spawnInstance: ContainerManager) => {
 

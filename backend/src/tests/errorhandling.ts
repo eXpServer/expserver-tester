@@ -5,12 +5,25 @@ import { generateRandomStrings, reverseString } from "../utils/string";
 
 export const prematureErrorHandling: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         const client = new Socket();
+
+        const safeCleanup = () => {
+            client.removeAllListeners();
+            client.on('error', () => { });
+            client.destroy();
+        };
 
 
         const closeCallback = (code: number | null) => {
-            client.removeAllListeners();
-            resolve({
+            safeCleanup();
+            safeResolve({
                 passed: (code == 1),
                 observedBehavior: `Process exited with code ${code || 0}`,
             })
@@ -20,7 +33,7 @@ export const prematureErrorHandling: TestFunction = (port: number, spawnInstance
 
         client.on('error', (error) => {
             console.log(error);
-            resolve({
+            safeResolve({
                 passed: false,
                 observedBehavior: "Client disconnected with an error",
                 cleanup: () => spawnInstance.off('close', closeCallback),
@@ -34,7 +47,7 @@ export const prematureErrorHandling: TestFunction = (port: number, spawnInstance
             client.on('close', () => {
                 const timeout = setTimeout(() => {
                     spawnInstance.off('close', closeCallback);
-                    resolve({
+                    safeResolve({
                         passed: false,
                         observedBehavior: "Process did not exit within 3s",
                         cleanup: () => clearTimeout(timeout),
@@ -48,47 +61,53 @@ export const prematureErrorHandling: TestFunction = (port: number, spawnInstance
 export const finalErrorHandling: TestFunction = (port: number, reverse: boolean, spawnInstance: ContainerManager) => {
 
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         const existingClient = new Socket();
         const clientToBeDisconnected = new Socket();
         const newClient = new Socket();
 
+        const safeCleanupAll = () => {
+            [existingClient, clientToBeDisconnected, newClient].forEach(client => {
+                client.removeAllListeners();
+                client.on('error', () => { });
+                client.destroy();
+            });
+        };
+
 
         const connectionAttemptFailedCallback = () => {
-            existingClient.removeAllListeners();
-            clientToBeDisconnected.removeAllListeners();
-            newClient.removeAllListeners();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server refused connection",
             })
         }
 
         const connectionTimeoutCallback = () => {
-            existingClient.removeAllListeners();
-            clientToBeDisconnected.removeAllListeners();
-            newClient.removeAllListeners();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
             })
         }
 
         const connectionErrorCallback = () => {
-            existingClient.removeAllListeners();
-            clientToBeDisconnected.removeAllListeners();
-            newClient.removeAllListeners();
-            spawnInstance?.kill();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "cannot establish a connection with server",
             })
         }
 
         const clientCloseCallback = () => {
-            existingClient.removeAllListeners();
-            clientToBeDisconnected.removeAllListeners();
-            newClient.removeAllListeners();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Connection was terminated / server is not running on desired port",
             })
@@ -108,17 +127,10 @@ export const finalErrorHandling: TestFunction = (port: number, reverse: boolean,
         newClient.on('error', connectionErrorCallback);
 
         spawnInstance.on('close', (code) => {
-            existingClient.removeAllListeners();
-            clientToBeDisconnected.removeAllListeners();
-            newClient.removeAllListeners();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: `Server terminated with Error code ${code || 0}`,
-                cleanup: () => {
-                    existingClient.destroy();
-                    clientToBeDisconnected.destroy();
-                    newClient.destroy();
-                }
             })
 
         })
@@ -133,30 +145,16 @@ export const finalErrorHandling: TestFunction = (port: number, reverse: boolean,
                         : input);
 
                     if (expected !== output) {
-                        existingClient.removeAllListeners();
-                        clientToBeDisconnected.removeAllListeners();
-                        newClient.removeAllListeners();
-                        return resolve({
+                        safeCleanupAll();
+                        return safeResolve({
                             passed: false,
                             observedBehavior: "new client didn't receive string it expected",
-                            cleanup: () => {
-                                existingClient.destroy();
-                                clientToBeDisconnected.destroy();
-                                newClient.destroy();
-                            }
                         })
                     }
                     else {
-                        existingClient.removeAllListeners();
-                        clientToBeDisconnected.removeAllListeners();
-                        newClient.removeAllListeners();
-                        return resolve({
+                        safeCleanupAll();
+                        return safeResolve({
                             passed: true,
-                            cleanup: () => {
-                                existingClient.destroy();
-                                clientToBeDisconnected.destroy();
-                                newClient.destroy();
-                            }
                         })
                     }
                 })
@@ -174,17 +172,10 @@ export const finalErrorHandling: TestFunction = (port: number, reverse: boolean,
                     : input);
 
                 if (expected !== output) {
-                    existingClient.removeAllListeners();
-                    clientToBeDisconnected.removeAllListeners();
-                    newClient.removeAllListeners();
-                    return resolve({
+                    safeCleanupAll();
+                    return safeResolve({
                         passed: false,
                         observedBehavior: "existing client didn't receive string it expected",
-                        cleanup: () => {
-                            existingClient.destroy();
-                            clientToBeDisconnected.destroy();
-                            newClient.destroy();
-                        }
                     })
                 }
                 else
@@ -206,27 +197,135 @@ export const finalErrorHandling: TestFunction = (port: number, reverse: boolean,
 export const proxyServerCrashHandling: TestFunction = async (port: number, spawnInstance: ContainerManager) => {
     await spawnInstance.stopPythonServer();
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
 
         spawnInstance.on('close', (code) => {
-            return resolve({
+            return safeResolve({
                 passed: false,
                 observedBehavior: `Server terminated with Error code ${code}`,
             })
         })
 
         fetch(`http://${spawnInstance.containerName}:${port}`).catch(err => {
-            if (err.cause?.code == 'UND_ERR_SOCKET') {
-                return resolve({
+            const causeCode = err.cause?.code;
+            if (causeCode === 'UND_ERR_SOCKET' || causeCode === 'ECONNRESET') {
+                return safeResolve({
                     passed: true,
-                    observedBehavior: "Server terminated client connection without any crashes",
+                    observedBehavior: `Server terminated client connection safely (${causeCode})`,
                 })
             }
             else {
-                return resolve({
+                const errorDetail = `Message: ${err.message}, Code: ${err.code}, Cause: ${err.cause?.code || 'none'}`;
+                return safeResolve({
                     passed: false,
-                    observedBehavior: `Server terminated client with error: ${err.code}`
+                    observedBehavior: `Server terminated client with error: ${errorDetail}`
                 })
             }
         })
     });
 }
+
+export const fileAccessRestrictionTest: TestFunction = async (port: number, spawnInstance: ContainerManager) => {
+    // Create a file outside public/ inside the container so realpath() can resolve it
+    const container = spawnInstance.container;
+    const exec = await container.exec({
+        AttachStderr: false,
+        AttachStdout: false,
+        Tty: false,
+        AttachStdin: false,
+        Cmd: ['sh', '-c', 'mkdir -p /usr/src/temp && echo "Some sample data" > /usr/src/temp/file.txt && chmod o+r /usr/src/temp/file.txt']
+    });
+    await exec.start({ hijack: false, stdin: false });
+
+    // Small delay to ensure the file is created
+    await new Promise(r => setTimeout(r, 500));
+
+    return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
+        const client = new Socket();
+
+        const safeCleanup = () => {
+            client.removeAllListeners();
+            client.on('error', () => { });
+            client.destroy();
+        };
+
+        // FAIL: Server crashed
+        spawnInstance.once('error', (error) => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Server crashed with error: ${error}`,
+            });
+        });
+
+        // FAIL: Server process terminated
+        spawnInstance.once('close', (code) => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Server terminated with exit code ${code || 0}`,
+            });
+        });
+
+        // FAIL: Cannot connect
+        client.on('connectionAttemptFailed', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: "Server refused connection",
+            });
+        });
+
+        // FAIL: Connection timed out
+        client.on('connectionAttemptTimeout', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: "Server connection timed out",
+            });
+        });
+
+        // FAIL: Connection error
+        client.on('error', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: "Cannot establish a connection with server",
+            });
+        });
+
+        // FAIL: If server sends data, the restriction didn't work
+        client.on('data', (data) => {
+            safeCleanup();
+            return safeResolve({
+                passed: false,
+                observedBehavior: `Server served data when it should have rejected the request.`,
+            });
+        });
+
+        // PASS: Server closed connection without sending data — graceful rejection
+        client.on('close', () => {
+            safeCleanup();
+            return safeResolve({
+                passed: true,
+                observedBehavior: "Server closed the connection without serving the restricted file",
+            });
+        });
+
+        // Just connect — no data is sent. The server is preconfigured to try
+        // serving a file outside public/, so the restriction should kick in.
+        client.connect(port, spawnInstance.containerName);
+    });
+};

@@ -12,39 +12,46 @@ export const multipleClients: TestFunction = (port: number, reverse: boolean, sp
 
 
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         const clients: Socket[] = [];
+
+        const safeCleanupAll = () => {
+            clients.forEach(client => {
+                client.removeAllListeners();
+                client.on('error', () => { });
+                client.destroy();
+            });
+        };
+
         for (let i = 0; i < numClients; i++) {
             const newClient = new Socket();
             newClient.on('connectionAttemptFailed', () => {
-                spawnInstance?.kill();
-                return resolve({
+                safeCleanupAll();
+                return safeResolve({
                     passed: false,
                     observedBehavior: "Server refused connection",
-                    cleanup: () => {
-                        clients.forEach(client => client.destroy());
-                    }
                 })
             })
 
             newClient.on('connectionAttemptTimeout', () => {
-                spawnInstance?.kill();
-                return resolve({
+                safeCleanupAll();
+                return safeResolve({
                     passed: false,
                     observedBehavior: "Server connection timed out",
-                    cleanup: () => {
-                        clients.forEach(client => client.destroy());
-                    }
                 })
             })
 
             newClient.on('error', () => {
-                spawnInstance?.kill();
-                return resolve({
+                safeCleanupAll();
+                return safeResolve({
                     passed: false,
                     observedBehavior: "cannot establish a connection with server",
-                    cleanup: () => {
-                        clients.forEach(client => client.destroy());
-                    }
                 })
             })
 
@@ -55,8 +62,8 @@ export const multipleClients: TestFunction = (port: number, reverse: boolean, sp
         let responsesReceived: number = 0;
 
         spawnInstance.on('error', (error) => {
-            spawnInstance?.kill();
-            resolve({
+            safeCleanupAll();
+            safeResolve({
                 passed: false,
                 observedBehavior: `server crashed with error ${error}`
             })
@@ -74,26 +81,20 @@ export const multipleClients: TestFunction = (port: number, reverse: boolean, sp
                 responsesReceived++;
 
                 if (output !== expected) {
-                    spawnInstance?.kill();
-                    return resolve({
+                    safeCleanupAll();
+                    return safeResolve({
                         passed: false,
                         expectedBehavior: `client ${index} receives ${expected}`,
                         observedBehavior: `client ${index} received ${output}`,
-                        cleanup: () => {
-                            clients.forEach((client) => client.destroy());
-                        }
                     })
                 }
                 client.off('data', receivedCallback);
 
 
                 if (responsesReceived == numClients) {
-                    spawnInstance?.kill();
-                    return resolve({
+                    safeCleanupAll();
+                    return safeResolve({
                         passed: true,
-                        cleanup: () => {
-                            clients.forEach(client => client.destroy());
-                        }
                     })
                 }
             }
@@ -115,9 +116,15 @@ export const proxyMultipleConnections: TestFunction = (port: number, spawnInstan
     const serverPort = 3000;
     const numClients = 3;
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         spawnInstance.on('error', (error) => {
-            spawnInstance?.kill();
-            return resolve({
+            safeResolve({
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`
             })
@@ -137,7 +144,7 @@ export const proxyMultipleConnections: TestFunction = (port: number, spawnInstan
             const fullResponse = `${statusLine}\n${headers}\n\n${body}`;
 
             if (fullResponse !== proxyServerResponse) {
-                return resolve({
+                return safeResolve({
                     passed: false,
                     observedBehavior: "Response received from the proxy server didn't match the response received directly from the main server",
                 })
@@ -145,7 +152,7 @@ export const proxyMultipleConnections: TestFunction = (port: number, spawnInstan
             else {
                 numPassed++;
                 if (numPassed == numClients) {
-                    return resolve({
+                    return safeResolve({
                         passed: true,
                     })
                 }
@@ -168,7 +175,7 @@ export const proxyMultipleConnections: TestFunction = (port: number, spawnInstan
                     })
                 })
                 .catch(error => {
-                    return resolve({
+                    return safeResolve({
                         passed: false,
                         observedBehavior: `Connection failed with error ${error}`
                     })
@@ -186,74 +193,55 @@ export const proxyMultipleConnections: TestFunction = (port: number, spawnInstan
  */
 export const nonBlockingSocket: TestFunction = async (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         const firstClient = new Socket();
         const secondClient = new Socket();
 
-        spawnInstance.on('error', error => {
-            spawnInstance?.kill();
+        const safeCleanupAll = () => {
             firstClient.removeAllListeners();
+            firstClient.on('error', () => { });
+            firstClient.destroy();
             secondClient.removeAllListeners();
-            return resolve({
+            secondClient.on('error', () => { });
+            secondClient.destroy();
+        };
+
+        spawnInstance.on('error', error => {
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`,
-                cleanup: () => {
-                    firstClient.destroy();
-                    secondClient.destroy();
-                }
             })
         })
 
 
         const connectionFailedHandler = () => {
-            firstClient.removeAllListeners();
-            secondClient.removeAllListeners();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Server refused connection",
-                cleanup: () => {
-                    firstClient.destroy();
-                    secondClient.destroy();
-                }
             })
         };
 
         const connectionTimeoutHandler = () => {
-            firstClient.removeAllListeners();
-            secondClient.removeAllListeners();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Server connection timeout",
-                cleanup: () => {
-                    firstClient.destroy();
-                    secondClient.destroy();
-                }
-            })
-        }
-
-
-        const connectionCloseHandler = () => {
-            firstClient.removeAllListeners();
-            secondClient.removeAllListeners();
-            return resolve({
-                passed: false,
-                observedBehavior: "Connection terminated / server not running on desired port",
-                cleanup: () => {
-                    firstClient.destroy();
-                    secondClient.destroy();
-                }
             })
         }
 
         const connectionErrorHandler = () => {
-            firstClient.removeAllListeners();
-            secondClient.removeAllListeners();
-            return resolve({
+            safeCleanupAll();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Cannot establish connection to server",
-                cleanup: () => {
-                    firstClient.destroy();
-                    secondClient.destroy();
-                }
             })
         }
 
@@ -261,12 +249,10 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
         firstClient.on('connectionAttemptFailed', connectionFailedHandler);
         firstClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
         firstClient.on('error', connectionErrorHandler);
-        // firstClient.on('close', connectionCloseHandler);
 
         secondClient.on('connectionAttemptFailed', connectionFailedHandler);
         secondClient.on('connectionAttemptTimeout', connectionTimeoutHandler);
         secondClient.on('error', connectionErrorHandler);
-        // secondClient.on('close', connectionCloseHandler);
 
         firstClient.connect(port, spawnInstance.containerName, () => {
             const file = createReadStream(path.join(process.cwd(), 'public', 'large-files', '4gb.txt'));
@@ -278,67 +264,41 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
                         ;
                         clearTimeout(firstClientWaitTimeout);
                         clearTimeout(secondClientWaitTimeout);
-                        firstClient.removeAllListeners();
-                        secondClient.removeAllListeners();
+                        safeCleanupAll();
 
-                        return resolve({
+                        return safeResolve({
                             passed: false,
                             observedBehavior: "Client connection was disconnected",
-                            cleanup: () => {
-                                firstClient.destroy();
-                                secondClient.destroy();
-                            }
                         })
                     };
 
-                    // firstClient.off('error', connectionErrorHandler);
-                    // secondClient.off('error', connectionErrorHandler);
                     firstClient.on('error', errorCallback);
                     secondClient.on('error', errorCallback)
 
 
 
-                    const input = "hello world";
+                    const input = "hello world\n";
                     secondClient.write(input);
 
                     secondClient.on('data', () => {
                         clearTimeout(secondClientWaitTimeout);
                         clearTimeout(firstClientWaitTimeout)
-                        firstClient.removeAllListeners();
-                        secondClient.removeAllListeners();
+                        safeCleanupAll();
 
-                        return resolve({
+                        return safeResolve({
                             passed: true,
-                            cleanup: () => {
-                                firstClient.destroy();
-                                secondClient.destroy();
-                            }
                         })
                     })
 
                     const secondClientWaitTimeout = setTimeout(() => {
-                        firstClient.off('connectionAttemptFailed', connectionFailedHandler);
-                        firstClient.off('connectionAttemptTimeout', connectionTimeoutHandler);
-                        firstClient.off('error', errorCallback);
-
-                        secondClient.off('connectionAttemptFailed', connectionFailedHandler);
-                        secondClient.off('connectionAttemptTimeout', connectionTimeoutHandler);
-                        secondClient.off('error', errorCallback);
-
-
                         clearTimeout(secondClientWaitTimeout);
                         file.close();
                         clearTimeout(firstClientWaitTimeout);
+                        safeCleanupAll();
                         spawnInstance.kill().then(() => {
-                            firstClient.removeAllListeners();
-                            secondClient.removeAllListeners();
-                            return resolve({
+                            return safeResolve({
                                 passed: false,
                                 observedBehavior: "Server did not respond to the second client within 30s",
-                                cleanup: () => {
-                                    firstClient.destroy();
-                                    secondClient.destroy()
-                                }
                             });
                         })
 
@@ -353,12 +313,25 @@ export const nonBlockingSocket: TestFunction = async (port: number, spawnInstanc
 
 export const checkCpuUsage: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve, _) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         const NUM_ITERATIONS = 30;
         const client = new Socket();
 
-        spawnInstance.on('error', error => {
+        const safeCleanup = () => {
             client.removeAllListeners();
-            return resolve({
+            client.on('error', () => { });
+            client.destroy();
+        };
+
+        spawnInstance.on('error', error => {
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`
             })
@@ -384,26 +357,24 @@ export const checkCpuUsage: TestFunction = (port: number, spawnInstance: Contain
         }
 
         client.on('connectionAttemptFailed', () => {
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Server refused connection",
             })
         });
 
         client.on('connectionAttemptTimeout', () => {
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Server connection timed out",
             })
         })
 
         client.on('error', () => {
-            client.destroy();
-            spawnInstance?.kill();
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
             })
@@ -419,17 +390,16 @@ export const checkCpuUsage: TestFunction = (port: number, spawnInstance: Contain
                     const average = calcAvergeUsage(results);
                     const slope = calcBestFitSlope(results);
                     const observedBehavior = `CPU usage was ${average}%`;
-                    client.destroy();
+                    safeCleanup();
                     clearInterval(interval);
-                    client.removeAllListeners();
                     if (slope > 0.5) {
-                        return resolve({
+                        return safeResolve({
                             passed: false,
                             observedBehavior: `Observed a trend of CPU usage increasing at a higher pace than expected. The average memory usage was ${average}%`,
                         });
                     }
                     else {
-                        return resolve({
+                        return safeResolve({
                             passed: true,
                             observedBehavior: `The average CPU usage was ${average}%`,
                         })
@@ -451,11 +421,17 @@ export const checkCpuUsage: TestFunction = (port: number, spawnInstance: Contain
 
 export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => {
     return new Promise(async resolve => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         await spawnInstance.detachStream();
         const results: number[] = [];
         spawnInstance.on('error', error => {
-            spawnInstance?.kill();
-            return resolve({
+            safeResolve({
                 passed: false,
                 observedBehavior: `Server crashed with error ${error}`
             })
@@ -522,7 +498,7 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
             if (exitCode != 0) {
                 clearInterval(interval);
                 await spawnInstance.attachStream();
-                return resolve({
+                return safeResolve({
                     passed: false,
                     observedBehavior: `netcat localhost 8001 failed with exit code ${exitCode}`
                 })
@@ -532,14 +508,14 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
             clearInterval(interval);
             if (slope > 0.5) {
                 await spawnInstance.attachStream();
-                return resolve({
+                return safeResolve({
                     passed: false,
                     observedBehavior: `Observed a trend of memory usage increasing at a higher pace than expected. The average memory usage was ${average}%`
                 })
             }
             else {
                 await spawnInstance.attachStream();
-                return resolve({
+                return safeResolve({
                     passed: true,
                     observedBehavior: `The average memory usage was ${average}%`
                 })
@@ -548,7 +524,7 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
         catch {
             clearInterval(interval);
             await spawnInstance.attachStream();
-            return resolve({
+            return safeResolve({
                 passed: false,
                 observedBehavior: "something went wrong",
             })
@@ -558,35 +534,47 @@ export const checkMemUsage: TestFunction = (spawnInstance: ContainerManager) => 
 
 export const prematureFileServerTest: TestFunction = (port: number, spawnInstance: ContainerManager) => {
     return new Promise((resolve) => {
+        let resolved = false;
+        const safeResolve = (value: any) => {
+            if (resolved) return;
+            resolved = true;
+            resolve(value);
+        };
+
         spawnInstance.once('error', (error) => {
-            return resolve({
+            return safeResolve({
                 passed: false,
                 observedBehavior: `server crashed with error ${error}`
             })
         })
 
         const client = new Socket();
-        client.on('connectionAttemptFailed', () => {
+
+        const safeCleanup = () => {
             client.removeAllListeners();
-            return resolve({
+            client.on('error', () => { });
+            client.destroy();
+        };
+
+        client.on('connectionAttemptFailed', () => {
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server refused connection",
             })
         })
 
         client.on('connectionAttemptTimeout', () => {
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "server connection timed out",
             })
         })
 
         client.on('error', () => {
-            client.destroy();
-            spawnInstance?.kill();
-            client.removeAllListeners();
-            return resolve({
+            safeCleanup();
+            return safeResolve({
                 passed: false,
                 observedBehavior: "Cannot establish a connection with server",
             })
@@ -595,8 +583,8 @@ export const prematureFileServerTest: TestFunction = (port: number, spawnInstanc
         let timeout = null;
         client.on('connect', () => {
             timeout = setTimeout(() => {
-                client.removeAllListeners();
-                return resolve({
+                safeCleanup();
+                return safeResolve({
                     passed: false,
                     observedBehavior: "Server didn't respond with any data",
                 })
@@ -610,14 +598,14 @@ export const prematureFileServerTest: TestFunction = (port: number, spawnInstanc
                 clearTimeout(timeout);
             const expectedString = readFileSync(`${process.cwd()}/public/common/sample.txt`, { encoding: 'utf-8' });
             if (data.toString() == expectedString) {
-                client.removeAllListeners();
-                return resolve({
+                safeCleanup();
+                return safeResolve({
                     passed: true,
                 });
             }
             else {
-                client.removeAllListeners();
-                return resolve({
+                safeCleanup();
+                return safeResolve({
                     passed: false,
                     observedBehavior: `Expected string: ${data.toString()}, received ${expectedString}`
                 })
@@ -628,4 +616,3 @@ export const prematureFileServerTest: TestFunction = (port: number, spawnInstanc
         client.connect(port, spawnInstance.containerName);
     });
 }
-

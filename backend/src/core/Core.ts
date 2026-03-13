@@ -95,14 +95,17 @@ export class Core {
                     fileName: file?.fileName || null,
                     running: false,
                     timeTaken: previousResult.timeTaken,
-                    testDetails: testDetails.map<TestDetails>((test, index) => ({
-                        title: test.title,
-                        description: test.description,
-                        testInput: test.testInput,
-                        expectedBehavior: test.expectedBehavior,
-                        observedBehavior: previousResult.testDetails[index].observedBehavior,
-                        status: previousResult.testDetails[index].status,
-                    }))
+                    testDetails: testDetails.map<TestDetails>((test, index) => {
+                        const prevTest = previousResult.testDetails[index];
+                        return {
+                            title: test.title,
+                            description: test.description,
+                            testInput: test.testInput,
+                            expectedBehavior: test.expectedBehavior,
+                            observedBehavior: prevTest?.observedBehavior ?? null,
+                            status: prevTest?.status ?? TestStatus.Pending,
+                        };
+                    })
                 })
             }
             return ({
@@ -148,14 +151,17 @@ export class Core {
                 fileName: runner.fileName,
                 running: false,
                 timeTaken: previousResult.timeTaken,
-                testDetails: currentState.map<TestDetails>((test, index) => ({
-                    title: test.title,
-                    description: test.description,
-                    testInput: test.testInput,
-                    expectedBehavior: test.expectedBehavior,
-                    observedBehavior: previousResult.testDetails[index].observedBehavior,
-                    status: previousResult.testDetails[index].status,
-                }))
+                testDetails: currentState.map<TestDetails>((test, index) => {
+                    const prevTest = previousResult.testDetails[index];
+                    return {
+                        title: test.title,
+                        description: test.description,
+                        testInput: test.testInput,
+                        expectedBehavior: test.expectedBehavior,
+                        observedBehavior: prevTest?.observedBehavior ?? null,
+                        status: prevTest?.status ?? TestStatus.Pending,
+                    };
+                })
             })
         }
 
