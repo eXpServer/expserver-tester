@@ -283,9 +283,9 @@ export class ContainerManager extends EventEmitter {
                     fs.writeFileSync(destinationFile, truncated);
 
                     // Console log (last 100 lines for consistency)
-                    // console.log(`\n--- [${useLabel}] Container ${this._containerName} logs (saved to stage_${this._stageNo}-${useLabel}.log) ---`);
-                    // console.log(truncated);
-                    // console.log(`--- End of [${useLabel}] logs ---\n`);
+                    console.log(`\n--- [${useLabel}] Container ${this._containerName} logs (saved to stage_${this._stageNo}-${useLabel}.log) ---`);
+                    console.log(truncated);
+                    console.log(`--- End of [${useLabel}] logs ---\n`);
 
                     this._logOffset = fileSize;
                 }
