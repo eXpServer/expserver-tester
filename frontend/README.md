@@ -45,6 +45,13 @@ cd frontend
 npm install
 ```
 
+- Create a `.env.local` file and add the following configuration to point to your backend services:
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=http://localhost:6969
+NEXT_PUBLIC_SOCKET_URL=http://localhost:6970
+```
+
 - build and execute the program
 ```bash
 npm run build
