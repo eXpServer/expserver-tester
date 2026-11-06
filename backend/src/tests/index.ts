@@ -116,5 +116,13 @@ export const tests: StageTest = {
     descriptionFilePath: "/description/stage20.md",
     tests: stageTests.stage20,
     requiresXpsConfig: true,
-},
+    },
+    stage21: {
+        stageName: "Request Timeouts",
+        requiresDummyServer: false,
+        customPublicPath: 'stage21',
+        descriptionFilePath: "/description/stage21.md",
+        tests: stageTests.stage21,
+        requiresXpsConfig: true,
+    },
 }
