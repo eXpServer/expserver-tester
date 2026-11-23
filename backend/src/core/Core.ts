@@ -326,7 +326,7 @@ export class Core {
                 console.log("emitted ack")
                 socket.emit(EmitEvents.ConnectionAck, { data: null });
             }
-
+ 
             socket.on(ReceiveEvents.RequestState, async (data: { stageNo: number, userId: string }) => {
                 const { stageNo, userId } = data;
                 await redis.set(`session:${clientId}`, JSON.stringify({ stageNo, userId }));

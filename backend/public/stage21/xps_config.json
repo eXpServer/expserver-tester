@@ -1,0 +1,24 @@
+{
+	"server_name": "eXpServer",
+	"workers": 4,
+	"servers": [
+		{
+			"listeners": [
+				{
+					"host": "0.0.0.0",
+					"port": 8001
+				}
+			],
+			"routes": [
+				{
+					"req_path": "/",
+					"type": "file_serve",
+					"dir_path": "./",
+					"index": [
+						"index.html"
+					]
+				}
+			]
+		}
+	]
+}

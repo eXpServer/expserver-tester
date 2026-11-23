@@ -65,10 +65,20 @@ export class ContainerManager extends EventEmitter {
         const customPublicDir = `${Config.HOST_PWD}/public/${publicPath}`;
         const workDir = `${Config.HOST_PWD}/uploads`;
         const logFile = `${WORKDIR}/${this._binaryId}.log`;
+        const extraUpstreams = stageNo === 20
+            ? [
+                'mkdir -p /tmp/up3001 /tmp/up3002',
+                'printf upstream-3001 > /tmp/up3001/index.html',
+                'printf upstream-3002 > /tmp/up3002/index.html',
+                '(nohup python3 -m http.server 3001 -d /tmp/up3001 > /dev/null 2>&1 & echo $! > /tmp/http_server_3001.pid)',
+                '(nohup python3 -m http.server 3002 -d /tmp/up3002 > /dev/null 2>&1 & echo $! > /tmp/http_server_3002.pid)',
+            ].join(' && ') + ' && '
+            : '';
+
         const entryCmd = [
             'sh', '-c',
-            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && export ASAN_OPTIONS=detect_leaks=0 && ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json > ${logFile} 2>&1`,
-        ]
+            `nohup python3 -m http.server 3000 -d ${PUBLIC_DIR} > /dev/null 2>&1 & echo $! > /tmp/http_server.pid && ${extraUpstreams}export ASAN_OPTIONS=detect_leaks=0 && ./${this._binaryId} ${PUBLIC_DIR}/xps_config.json > ${logFile} 2>&1`,
+        ];
 
         console.log(entryCmd)
 
@@ -462,7 +472,7 @@ export class ContainerManager extends EventEmitter {
                 return resolve({ message: "container not running" });
             }
             const exec = await this._container.exec({
-                Cmd: ['sh', '-c', 'kill $(cat /tmp/http_server.pid) && rm -f /tmp/http_server.pid'],
+                Cmd: ['sh', '-c', 'kill $(cat /tmp/http_server*.pid) && rm -f /tmp/http_server*.pid'],
                 AttachStderr: false,
                 AttachStdout: false,
             });

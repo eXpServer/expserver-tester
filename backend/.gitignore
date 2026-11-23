@@ -7,3 +7,12 @@ test.*s
 public/large-files/*
 compile/
 seeders/
+
+
+node_modules
+.next
+.git
+.env*
+npm-debug.log
+Dockerfile
+.dockerignore

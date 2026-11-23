@@ -43,6 +43,27 @@ services:
           memory: 12G
         reservations:
           memory: 4G
+  
+  frontend:
+    container_name: expserver-frontend
+    restart: always
+
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_BACKEND_URL: http://localhost:6969
+        NEXT_PUBLIC_SOCKET_URL: http://localhost:6970
+
+    ports:
+      - "6971:6971"
+
+    depends_on:
+      - backend
+
+    networks:
+      - eXpServer-network-prod
+
   redis:
     image: redis:latest
     restart: always
